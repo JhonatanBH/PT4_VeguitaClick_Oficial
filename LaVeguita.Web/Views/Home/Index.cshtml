@@ -1,0 +1,79 @@
+﻿@{
+    ViewData["Title"] = "Dashboard Gerencial";
+}
+
+<div class="container-fluid">
+    <div class="header-dashboard mb-4">
+        <h1 class="h3 mb-0 text-gray-800">Bienvenido, @ViewBag.NombreUsuario</h1>
+        <p class="text-muted">Estado actual de La Veguita Click - Caso 4</p>
+    </div>
+
+    <div class="row">
+        <div class="col-xl-4 col-md-6 mb-4">
+            <div class="card border-left-success shadow h-100 py-2" style="border-left: 5px solid #2ecc71;">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-success text-uppercase mb-1">Total Inventario</div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">@ViewBag.TotalProductos Productos</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-4 col-md-6 mb-4">
+            <div class="card border-left-danger shadow h-100 py-2" style="border-left: 5px solid #e74c3c;">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-danger text-uppercase mb-1">Productos en Stock Critico</div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">@ViewBag.StockCritico Alertas</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-4 col-md-6 mb-4">
+            <div class="card border-left-info shadow h-100 py-2" style="border-left: 5px solid #3498db;">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-info text-uppercase mb-1">Capacidad Logistica</div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">Bicis y Triciclos Listos</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row mt-4">
+        <div class="col-lg-6">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3 bg-light">
+                    <h6 class="m-0 font-weight-bold text-primary">Acciones Administrativas</h6>
+                </div>
+                <div class="card-body">
+                    <p>Acceda rapidamente a la gestion de datos maestros segun las reglas de negocio establecidas.</p>
+                    <a asp-controller="Productos" asp-action="Index" class="btn btn-success btn-sm mb-2">Gestionar Inventario</a>
+                    <a asp-controller="Usuarios" asp-action="Index" class="btn btn-dark btn-sm mb-2">Gestionar Usuarios</a>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-lg-6">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3 bg-light">
+                    <h6 class="m-0 font-weight-bold text-primary">Recordatorio Regla N°12</h6>
+                </div>
+                <div class="card-body">
+                    <div class="alert alert-warning border-0 small">
+                        <strong>Atencion:</strong> Por normativa del sistema, queda estrictamente prohibido el uso de tildes en cualquier registro de productos o nombres de usuario.
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

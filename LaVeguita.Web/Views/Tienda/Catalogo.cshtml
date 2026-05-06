@@ -1,0 +1,73 @@
+﻿@model IEnumerable<LaVeguita.Entities.Producto>
+
+@{
+    ViewData["Title"] = "Catalogo de Productos";
+}
+
+<style>
+    /* 1. Unifica el tamaño de todas las tarjetas */
+    .card {
+        transition: transform 0.2s ease, box-shadow 0.2s ease;
+        display: flex;
+        flex-direction: column;
+    }
+
+        .card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 20px rgba(0,0,0,0.1) !important;
+        }
+
+    /* 2. Control de jerarquia de textos */
+    .card-title {
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis; /* Si el nombre es muy largo, pone "..." */
+        font-weight: 700;
+    }
+
+    .card-text {
+        display: -webkit-box;
+        -webkit-line-clamp: 2; /* Maximo 2 lineas de descripcion */
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+        min-height: 40px; /* Mantiene la misma altura aunque no haya texto */
+    }
+</style>
+
+<div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2 class="text-success">🍎 Productos Disponibles</h2>
+        <span class="badge bg-light text-dark border">@Model.Count() items encontrados</span>
+    </div>
+
+    <div class="row">
+        @foreach (var item in Model)
+        {
+            <div class="col-12 col-sm-6 col-md-4 col-lg-3 mb-4">
+                <div class="card h-100 border-0 shadow-sm" style="border-radius: 15px; overflow: hidden;">
+                    
+                    <div class="bg-light d-flex align-items-center justify-content-center" style="height: 160px;">
+                        <i class="text-muted">Sin Imagen</i>
+                    </div>
+                    
+                    <div class="card-body d-flex flex-column">
+                        <small class="text-uppercase text-muted fw-bold" style="font-size: 10px; letter-spacing: 1px;">@item.NomTipo</small>
+                        
+                        <h5 class="card-title mt-1 mb-2" title="@item.NomProducto">@item.NomProducto</h5>
+                        
+                        <p class="card-text text-muted small">@item.Descripcion</p>
+                        
+                        <div class="d-flex justify-content-between align-items-center mt-auto pt-3">
+                            <span class="fw-bold text-success" style="font-size: 1.3rem;">$@item.PrecioUnd.ToString("N0")</span>
+                            <button class="btn btn-sm btn-success rounded-pill px-3 fw-bold">Añadir</button>
+                        </div>
+                    </div>
+                    
+                    <div class="card-footer bg-white border-0 pb-3">
+                        <small class="text-muted">Stock: @item.StockActual un.</small>
+                    </div>
+                </div>
+            </div>
+        }
+    </div>
+</div>

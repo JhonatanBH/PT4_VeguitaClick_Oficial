@@ -1,0 +1,98 @@
+﻿@using Microsoft.AspNetCore.Http
+@inject IHttpContextAccessor HttpContextAccessor
+@{
+    // Obtenemos el rol de la sesión
+    int? rol = HttpContextAccessor.HttpContext.Session.GetInt32("RolUsuario");
+    string nombreUser = HttpContextAccessor.HttpContext.Session.GetString("UsuarioNombre") ?? "Invitado";
+}
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"] - La Veguita Click</title>
+    <style>
+        body { margin: 0; font-family: 'Segoe UI', sans-serif; display: flex; background-color: #f4f7f6; min-height: 100vh; overflow-x: hidden; }
+        .sidebar { width: 260px; background-color: #2c3e50; color: white; position: fixed; height: 100vh; padding: 20px; box-sizing: border-box; transition: all 0.3s ease; left: 0; z-index: 1000; }
+        .sidebar.collapsed { left: -260px; }
+        .sidebar h2 { color: #2ecc71; text-align: center; font-size: 22px; margin-bottom: 30px; }
+        .admin-status { background: #34495e; padding: 15px; border-radius: 8px; margin-bottom: 25px; text-align: center; border-left: 4px solid #2ecc71; }
+        .sidebar ul { list-style: none; padding: 0; }
+        .sidebar ul li { margin-bottom: 10px; }
+        .sidebar ul li a { color: #bdc3c7; text-decoration: none; display: block; padding: 12px; border-radius: 5px; transition: 0.3s; }
+        .sidebar ul li a:hover { background: #34495e; color: white; padding-left: 20px; }
+        .main-content { margin-left: 260px; flex-grow: 1; padding: 40px; width: calc(100% - 260px); transition: all 0.3s ease; }
+        .main-content.expanded { margin-left: 0; width: 100%; }
+        .container-card { background: white; padding: 30px; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+        .toggle-btn { position: fixed; top: 20px; left: 20px; z-index: 1100; background: #2ecc71; color: white; border: none; padding: 10px 15px; border-radius: 5px; cursor: pointer; display: none; }
+        .sidebar.collapsed ~ .toggle-btn { display: block; }
+    </style>
+</head>
+<body>
+    <nav class="sidebar" id="sidebar">
+        <div onclick="toggleSidebar()" style="cursor:pointer; text-align:right; font-size:20px;">✖</div>
+        
+        <h2>La Veguita Click</h2>
+        
+        <div class="admin-status">
+            <span style="font-size: 11px; color: #bdc3c7; display: block; text-transform: uppercase;">Hola, @nombreUser</span>
+            <strong>
+                @if (rol == 1) { <span>Panel Gerente</span> }
+                else if (rol == 8) { <span>Portal Cliente</span> }
+                else { <span>Sistema Interno</span> }
+            </strong>
+        </div>
+
+        <ul>
+            <li><a asp-controller="Home" asp-action="Index">🏠 Inicio</a></li>
+
+            @if (rol != 8) // Si NO es cliente (Gerentes, Asistentes, etc.)
+            {
+                <li><a asp-controller="Usuarios" asp-action="Index">👥 Gestión de Usuarios</a></li>
+                <li><a asp-controller="Productos" asp-action="Index">🍎 Gestión de Inventario</a></li>
+                <li><a asp-controller="Categorias" asp-action="Index">🏷️ Categorías</a></li>
+            }
+            else // Solo para el CLIENTE (Rol 8)
+            {
+                <li><a asp-controller="Tienda" asp-action="Catalogo">🛒 Comprar Productos</a></li>
+                <li><a href="#">📦 Mis Pedidos</a></li>
+            }
+
+            <li style="margin-top: 50px;">
+                <a asp-controller="Acceso" asp-action="Logout" style="color: #e74c3c;">🚪 Cerrar Sesion</a>
+            </li>
+        </ul>
+    </nav>
+
+    <button class="toggle-btn" onclick="toggleSidebar()">☰</button>
+
+    <main class="main-content" id="main-content">
+        <div class="container-card">
+            @RenderBody()
+        </div>
+    </main>
+
+    <script>
+        function toggleSidebar() {
+            document.getElementById('sidebar').classList.toggle('collapsed');
+            document.getElementById('main-content').classList.toggle('expanded');
+        }
+        function validarSinTildes(e) {
+            // Capturamos la tecla
+            var tecla = e.key;
+            // Definimos los caracteres prohibidos
+            var prohibidos = /[áéíóúÁÉÍÓÚ]/;
+    
+            if (prohibidos.test(tecla)) {
+                // Bloquea la entrada del caracter
+                e.preventDefault();
+                return false;
+            }
+        }
+
+
+    </script>
+
+    @await RenderSectionAsync("Scripts", required: false)
+</body>
+</html>

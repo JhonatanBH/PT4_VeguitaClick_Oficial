@@ -1,0 +1,19 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <RootNamespace>Capa_de_Negocio_BLL___Business_Logic_Layer_</RootNamespace>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Oracle.ManagedDataAccess.Core" Version="23.26.200" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Capa de Datos(DAL - Data Access Layer)\Capa de Datos(DAL - Data Access Layer).csproj" />
+    <ProjectReference Include="..\Entities CapEx\Entities CapEx.csproj" />
+  </ItemGroup>
+
+</Project>

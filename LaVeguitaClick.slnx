@@ -1,0 +1,6 @@
+<Solution>
+  <Project Path="Capa de Datos(DAL - Data Access Layer)/Capa de Datos(DAL - Data Access Layer).csproj" />
+  <Project Path="Capa de Negocio(BLL - Business Logic Layer)/Capa de Negocio(BLL - Business Logic Layer).csproj" />
+  <Project Path="Entities CapEx/Entities CapEx.csproj" />
+  <Project Path="LaVeguita.Web/LaVeguita.Web.csproj" Id="fd6396ef-e044-4d47-a884-6ab9f0755622" />
+</Solution>
