@@ -20,7 +20,6 @@ namespace LaVeguita.DAL
 
             using (OracleConnection conn = conexion.LeerConexion())
             {
-                // Traemos todos los campos de productos y el nombre del tipo desde TIPO_PRODUCTO
                 string query = @"SELECT p.ID_PRODUCTO, p.NOM_PRODUCTO, p.DESCRIPCION, p.PRECIO_UND, 
                                        p.STOCK_ACTUAL, p.STOCK_MIN, p.ES_ORGANICO, p.ID_TIPO_PRODUCTO,
                                        t.NOM_TIPO
@@ -39,15 +38,16 @@ namespace LaVeguita.DAL
                         {
                             Producto prod = new Producto
                             {
-                                IdProducto = Convert.ToInt32(reader["ID_PRODUCTO"]),
-                                NomProducto = reader["NOM_PRODUCTO"].ToString(),
-                                Descripcion = reader["DESCRIPCION"].ToString(),
-                                PrecioUnd = Convert.ToDecimal(reader["PRECIO_UND"]),
-                                StockActual = Convert.ToInt32(reader["STOCK_ACTUAL"]),
-                                StockMin = Convert.ToInt32(reader["STOCK_MIN"]),
-                                EsOrganico = reader["ES_ORGANICO"].ToString(),
-                                IdTipoProducto = Convert.ToInt32(reader["ID_TIPO_PRODUCTO"]),
-                                NomTipo = reader["NOM_TIPO"].ToString() // Propiedad extendida
+                                // Blindaje contra nulos aplicado aquí
+                                IdProducto = reader["ID_PRODUCTO"] != DBNull.Value ? Convert.ToInt32(reader["ID_PRODUCTO"]) : 0,
+                                NomProducto = reader["NOM_PRODUCTO"] != DBNull.Value ? reader["NOM_PRODUCTO"].ToString() : "",
+                                Descripcion = reader["DESCRIPCION"] != DBNull.Value ? reader["DESCRIPCION"].ToString() : "",
+                                PrecioUnd = reader["PRECIO_UND"] != DBNull.Value ? Convert.ToDecimal(reader["PRECIO_UND"]) : 0,
+                                StockActual = reader["STOCK_ACTUAL"] != DBNull.Value ? Convert.ToInt32(reader["STOCK_ACTUAL"]) : 0,
+                                StockMin = reader["STOCK_MIN"] != DBNull.Value ? Convert.ToInt32(reader["STOCK_MIN"]) : 0,
+                                EsOrganico = reader["ES_ORGANICO"] != DBNull.Value ? reader["ES_ORGANICO"].ToString() : "",
+                                IdTipoProducto = reader["ID_TIPO_PRODUCTO"] != DBNull.Value ? Convert.ToInt32(reader["ID_TIPO_PRODUCTO"]) : 0,
+                                NomTipo = reader["NOM_TIPO"] != DBNull.Value ? reader["NOM_TIPO"].ToString() : ""
                             };
                             lista.Add(prod);
                         }
@@ -61,13 +61,10 @@ namespace LaVeguita.DAL
             return lista;
         }
 
-
-
         public bool InsertarProducto(Producto p)
         {
             using (OracleConnection con = conexion.LeerConexion())
             {
-                // 1. La Query (Asegúrate de que no falte ninguna coma)
                 string query = @"INSERT INTO PRODUCTOS (
                             ID_PRODUCTO, NOM_PRODUCTO, DESCRIPCION, PRECIO_UND, 
                             STOCK_ACTUAL, ID_PROVEEDOR, STOCK_MIN, STOCK_MAX, 
@@ -82,10 +79,8 @@ namespace LaVeguita.DAL
 
                 OracleCommand cmd = new OracleCommand(query, con);
 
-                // 2. ¡ESTA LÍNEA ES VITAL! Para que use los nombres y no el orden
                 cmd.BindByName = true;
 
-                // 3. Parámetros corregidos (Sin los ":" en el nombre)
                 cmd.Parameters.Add("nom", p.NomProducto);
                 cmd.Parameters.Add("descr", (object)p.Descripcion ?? DBNull.Value);
                 cmd.Parameters.Add("precio", p.PrecioUnd);
@@ -95,7 +90,7 @@ namespace LaVeguita.DAL
                 cmd.Parameters.Add("smax", p.StockMax);
                 cmd.Parameters.Add("peso", p.PesoUnitEstimado);
                 cmd.Parameters.Add("organico", p.EsOrganico);
-                cmd.Parameters.Add("tipoID", p.IdTipoProducto); // Cambié el nombre para evitar conflictos
+                cmd.Parameters.Add("tipoID", p.IdTipoProducto);
                 cmd.Parameters.Add("calid", p.IdCalidad);
                 cmd.Parameters.Add("pack", (object)p.Packing ?? DBNull.Value);
 
@@ -105,13 +100,11 @@ namespace LaVeguita.DAL
             }
         }
 
-
         public List<TipoProducto> ListarTipos()
         {
             List<TipoProducto> lista = new List<TipoProducto>();
             using (OracleConnection con = conexion.LeerConexion())
             {
-                // Usamos los nombres exactos de tu CREATE TABLE
                 string query = "SELECT ID_TIPO_PRODUCTO, NOM_TIPO FROM TIPO_PRODUCTO ORDER BY NOM_TIPO ASC";
                 OracleCommand cmd = new OracleCommand(query, con);
                 con.Open();
@@ -121,8 +114,9 @@ namespace LaVeguita.DAL
                     {
                         lista.Add(new TipoProducto
                         {
-                            IdTipoProducto = dr.GetInt32(0),
-                            NomTipo = dr.GetString(1)
+                            // Blindaje aplicado a dr.GetInt32 y dr.GetString
+                            IdTipoProducto = dr["ID_TIPO_PRODUCTO"] != DBNull.Value ? Convert.ToInt32(dr["ID_TIPO_PRODUCTO"]) : 0,
+                            NomTipo = dr["NOM_TIPO"] != DBNull.Value ? dr["NOM_TIPO"].ToString() : ""
                         });
                     }
                 }
@@ -130,14 +124,12 @@ namespace LaVeguita.DAL
             return lista;
         }
 
-
         // 1. Para llenar el DropDownList en la Vista
         public List<Proveedor> ListarProveedores()
         {
             List<Proveedor> lista = new List<Proveedor>();
             using (var conn = conexion.LeerConexion())
             {
-                // Nombre exacto: PROVEEDORES
                 string sql = "SELECT ID_PROVEEDOR, NOM_PROVEEDOR FROM PROVEEDORES ORDER BY NOM_PROVEEDOR";
                 OracleCommand cmd = new OracleCommand(sql, conn);
                 conn.Open();
@@ -147,8 +139,9 @@ namespace LaVeguita.DAL
                     {
                         lista.Add(new Proveedor
                         {
-                            IdProveedor = Convert.ToInt32(dr["ID_PROVEEDOR"]),
-                            NomProveedor = dr["NOM_PROVEEDOR"].ToString()
+                            // Blindaje contra nulos aplicado aquí
+                            IdProveedor = dr["ID_PROVEEDOR"] != DBNull.Value ? Convert.ToInt32(dr["ID_PROVEEDOR"]) : 0,
+                            NomProveedor = dr["NOM_PROVEEDOR"] != DBNull.Value ? dr["NOM_PROVEEDOR"].ToString() : ""
                         });
                     }
                 }
@@ -161,7 +154,6 @@ namespace LaVeguita.DAL
         {
             using (var conn = conexion.LeerConexion())
             {
-                // Hemos renombrado los parámetros para evitar palabras reservadas (como :desc)
                 string sql = @"UPDATE PRODUCTOS SET 
                         NOM_PRODUCTO = :v_nom, 
                         DESCRIPCION = :v_desc, 
@@ -180,7 +172,6 @@ namespace LaVeguita.DAL
                 OracleCommand cmd = new OracleCommand(sql, conn);
                 cmd.BindByName = true; // Indispensable
 
-                // Asignación de parámetros con nombres seguros
                 cmd.Parameters.Add("v_nom", p.NomProducto);
                 cmd.Parameters.Add("v_desc", (object)p.Descripcion ?? DBNull.Value);
                 cmd.Parameters.Add("v_precio", p.PrecioUnd);
@@ -203,7 +194,6 @@ namespace LaVeguita.DAL
                 }
                 catch (Exception ex)
                 {
-                    // Esto nos permitirá ver si surge otro error diferente ahora
                     throw new Exception("Error al ejecutar UPDATE en Oracle: " + ex.Message);
                 }
             }
@@ -227,7 +217,6 @@ namespace LaVeguita.DAL
         public Producto ObtenerPorId(int id)
         {
             Producto p = null;
-            // Usamos el objeto 'conexion' que ya tienes declarado al inicio de tu DAL
             using (OracleConnection conn = conexion.LeerConexion())
             {
                 string query = "SELECT * FROM PRODUCTOS WHERE ID_PRODUCTO = :id";
@@ -243,18 +232,19 @@ namespace LaVeguita.DAL
                         {
                             p = new Producto
                             {
-                                IdProducto = Convert.ToInt32(reader["ID_PRODUCTO"]),
-                                NomProducto = reader["NOM_PRODUCTO"].ToString(),
+                                // Blindaje total contra nulos en cada propiedad
+                                IdProducto = reader["ID_PRODUCTO"] != DBNull.Value ? Convert.ToInt32(reader["ID_PRODUCTO"]) : 0,
+                                NomProducto = reader["NOM_PRODUCTO"] != DBNull.Value ? reader["NOM_PRODUCTO"].ToString() : "",
                                 Descripcion = reader["DESCRIPCION"] != DBNull.Value ? reader["DESCRIPCION"].ToString() : "",
-                                PrecioUnd = Convert.ToDecimal(reader["PRECIO_UND"]),
-                                StockActual = Convert.ToInt32(reader["STOCK_ACTUAL"]),
-                                IdProveedor = Convert.ToInt32(reader["ID_PROVEEDOR"]),
-                                StockMin = Convert.ToInt32(reader["STOCK_MIN"]),
-                                StockMax = Convert.ToInt32(reader["STOCK_MAX"]),
-                                PesoUnitEstimado = Convert.ToDecimal(reader["PESO_UNIT_ESTIMADO"]),
-                                EsOrganico = reader["ES_ORGANICO"].ToString(),
-                                IdTipoProducto = Convert.ToInt32(reader["ID_TIPO_PRODUCTO"]),
-                                IdCalidad = Convert.ToInt32(reader["ID_CALIDAD"]),
+                                PrecioUnd = reader["PRECIO_UND"] != DBNull.Value ? Convert.ToDecimal(reader["PRECIO_UND"]) : 0,
+                                StockActual = reader["STOCK_ACTUAL"] != DBNull.Value ? Convert.ToInt32(reader["STOCK_ACTUAL"]) : 0,
+                                IdProveedor = reader["ID_PROVEEDOR"] != DBNull.Value ? Convert.ToInt32(reader["ID_PROVEEDOR"]) : 0,
+                                StockMin = reader["STOCK_MIN"] != DBNull.Value ? Convert.ToInt32(reader["STOCK_MIN"]) : 0,
+                                StockMax = reader["STOCK_MAX"] != DBNull.Value ? Convert.ToInt32(reader["STOCK_MAX"]) : 0,
+                                PesoUnitEstimado = reader["PESO_UNIT_ESTIMADO"] != DBNull.Value ? Convert.ToDecimal(reader["PESO_UNIT_ESTIMADO"]) : 0,
+                                EsOrganico = reader["ES_ORGANICO"] != DBNull.Value ? reader["ES_ORGANICO"].ToString() : "",
+                                IdTipoProducto = reader["ID_TIPO_PRODUCTO"] != DBNull.Value ? Convert.ToInt32(reader["ID_TIPO_PRODUCTO"]) : 0,
+                                IdCalidad = reader["ID_CALIDAD"] != DBNull.Value ? Convert.ToInt32(reader["ID_CALIDAD"]) : 0,
                                 Packing = reader["PACKING"] != DBNull.Value ? reader["PACKING"].ToString() : ""
                             };
                         }
@@ -266,10 +256,6 @@ namespace LaVeguita.DAL
                 }
             }
             return p;
-
-
-
-
         }
 
         public List<Calidad> ListarCalidades()
@@ -277,7 +263,6 @@ namespace LaVeguita.DAL
             List<Calidad> lista = new List<Calidad>();
             using (var conn = conexion.LeerConexion())
             {
-                // Nombre exacto: CALIDAD
                 string sql = "SELECT ID_CALIDAD, NOM_CALIDAD FROM CALIDAD ORDER BY NOM_CALIDAD";
                 OracleCommand cmd = new OracleCommand(sql, conn);
                 try
@@ -289,8 +274,9 @@ namespace LaVeguita.DAL
                         {
                             lista.Add(new Calidad
                             {
-                                IdCalidad = Convert.ToInt32(dr["ID_CALIDAD"]),
-                                NomCalidad = dr["NOM_CALIDAD"].ToString()
+                                // Blindaje contra nulos aplicado aquí
+                                IdCalidad = dr["ID_CALIDAD"] != DBNull.Value ? Convert.ToInt32(dr["ID_CALIDAD"]) : 0,
+                                NomCalidad = dr["NOM_CALIDAD"] != DBNull.Value ? dr["NOM_CALIDAD"].ToString() : ""
                             });
                         }
                     }
@@ -302,9 +288,6 @@ namespace LaVeguita.DAL
             }
             return lista;
         }
-
-
-
 
     }
 }

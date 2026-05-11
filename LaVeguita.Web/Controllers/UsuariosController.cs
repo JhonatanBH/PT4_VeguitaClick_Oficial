@@ -23,18 +23,29 @@ namespace LaVeguita.Web.Controllers
         }
 
         // 2. CREAR USUARIO (POST)
-        [HttpPost]
-        public IActionResult Crear(Usuario nuevoUser)
+        [HttpGet]
+        public IActionResult Crear()
         {
+            // Verificamos sesión (tu regla de seguridad)
             int? rol = HttpContext.Session.GetInt32("RolUsuario");
             if (rol == null || rol != 1) return RedirectToAction("Login", "Acceso");
 
+            return View();
+        }
+
+        // Acción para recibir los datos (POST) - Ya la tienes, solo asegúrate que redirija al Index
+        [HttpPost]
+        public IActionResult Crear(Usuario nuevoUser)
+        {
             if (nuevoUser != null)
             {
                 bool inserto = _usuarioBll.AgregarUsuario(nuevoUser);
-                if (inserto) return RedirectToAction("Index");
+                if (inserto)
+                {
+                    return RedirectToAction("Index");
+                }
             }
-            return RedirectToAction("Index");
+            return View(nuevoUser);
         }
 
         // 3. EDITAR USUARIO (GET - Cargar formulario)

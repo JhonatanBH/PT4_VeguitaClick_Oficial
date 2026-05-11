@@ -24,5 +24,11 @@ namespace LaVeguita.Entities
         public int IdVenta { get; set; }
         public int IdTransporte { get; set; }
         public int IdEmpleado { get; set; }
+
+
+        public decimal PesoTotalKg { get; set; }
+
+
+
     }
 }

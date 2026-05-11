@@ -251,7 +251,49 @@ namespace LaVeguita.DAL
             return lista;
         }
 
+        public Usuario ObtenerUsuarioParaLogin(string username, string password)
+        {
+            Usuario user = null;
+            using (OracleConnection conn = conexion.LeerConexion())
+            {
+                string query = "SELECT ID_USUARIO, NOMBRE_USER, ID_ROL_USUARIO, ID_DIRECCION FROM USUARIOS WHERE NOMBRE_USER = :u AND CONTRASENA = :p";
 
+                OracleCommand cmd = new OracleCommand(query, conn);
+                cmd.Parameters.Add("u", username);
+                cmd.Parameters.Add("p", password);
+
+                try
+                {
+                    conn.Open();
+                    using (var reader = cmd.ExecuteReader())
+                    {
+                        if (reader.Read())
+                        {
+                            user = new Usuario
+                            {
+                                // Protección total contra DBNull en todos los campos
+                                IdUsuario = reader["ID_USUARIO"] != DBNull.Value
+                                            ? Convert.ToInt32(reader["ID_USUARIO"]) : 0,
+
+                                NombreUser = reader["NOMBRE_USER"] != DBNull.Value
+                                             ? reader["NOMBRE_USER"].ToString() : "Sin Nombre",
+
+                                IdRolUsuario = reader["ID_ROL_USUARIO"] != DBNull.Value
+                                               ? Convert.ToInt32(reader["ID_ROL_USUARIO"]) : 0,
+
+                                IdDireccion = reader["ID_DIRECCION"] != DBNull.Value
+                                              ? Convert.ToInt32(reader["ID_DIRECCION"]) : 0
+                            };
+                        }
+                    }
+                }
+                catch (Exception ex)
+                {
+                    throw new Exception("Error al obtener datos de login: " + ex.Message);
+                }
+            }
+            return user;
+        }
 
     }
 }

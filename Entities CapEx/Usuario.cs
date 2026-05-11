@@ -25,6 +25,6 @@ namespace LaVeguita.Entities
 
         public string NombreRol { get; set; }
 
-
+        public DateTime? FechaRegistro { get; set; }
     }
 }

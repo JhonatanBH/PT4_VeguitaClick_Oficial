@@ -3,38 +3,11 @@
     ViewData["Title"] = "Gestión de Usuarios";
 }
 
-<div style="background: white; padding: 20px; border-radius: 8px; border: 1px solid #eee; margin-bottom: 30px;">
-    <h3 style="margin-top:0; color: #2c3e50;">+ Registrar Nuevo Usuario</h3>
-    
-    <form asp-controller="Usuarios" asp-action="Crear" method="post" style="display: flex; gap: 15px; align-items: flex-end; flex-wrap: wrap;">
-        
-        <div style="display: flex; flex-direction: column;">
-            <label style="font-size: 12px; color: #7f8c8d;">Nombre de Usuario</label>
-            <input type="text" name="NombreUser" required style="padding: 10px; border: 1px solid #ccc; border-radius: 4px; width: 180px;" />
-        </div>
-
-        <div style="display: flex; flex-direction: column;">
-            <label style="font-size: 12px; color: #7f8c8d;">Contraseña</label>
-            <input type="password" name="Contrasena" required style="padding: 10px; border: 1px solid #ccc; border-radius: 4px; width: 130px;" />
-        </div>
-
-        <div style="display: flex; flex-direction: column;">
-            <label style="font-size: 12px; color: #7f8c8d;">Correo</label>
-            <input type="email" name="CorreoUsu" style="padding: 10px; border: 1px solid #ccc; border-radius: 4px; width: 180px;" />
-        </div>
-
-        <div style="display: flex; flex-direction: column;">
-            <label style="font-size: 12px; color: #7f8c8d;">Teléfono</label>
-            <input type="number" name="Fono" required style="padding: 10px; border: 1px solid #ccc; border-radius: 4px; width: 130px;" />
-        </div>
-
-        <input type="hidden" name="IdRolUsuario" value="2" />
-        <input type="hidden" name="IdDireccion" value="100" />
-
-        <button type="submit" style="background-color: #2ecc71; color: white; border: none; padding: 12px 25px; border-radius: 5px; cursor: pointer; font-weight: bold; transition: 0.3s;">
-            Guardar en Oracle
-        </button>
-    </form>
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2 class="text-dark">Gestión de Usuarios</h2>
+    <a asp-action="Crear" class="btn btn-success shadow-sm">
+        <i class="fas fa-user-plus"></i> + Nuevo Usuario
+    </a>
 </div>
 
 <table style="width: 100%; border-collapse: collapse; margin-top: 20px;">

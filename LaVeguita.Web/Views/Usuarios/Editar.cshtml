@@ -15,7 +15,7 @@
 
                 <div class="form-group mb-3">
                     <label class="control-label">Nombre de Usuario</label>
-                    <input asp-for="NombreUser"
+                    <input asp-for="NombreUser" class="form-control validar-realtime" required />
                            class="form-control"
                            onkeypress="return validarSinTildes(event)"
                            required />
@@ -23,7 +23,7 @@
 
                 <div class="form-group mb-3">
                     <label class="control-label">Correo Electrónico</label>
-                    <input asp-for="CorreoUsu"
+                    <input asp-for="CorreoUsu" class="form-control validar-realtime" required />
                            type="email"
                            class="form-control"
                            onkeypress="return validarSinTildes(event)"
@@ -32,7 +32,7 @@
 
                 <div class="form-group mb-3">
                     <label class="control-label">Teléfono</label>
-                    <input asp-for="Fono" type="number" class="form-control" />
+                    <input asp-for="Fono" type="number" class="form-control validar-realtime" required />
                 </div>
 
                 <div class="form-group mb-3">
