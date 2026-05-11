@@ -94,19 +94,21 @@ namespace LaVeguita.DAL
         {
             using (OracleConnection conn = conexion.LeerConexion())
             {
-                // SQL ajustado a tus nombres de tabla y secuencia
                 string query = "INSERT INTO USUARIOS (ID_USUARIO, NOMBRE_USER, CONTRASENA, FONO, CORREO_USU, ID_ROL_USUARIO, ID_DIRECCION) " +
                                "VALUES (SEQ_USUARIO.NEXTVAL, :nombre, :pass, :fono, :correo, :idRol, :idDir)";
 
                 OracleCommand cmd = new OracleCommand(query, conn);
 
-                // Pasamos los datos desde tu clase Usuario
-                cmd.Parameters.Add(new OracleParameter("nombre", nuevoUser.NombreUser));
-                cmd.Parameters.Add(new OracleParameter("pass", nuevoUser.Contrasena));
-                cmd.Parameters.Add(new OracleParameter("fono", nuevoUser.Fono));
-                cmd.Parameters.Add(new OracleParameter("correo", nuevoUser.CorreoUsu));
-                cmd.Parameters.Add(new OracleParameter("idRol", nuevoUser.IdRolUsuario));
-                cmd.Parameters.Add(new OracleParameter("idDir", nuevoUser.IdDireccion));
+                // VITAL: Esto evita que el orden de los parámetros cause errores
+                cmd.BindByName = true;
+
+                // Definimos tipos específicos para asegurar compatibilidad con Oracle
+                cmd.Parameters.Add("nombre", OracleDbType.Varchar2).Value = nuevoUser.NombreUser;
+                cmd.Parameters.Add("pass", OracleDbType.Varchar2).Value = nuevoUser.Contrasena;
+                cmd.Parameters.Add("fono", OracleDbType.Int64).Value = nuevoUser.Fono;
+                cmd.Parameters.Add("correo", OracleDbType.Varchar2).Value = nuevoUser.CorreoUsu;
+                cmd.Parameters.Add("idRol", OracleDbType.Int32).Value = nuevoUser.IdRolUsuario;
+                cmd.Parameters.Add("idDir", OracleDbType.Int32).Value = nuevoUser.IdDireccion;
 
                 try
                 {
@@ -116,6 +118,7 @@ namespace LaVeguita.DAL
                 }
                 catch (Exception ex)
                 {
+                    // Este throw te mostrará el error real de Oracle (ej: "Unique constraint violated")
                     throw new Exception("Error al insertar usuario: " + ex.Message);
                 }
             }
@@ -131,6 +134,7 @@ namespace LaVeguita.DAL
                                "WHERE ID_USUARIO = :id";
 
                 OracleCommand cmd = new OracleCommand(query, conn);
+                cmd.BindByName = true; // <-- AGREGA ESTO SIEMPRE
 
                 // 2. IMPORTANTE: El orden de los parámetros debe ser IGUAL al de la query arriba
                 cmd.Parameters.Add(new OracleParameter("nombre", u.NombreUser));

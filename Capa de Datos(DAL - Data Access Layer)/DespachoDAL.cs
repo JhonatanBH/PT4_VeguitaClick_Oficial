@@ -10,14 +10,54 @@ namespace LaVeguita.DAL
     {
         private readonly Conexion _conexion = new Conexion();
 
-        public List<Despacho> ListarDespachosPendientes()
+        // 1. PARA EL TRANSPORTISTA: Filtra por su vehículo (Bici/Triciclo)
+        public List<Despacho> ListarDespachosPorVehiculo(string tipoVehiculo)
         {
             List<Despacho> lista = new List<Despacho>();
             using (OracleConnection cn = _conexion.LeerConexion())
             {
-                // Mantenemos la consulta con PESO_TOTAL_KG
-                string query = "SELECT ID_DESPACHO, KM_OBTENIDOS, ID_VENTA, ID_TRANSPORTE, ESTADO_PEDIDO, PESO_TOTAL_KG FROM DESPACHO WHERE ESTADO_PEDIDO != 'ENTREGADO'";
+                string query = @"SELECT d.ID_DESPACHO, d.KM_OBTENIDOS, d.ID_VENTA, d.ID_TRANSPORTE, 
+                                       d.ESTADO_PEDIDO, d.PESO_TOTAL_KG, t.TIPO_MOVIL
+                                FROM DESPACHO d
+                                JOIN TRANSPORTE t ON d.ID_TRANSPORTE = t.ID_TRANSPORTE
+                                WHERE t.TIPO_MOVIL = :tipo 
+                                AND d.ESTADO_PEDIDO = 'PENDIENTE'";
 
+                OracleCommand cmd = new OracleCommand(query, cn);
+                cmd.Parameters.Add("tipo", tipoVehiculo);
+
+                try
+                {
+                    cn.Open();
+                    using (OracleDataReader dr = cmd.ExecuteReader())
+                    {
+                        while (dr.Read())
+                        {
+                            lista.Add(new Despacho
+                            {
+                                IdDespacho = dr["ID_DESPACHO"] != DBNull.Value ? Convert.ToInt32(dr["ID_DESPACHO"]) : 0,
+                                KmObtenidos = dr["KM_OBTENIDOS"] != DBNull.Value ? Convert.ToDecimal(dr["KM_OBTENIDOS"]) : 0,
+                                IdVenta = dr["ID_VENTA"] != DBNull.Value ? Convert.ToInt32(dr["ID_VENTA"]) : 0,
+                                IdTransporte = dr["ID_TRANSPORTE"] != DBNull.Value ? Convert.ToInt32(dr["ID_TRANSPORTE"]) : 0,
+                                EstadoPedido = dr["ESTADO_PEDIDO"]?.ToString() ?? "PENDIENTE",
+                                PesoTotalKg = dr["PESO_TOTAL_KG"] != DBNull.Value ? Convert.ToDecimal(dr["PESO_TOTAL_KG"]) : 0
+                            });
+                        }
+                    }
+                }
+                catch (Exception ex) { throw new Exception("Error en ListarDespachosPorVehiculo: " + ex.Message); }
+            }
+            return lista;
+        }
+
+        // 2. PARA EL JEFE (ASISTENTE): Ve todo lo que falta por entregar (Cartas de Gestión)
+        // Consolidamos ListarDespachosGlobales y ListarTodoParaGestion aquí.
+        public List<Despacho> ListarTodoParaGestion()
+        {
+            List<Despacho> lista = new List<Despacho>();
+            using (OracleConnection cn = _conexion.LeerConexion())
+            {
+                string query = "SELECT * FROM DESPACHO WHERE ESTADO_PEDIDO != 'ENTREGADO' ORDER BY ID_DESPACHO DESC";
                 OracleCommand cmd = new OracleCommand(query, cn);
                 try
                 {
@@ -28,31 +68,21 @@ namespace LaVeguita.DAL
                         {
                             lista.Add(new Despacho
                             {
-                                // Blindaje aplicado a todos los campos para evitar InvalidCastException
                                 IdDespacho = dr["ID_DESPACHO"] != DBNull.Value ? Convert.ToInt32(dr["ID_DESPACHO"]) : 0,
-
-                                KmObtenidos = dr["KM_OBTENIDOS"] != DBNull.Value ? Convert.ToDecimal(dr["KM_OBTENIDOS"]) : 0,
-
                                 IdVenta = dr["ID_VENTA"] != DBNull.Value ? Convert.ToInt32(dr["ID_VENTA"]) : 0,
-
-                                IdTransporte = dr["ID_TRANSPORTE"] != DBNull.Value ? Convert.ToInt32(dr["ID_TRANSPORTE"]) : 0,
-
-                                EstadoPedido = dr["ESTADO_PEDIDO"] != DBNull.Value ? dr["ESTADO_PEDIDO"].ToString() : "PENDIENTE",
-
-                                // Ahora esta línea no dará error porque la propiedad ya existe en la entidad
-                                PesoTotalKg = dr["PESO_TOTAL_KG"] != DBNull.Value ? Convert.ToDecimal(dr["PESO_TOTAL_KG"]) : 0
+                                KmObtenidos = dr["KM_OBTENIDOS"] != DBNull.Value ? Convert.ToDecimal(dr["KM_OBTENIDOS"]) : 0,
+                                PesoTotalKg = dr["PESO_TOTAL_KG"] != DBNull.Value ? Convert.ToDecimal(dr["PESO_TOTAL_KG"]) : 0,
+                                EstadoPedido = dr["ESTADO_PEDIDO"]?.ToString() ?? "PENDIENTE"
                             });
                         }
                     }
                 }
-                catch (Exception ex)
-                {
-                    throw new Exception("Error al listar despachos pendientes: " + ex.Message);
-                }
+                catch (Exception ex) { throw new Exception("Error en ListarTodoParaGestion: " + ex.Message); }
             }
             return lista;
         }
 
+        // 3. ACCIÓN: Marcar como entregado
         public void ActualizarEstadoEntregado(int idDespacho)
         {
             using (OracleConnection cn = _conexion.LeerConexion())
@@ -60,10 +90,7 @@ namespace LaVeguita.DAL
                 string query = "UPDATE DESPACHO SET ESTADO_PEDIDO = 'ENTREGADO', HORA_ENTR = :hora WHERE ID_DESPACHO = :id";
                 OracleCommand cmd = new OracleCommand(query, cn);
                 cmd.BindByName = true;
-
-                // Formateo de hora como número HHmm (ej: 1430)
                 int horaActual = int.Parse(DateTime.Now.ToString("HHmm"));
-
                 cmd.Parameters.Add("hora", horaActual);
                 cmd.Parameters.Add("id", idDespacho);
 
@@ -72,11 +99,20 @@ namespace LaVeguita.DAL
                     cn.Open();
                     cmd.ExecuteNonQuery();
                 }
-                catch (Exception ex)
-                {
-                    throw new Exception("Error al actualizar despacho a entregado: " + ex.Message);
-                }
+                catch (Exception ex) { throw new Exception("Error al actualizar despacho: " + ex.Message); }
             }
         }
+
+        // --- MÉTODO DE COMPATIBILIDAD ---
+        // Agrega esto para que el HomeController y otros dejen de dar error
+        public List<Despacho> ListarDespachosPendientes()
+        {
+            // Redirigimos al nuevo método que ya tiene blindaje contra nulos
+            return ListarTodoParaGestion();
+        }
+
+
+
+
     }
 }

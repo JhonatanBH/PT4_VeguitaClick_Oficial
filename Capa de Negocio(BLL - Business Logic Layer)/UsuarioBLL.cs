@@ -22,8 +22,12 @@ namespace LaVeguita.BLL
         public bool AgregarUsuario(Usuario u)
         {
             if (string.IsNullOrEmpty(u.NombreUser)) return false;
-            u.IdRolUsuario = 1; // Este ID 1 existe en tu tabla ROL (Administrador)
-            u.IdDireccion = 100; // Por si acaso el HTML falla, asegúralo aquí también
+
+            // u.IdRolUsuario = 1;  <-- ¡BORRA ESTA LÍNEA! O todos serán siempre Admin
+
+            if (u.IdRolUsuario <= 0) u.IdRolUsuario = 8; // Por defecto Cliente si no eliges nada
+            u.IdDireccion = 100;
+
             return dal.InsertarUsuario(u);
         }
 

@@ -4,51 +4,67 @@
     ViewData["Title"] = "Editar Usuario";
 }
 
-<div class="container" style="margin-top: 50px;">
-    <h2>Editar Usuario</h2>
-    <hr />
+<div style="max-width: 600px; margin: 40px auto; background: white; padding: 30px; border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.08);">
+    <h2 style="color: #2c3e50; border-bottom: 2px solid #3498db; padding-bottom: 10px; margin-bottom: 25px;">
+        ⚙️ Editar Usuario: @Model.NombreUser
+    </h2>
+    
+    <form asp-action="Editar" method="post" id="formEditar" novalidate>
+        <input type="hidden" asp-for="IdUsuario" />
+        <input type="hidden" asp-for="IdDireccion" />
 
-    <div class="row">
-        <div class="col-md-4">
-            <form asp-action="Editar" method="post">
-                <input type="hidden" asp-for="IdUsuario" />
-
-                <div class="form-group mb-3">
-                    <label class="control-label">Nombre de Usuario</label>
-                    <input asp-for="NombreUser" class="form-control validar-realtime" required />
-                           class="form-control"
-                           onkeypress="return validarSinTildes(event)"
-                           required />
-                </div>
-
-                <div class="form-group mb-3">
-                    <label class="control-label">Correo Electrónico</label>
-                    <input asp-for="CorreoUsu" class="form-control validar-realtime" required />
-                           type="email"
-                           class="form-control"
-                           onkeypress="return validarSinTildes(event)"
-                           required />
-                </div>
-
-                <div class="form-group mb-3">
-                    <label class="control-label">Teléfono</label>
-                    <input asp-for="Fono" type="number" class="form-control validar-realtime" required />
-                </div>
-
-                <div class="form-group mb-3">
-                    <label class="control-label">Asignar Rol de Usuario</label>
-                    <select asp-for="IdRolUsuario" class="form-control"
-                            asp-items="@(new SelectList(ViewBag.Roles, "IdRolUsuario", "Nombre"))">
-                        <option value="">-- Seleccione un Cargo --</option>
-                    </select>
-                    <span asp-validation-for="IdRolUsuario" class="text-danger"></span>
-                </div>
-
-                <div class="form-group mt-4">
-                    <button type="submit" class="btn btn-success">Guardar Cambios</button>
-                    <a asp-action="Index" class="btn btn-secondary">Volver a la lista</a>
-                </div>
-            </form>
+        <div class="form-group mb-3">
+            <label class="fw-bold text-muted">Nombre de Usuario</label>
+            <input asp-for="NombreUser" class="form-control validar-realtime" placeholder="Nombre de acceso" />
         </div>
-    </div>
+
+        <div class="form-group mb-3">
+            <label class="fw-bold text-muted">Correo Electrónico</label>
+            <input asp-for="CorreoUsu" type="email" class="form-control" placeholder="ejemplo@correo.com" />
+        </div>
+
+        <div class="form-group mb-3">
+            <label class="fw-bold text-muted">Teléfono</label>
+            <input asp-for="Fono" type="number" class="form-control" />
+        </div>
+
+        <div class="form-group mb-4">
+            <label class="fw-bold text-muted">Rol Asignado</label>
+            <select asp-for="IdRolUsuario" class="form-select" style="padding: 12px;"
+                    asp-items="@(new SelectList(ViewBag.Roles, "IdRolUsuario", "Nombre"))">
+                <option value="">-- Seleccione un Cargo --</option>
+            </select>
+        </div>
+
+        <div style="display: flex; gap: 15px; margin-top: 30px;">
+            <button type="submit" class="btn btn-primary" style="flex: 2; font-weight: bold; padding: 12px;">
+                💾 Guardar Cambios
+            </button>
+            <a asp-action="Index" class="btn btn-secondary" style="flex: 1; padding: 12px;">
+                Volver
+            </a>
+        </div>
+    </form>
 </div>
+
+@section Scripts {
+    <script>
+        // Validación personalizada por JS para evitar el HTML5
+        document.getElementById('formEditar').addEventListener('submit', function(e) {
+            let valido = true;
+            const inputs = this.querySelectorAll('.validar-realtime, input[type="email"]');
+            
+            inputs.forEach(i => {
+                if(i.value.trim() === "") {
+                    i.style.border = "2px solid #e74c3c";
+                    valido = false;
+                }
+            });
+
+            if(!valido) {
+                e.preventDefault();
+                alert("⚠️ Por favor, completa los campos obligatorios.");
+            }
+        });
+    </script>
+}

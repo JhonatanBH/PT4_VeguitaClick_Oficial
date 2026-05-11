@@ -23,7 +23,7 @@ namespace LaVeguita.Entities
         public int IdRolUsuario { get; set; }
         public int IdDireccion { get; set; }
 
-        public string NombreRol { get; set; }
+        public string? NombreRol { get; set; } // El ? permite que sea nulo en el insert
 
         public DateTime? FechaRegistro { get; set; }
     }

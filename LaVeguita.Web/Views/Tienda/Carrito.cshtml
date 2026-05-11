@@ -1,4 +1,5 @@
 ﻿@model List<LaVeguita.Entities.CarritoItem>
+
 @if (TempData["Error"] != null)
 {
     <div class="alert alert-danger alert-dismissible fade show" role="alert">
@@ -6,7 +7,6 @@
         <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
     </div>
 }
-
 
 <div class="container mt-4">
     <h2 class="text-success mb-4">🛒 Tu Carrito de Compras</h2>
@@ -19,48 +19,50 @@
     else
     {
         <div class="row">
-            <div class="col-md-8">
-                <table class="table table-hover bg-white shadow-sm" style="border-radius: 10px; overflow: hidden;">
-                    <thead class="bg-success text-white">
-                        <tr>
-                            <th>Producto</th>
-                            <th>Precio</th>
-                            <th style="width: 100px;">Cant.</th>
-                            <th>Peso Subtotal</th>
-                            <th>Subtotal</th>
-                            <th>Acción</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @foreach (var item in Model)
-                        {
+            <div class="col-12 mb-4">
+                <div class="table-responsive">
+                    <table class="table table-hover bg-white shadow-sm" style="border-radius: 10px; overflow: hidden;">
+                        <thead class="bg-success text-white">
                             <tr>
-                                <td>@item.Nombre</td>
-                                <td>$@item.Precio.ToString("N0")</td>
-                                <td>@item.Cantidad</td>
-                                <td>@item.PesoSubtotal kg</td>
-                                <td>$@item.Subtotal.ToString("N0")</td>
-                                <td>
-                                    <div class="d-flex align-items-center">
-                                        <a asp-action="AjustarCantidad" asp-route-id="@item.IdProducto" asp-route-cambio="-1" class="btn btn-sm btn-outline-danger shadow-sm">
-                                            <i class="fas fa-minus"></i>
-                                        </a>
-                                        <span class="mx-3 fw-bold">@item.Cantidad</span>
-                                        <a asp-action="AjustarCantidad" asp-route-id="@item.IdProducto" asp-route-cambio="1" class="btn btn-sm btn-outline-success shadow-sm">
-                                            <i class="fas fa-plus"></i>
-                                        </a>
-                                    </div>
-                                </td>
+                                <th>Producto</th>
+                                <th>Precio</th>
+                                <th style="width: 100px;">Cant.</th>
+                                <th>Peso Subtotal</th>
+                                <th>Subtotal</th>
+                                <th>Acción</th>
                             </tr>
-                        }
-                    </tbody>
-                </table>
+                        </thead>
+                        <tbody>
+                            @foreach (var item in Model)
+                            {
+                                <tr>
+                                    <td>@item.Nombre</td>
+                                    <td>$@item.Precio.ToString("N0")</td>
+                                    <td>@item.Cantidad</td>
+                                    <td>@item.PesoSubtotal kg</td>
+                                    <td>$@item.Subtotal.ToString("N0")</td>
+                                    <td>
+                                        <div class="d-flex align-items-center">
+                                            <a asp-action="AjustarCantidad" asp-route-id="@item.IdProducto" asp-route-cambio="-1" class="btn btn-sm btn-outline-danger shadow-sm">
+                                                <i class="fas fa-minus"></i>
+                                            </a>
+                                            <span class="mx-3 fw-bold">@item.Cantidad</span>
+                                            <a asp-action="AjustarCantidad" asp-route-id="@item.IdProducto" asp-route-cambio="1" class="btn btn-sm btn-outline-success shadow-sm">
+                                                <i class="fas fa-plus"></i>
+                                            </a>
+                                        </div>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
             </div>
 
-            <div class="col-md-4">
+            <div class="col-12 col-lg-6 mx-auto">
                 <div class="card shadow-sm border-0">
                     <div class="card-body">
-                        <h4 class="card-title">Resumen de Compra</h4>
+                        <h4 class="card-title text-center">Resumen de Compra</h4>
                         <hr>
                         <div class="d-flex justify-content-between mb-2">
                             <span>Total Productos:</span>
@@ -75,14 +77,14 @@
                             <strong style="font-size: 1.2rem;" class="text-success">$@Model.Sum(x => x.Subtotal).ToString("N0")</strong>
                         </div>
 
-                        @* Lógica visual del Caso 4 corregida con PesoSubtotal *@
-                        <div class="alert @(Model.Sum(x => x.PesoSubtotal) < 5 ? "alert-info" : "alert-warning") small">
+                        @* Lógica visual del Caso 4 *@
+                        <div class="alert @(Model.Sum(x => x.PesoSubtotal) < 5 ? "alert-info" : "alert-warning") text-center">
                             <strong>Logística:</strong>
                             @(Model.Sum(x => x.PesoSubtotal) < 5 ? "Pedido liviano. Se asignará Bicicleta." : "Pedido pesado. Se asignará Triciclo.")
                         </div>
 
                         <form asp-action="FinalizarCompra" method="post">
-                            <button type="submit" class="btn btn-success w-100 fw-bold py-2">
+                            <button type="submit" class="btn btn-success w-100 fw-bold py-3 shadow">
                                 ✅ Confirmar y Generar Orden
                             </button>
                         </form>

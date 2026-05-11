@@ -9,30 +9,36 @@ namespace LaVeguita.Web.Controllers
     {
         private readonly DespachoDAL _despachoDal = new DespachoDAL();
 
-        // 1. Ver la lista de despachos asignados
         public IActionResult MisDespachos()
         {
-            // Seguridad: Solo permitimos a Admin (1) y Empleado/Transportista (2)
+            // Seguridad: Rol 7 es el Transportista
             int? rol = HttpContext.Session.GetInt32("RolUsuario");
-
             if (rol == null || (rol != 1 && rol != 7))
             {
                 return RedirectToAction("Login", "Acceso");
             }
 
-            // Llamamos a la DAL que ya configuramos con tu tabla DESPACHO
-            var despachos = _despachoDal.ListarDespachosPendientes();
+            // --- Lógica de Filtrado por Vehículo ---
+            // Obtenemos el tipo de vehículo de la sesión. 
+            // (Asegúrate de que al hacer Login guardes "Bicicleta" o "Triciclo" en esta variable de sesión)
+            string tipoVehiculo = HttpContext.Session.GetString("TipoVehiculo") ?? "BICICLETA";
+
+            // Llamamos al nuevo método que creamos en el DAL
+            var despachos = _despachoDal.ListarDespachosPorVehiculo(tipoVehiculo);
+
+            // --- Lógica de Tiempos para la Vista ---
+            // Pasamos la velocidad al ViewBag para que la vista pueda mostrar el cálculo si lo necesitas
+            ViewBag.Velocidad = (tipoVehiculo.ToUpper() == "BICICLETA") ? 15 : 10;
+            ViewBag.TipoVehiculo = tipoVehiculo;
+
             return View(despachos);
         }
 
-        // 2. Acción para el botón de la vista
-        // Este método recibe el ID, llama a la DAL para hacer el UPDATE en Oracle y vuelve a la lista
         public IActionResult MarcarEntregado(int id)
         {
             int? rol = HttpContext.Session.GetInt32("RolUsuario");
             if (rol == null || (rol != 1 && rol != 7)) return RedirectToAction("Login", "Acceso");
 
-            // Ejecuta el UPDATE: ESTADO_PEDIDO = 'ENTREGADO' y HORA_ENTR = HHmm
             _despachoDal.ActualizarEstadoEntregado(id);
 
             TempData["Exito"] = "Pedido marcado como entregado correctamente.";

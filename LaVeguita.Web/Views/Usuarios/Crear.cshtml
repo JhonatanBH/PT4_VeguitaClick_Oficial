@@ -1,87 +1,75 @@
 ﻿@model LaVeguita.Entities.Usuario
 
 @{
-    ViewData["Title"] = "Editar Usuario";
+    ViewData["Title"] = "Nuevo Usuario";
 }
 
 <div style="max-width: 600px; margin: 40px auto; background: white; padding: 30px; border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.08);">
     <h2 style="color: #2c3e50; border-bottom: 2px solid #2ecc71; padding-bottom: 10px; margin-bottom: 25px;">
-        👤 Editar Usuario: @Model.NombreUser
+        👤 Registrar Nuevo Usuario
     </h2>
     
-    <form asp-controller="Usuarios" asp-action="Editar" method="post">
-        <input type="hidden" name="IdUsuario" value="@Model.IdUsuario" />
 
+    <div asp-validation-summary="All" class="text-danger fw-bold"></div>
+
+    <form asp-controller="Usuarios" asp-action="Crear" method="post" id="formCrear" novalidate>
+        
         <div class="mb-4">
             <label class="form-label" style="font-weight: bold; color: #7f8c8d;">Nombre de Usuario</label>
-            <input type="text" name="NombreUser" value="@Model.NombreUser"
-                   class="form-control validar-realtime" required
-                   style="padding: 12px;" />
+            <input type="text" asp-for="NombreUser" class="form-control validar-realtime"
+                   placeholder="Ej: JuanPerez" style="padding: 12px;" />
         </div>
 
         <div class="mb-4">
-            <label class="form-label" style="font-weight: bold; color: #7f8c8d;">Contraseña (Nueva o Actual)</label>
-            <input type="password" name="Contrasena" value="@Model.Contrasena"
-                   class="form-control" required style="padding: 12px;" />
+            <label class="form-label" style="font-weight: bold; color: #7f8c8d;">Contraseña</label>
+            <input type="password" asp-for="Contrasena" class="form-control" style="padding: 12px;" />
         </div>
 
         <div class="row">
             <div class="col-md-7 mb-4">
-                <label class="form-label" style="font-weight: bold; color: #7f8c8d;">Correo Electrónico</label>
-                <input type="email" name="CorreoUsu" value="@Model.CorreoUsu"
-                       class="form-control" style="padding: 12px;" />
+                <label class="form-label" style="font-weight: bold; color: #7f8c8d;">Correo</label>
+                <input type="email" asp-for="CorreoUsu" class="form-control" style="padding: 12px;" />
             </div>
             <div class="col-md-5 mb-4">
                 <label class="form-label" style="font-weight: bold; color: #7f8c8d;">Teléfono</label>
-                <input type="number" name="Fono" value="@Model.Fono"
-                       class="form-control" required style="padding: 12px;" />
+                <input type="number" asp-for="Fono" class="form-control" style="padding: 12px;" />
             </div>
         </div>
 
-        <input type="hidden" name="IdRolUsuario" value="@Model.IdRolUsuario" />
-        <input type="hidden" name="IdDireccion" value="@Model.IdDireccion" />
+        <div class="mb-4">
+            <label class="form-label" style="font-weight: bold; color: #7f8c8d;">Asignar Rol</label>
+            <select asp-for="IdRolUsuario" class="form-select" style="padding: 12px;"
+                    asp-items="@(new SelectList(ViewBag.Roles, "IdRolUsuario", "Nombre"))">
+                <option value="">-- Seleccione un Cargo --</option>
+            </select>
+        </div>
 
         <div style="margin-top: 30px; display: flex; gap: 15px;">
             <button type="submit" class="btn btn-success" style="flex: 1; padding: 12px; font-weight: bold;">
-                💾 Actualizar en Oracle
+                ✅ Registrar en Sistema
             </button>
-            <a asp-action="Index" class="btn btn-secondary" style="flex: 1; padding: 12px;">
-                ❌ Cancelar
-            </a>
+            <a asp-action="Index" class="btn btn-secondary" style="flex: 1; padding: 12px;">Volver</a>
         </div>
     </form>
 </div>
 
 @section Scripts {
     <script>
-        document.addEventListener("DOMContentLoaded", function () {
-            const inputsValidar = document.querySelectorAll('.validar-realtime');
+        document.getElementById('formCrear').addEventListener('submit', function (e) {
+            let esValido = true;
+            const inputs = this.querySelectorAll('.validar-realtime, input[type="password"], input[type="email"], select');
 
-            inputsValidar.forEach(input => {
-                input.addEventListener('input', function() {
-                    const tildes = /[áéíóúÁÉÍÓÚ]/;
-                    
-                    // Si el span de error no existe, lo creamos
-                    let errorSpan = this.nextElementSibling;
-                    if (!errorSpan || !errorSpan.classList.contains('error-msg')) {
-                        errorSpan = document.createElement('small');
-                        errorSpan.classList.add('error-msg', 'text-danger', 'd-block');
-                        this.parentNode.insertBefore(errorSpan, this.nextSibling);
-                    }
-
-                    if (tildes.test(this.value)) {
-                        errorSpan.innerText = "❌ No se permiten tildes (Regla N°12).";
-                        this.style.border = "2px solid #e74c3c";
-                        this.value = this.value.replace(tildes, '');
-                    } else if (this.value.trim() === "") {
-                        errorSpan.innerText = "⚠️ Este campo es obligatorio.";
-                        this.style.border = "2px solid #e74c3c";
-                    } else {
-                        errorSpan.innerText = "";
-                        this.style.border = "2px solid #2ecc71";
-                    }
-                });
+            inputs.forEach(input => {
+                if (input.value.trim() === "") {
+                    input.style.border = "2px solid #e74c3c";
+                    esValido = false;
+                }
             });
+
+            if (!esValido) {
+                e.preventDefault(); // Detiene el envío si algo falta
+                alert("⚠️ Por favor, completa todos los campos correctamente.");
+            }
         });
     </script>
 }

@@ -20,22 +20,30 @@ namespace LaVeguita.Web.Controllers
 
             if (usuarioLogueado != null)
             {
-                // 1. Datos universales (Todos los tienen)
                 HttpContext.Session.SetInt32("IdUsuario", usuarioLogueado.IdUsuario);
                 HttpContext.Session.SetInt32("RolUsuario", usuarioLogueado.IdRolUsuario);
                 HttpContext.Session.SetString("UsuarioNombre", usuarioLogueado.NombreUser);
-
-                // 2. Datos opcionales (Solo si existen)
-                // Usamos 0 si es nulo para que no explote el cast
                 HttpContext.Session.SetInt32("IdCliente", usuarioLogueado.IdDireccion);
 
                 // 3. Redirección por Caso de Uso
                 switch (usuarioLogueado.IdRolUsuario)
                 {
-                    case 1: case 2: return RedirectToAction("Index", "Home");      // Gestión
-                    case 7: return RedirectToAction("MisDespachos", "Transporte"); // Logística
-                    case 8: return RedirectToAction("Catalogo", "Tienda");        // Venta
-                    default: return RedirectToAction("Index", "Home");
+                    case 1:
+                    case 2:
+                        return RedirectToAction("Index", "Home");
+
+                    case 7:
+                        // CASO 4: Determinamos el vehículo para el transportista
+                        // Aquí podrías buscar en la DB si el usuario tiene asignada una Bici o Triciclo
+                        // Por ahora, pondremos "BICICLETA" por defecto para que la vista no falle
+                        HttpContext.Session.SetString("TipoVehiculo", "BICICLETA");
+                        return RedirectToAction("MisDespachos", "Transporte");
+
+                    case 8:
+                        return RedirectToAction("Catalogo", "Tienda");
+
+                    default:
+                        return RedirectToAction("Index", "Home");
                 }
             }
             ViewBag.Error = "Credenciales incorrectas";

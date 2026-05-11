@@ -1,7 +1,8 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using LaVeguita.BLL;
 using LaVeguita.Entities;
-using Microsoft.AspNetCore.Http; // Necesario para usar Session
+using Microsoft.AspNetCore.Http;
+using System.Collections.Generic;
 
 namespace LaVeguita.Web.Controllers
 {
@@ -13,42 +14,74 @@ namespace LaVeguita.Web.Controllers
         public IActionResult Index()
         {
             int? rol = HttpContext.Session.GetInt32("RolUsuario");
-
-            // SEGURIDAD: Si no hay sesión o no es Gerente (1), fuera.
-            if (rol == null) return RedirectToAction("Login", "Acceso");
-            if (rol != 1) return RedirectToAction("Index", "Home");
+            if (rol == null || rol != 1) return RedirectToAction("Login", "Acceso");
 
             var lista = _usuarioBll.ObtenerTodos();
             return View(lista);
         }
 
-        // 2. CREAR USUARIO (POST)
+        // 2. CREAR USUARIO (GET - Cargar formulario)
         [HttpGet]
         public IActionResult Crear()
         {
-            // Verificamos sesión (tu regla de seguridad)
             int? rol = HttpContext.Session.GetInt32("RolUsuario");
             if (rol == null || rol != 1) return RedirectToAction("Login", "Acceso");
 
-            return View();
-        }
+            // 1. EL MOLDE: Enviamos un usuario nuevo para que asp-for no de error
+            var nuevoUser = new Usuario();
 
-        // Acción para recibir los datos (POST) - Ya la tienes, solo asegúrate que redirija al Index
-        [HttpPost]
-        public IActionResult Crear(Usuario nuevoUser)
-        {
-            if (nuevoUser != null)
-            {
-                bool inserto = _usuarioBll.AgregarUsuario(nuevoUser);
-                if (inserto)
-                {
-                    return RedirectToAction("Index");
-                }
-            }
+            // 2. LA LISTA: Cargamos los roles. 
+            // Si la BLL devuelve null, inicializamos una lista vacía para evitar el error de objeto nulo.
+            var listaRoles = _usuarioBll.ListarRoles();
+            ViewBag.Roles = listaRoles ?? new List<Rol>();
+
             return View(nuevoUser);
         }
 
-        // 3. EDITAR USUARIO (GET - Cargar formulario)
+        // 2. CREAR USUARIO (POST - Guardar en DB)
+        [HttpPost]
+        public IActionResult Crear(Usuario nuevoUser)
+        {
+            // 1. Seguridad de Rol (Igual que antes)
+            int? rol = HttpContext.Session.GetInt32("RolUsuario");
+            if (rol == null || rol != 1) return RedirectToAction("Login", "Acceso");
+
+            // 2. ELIMINAR VALIDACIONES QUE NO CORRESPONDEN AL INSERT
+            // Quitamos NombreRol porque es un campo de "Solo Lectura" para el Index
+            ModelState.Remove("NombreRol");
+            ModelState.Remove("IdUsuario");
+            ModelState.Remove("IdDireccion");
+
+            try
+            {
+                if (ModelState.IsValid)
+                {
+                    nuevoUser.IdDireccion = 100; // Valor fijo para Oracle
+
+                    bool inserto = _usuarioBll.AgregarUsuario(nuevoUser);
+
+                    if (inserto)
+                    {
+                        return RedirectToAction("Index");
+                    }
+                }
+                else
+                {
+                    // Si entra aquí, el 'asp-validation-summary="All"' te dirá qué otro campo falta
+                    ModelState.AddModelError(string.Empty, "Error: Verifique los campos obligatorios.");
+                }
+            }
+            catch (Exception ex)
+            {
+                ModelState.AddModelError(string.Empty, "Error de Oracle: " + ex.Message);
+            }
+
+            // Siempre recargar roles para la vista
+            ViewBag.Roles = _usuarioBll.ListarRoles() ?? new List<Rol>();
+            return View(nuevoUser);
+        }
+
+        // 3. EDITAR USUARIO (GET)
         [HttpGet]
         public IActionResult Editar(int id)
         {
@@ -62,21 +95,21 @@ namespace LaVeguita.Web.Controllers
             return View(usuario);
         }
 
-        // 4. EDITAR USUARIO (POST - Guardar cambios)
+        // 4. EDITAR USUARIO (POST)
         [HttpPost]
         public IActionResult Editar(Usuario usuarioEditado)
         {
             int? rol = HttpContext.Session.GetInt32("RolUsuario");
             if (rol == null || rol != 1) return RedirectToAction("Login", "Acceso");
 
-            usuarioEditado.IdDireccion = 100; // Valor por defecto para Oracle
+            usuarioEditado.IdDireccion = 100;
 
             if (_usuarioBll.ActualizarUsuario(usuarioEditado))
             {
                 return RedirectToAction("Index");
             }
 
-            ViewBag.Roles = _usuarioBll.ListarRoles(); // Recargar roles si falla
+            ViewBag.Roles = _usuarioBll.ListarRoles();
             return View(usuarioEditado);
         }
 
