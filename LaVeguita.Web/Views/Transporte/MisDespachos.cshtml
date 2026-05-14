@@ -1,24 +1,35 @@
 ﻿@model IEnumerable<LaVeguita.Entities.Despacho>
 
 @{
-    ViewData["Title"] = "Mis Entregas";
-    // Rescatamos datos de la sesión para el cálculo
+    ViewData["Title"] = "Hoja de Ruta";
     string tipoVehiculo = Context.Session.GetString("TipoVehiculo") ?? "BICICLETA";
-    int velocidad = (tipoVehiculo == "BICICLETA") ? 15 : 10;
+    int velocidad = (tipoVehiculo == "BICICLETA") ? 15 : 10; // Velocidades según electromovilidad
 }
 
-<div class="container-fluid">
-    <div class="d-flex justify-content-between align-items-center mb-4">
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+<div class="container-fluid py-3">
+    <div class="d-flex justify-content-between align-items-center mb-3">
         <div>
-            <h2 class="text-dark fw-bold"><i class="fas fa-shipping-fast text-success me-2"></i> Mis Despachos Pendientes</h2>
-            <p class="text-muted">Vehículo actual: <strong>@tipoVehiculo</strong> (@velocidad km/h)</p>
+            <h2 class="text-dark fw-bold mb-0">
+                <i class="fas fa-route text-success me-2"></i> Mi Hoja de Ruta
+            </h2>
+            <small class="text-muted">Móvil: <strong>@tipoVehiculo</strong> | Capacidad: @(tipoVehiculo == "BICICLETA" ? "5kg" : "50kg") [cite: 48]</small>
         </div>
-        <span class="badge bg-primary">@Model.Count() pedidos por entregar</span>
+        <span class="badge bg-success rounded-pill p-2">@Model.Count() Pedidos</span>
+    </div>
+
+    <div class="card border-0 shadow-sm mb-4" style="border-radius: 15px; overflow: hidden;">
+        <div id="map" style="height: 350px; width: 100%;"></div>
+        <div class="card-footer bg-white small text-center">
+            <i class="fas fa-satellite-dish text-primary me-1"></i> Seguimiento GPS en tiempo real activado.
+        </div>
     </div>
 
     @if (TempData["Exito"] != null)
     {
-        <div class="alert alert-success alert-dismissible fade show rounded-pill shadow-sm" role="alert">
+        <div class="alert alert-success alert-dismissible fade show rounded-pill" role="alert">
             <i class="fas fa-check-circle me-2"></i> @TempData["Exito"]
             <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
         </div>
@@ -27,39 +38,44 @@
     <div class="row">
         @foreach (var item in Model)
         {
-            // CÁLCULO DE TIEMPO ESTIMADO (Caso 4)
-            // Tiempo = (Distancia / Velocidad) * 60 minutos
+            // Estimación de tiempo basada en distancia y velocidad del móvil [cite: 34, 43]
             decimal tiempoHoras = item.KmObtenidos / (decimal)velocidad;
             int tiempoMinutos = (int)Math.Round(tiempoHoras * 60);
 
             <div class="col-12 col-md-6 col-lg-4 mb-4">
                 <div class="card h-100 border-0 shadow-sm" style="border-radius: 15px;">
                     <div class="card-body p-4">
-                        <div class="d-flex justify-content-between align-items-center mb-3">
-                            <span class="badge bg-light text-success border border-success">Orden #@item.IdVenta</span>
-                            <span class="badge bg-info text-dark">@tiempoMinutos min aprox.</span>
+                        <div class="d-flex justify-content-between mb-3">
+                            <span class="badge bg-light text-success border border-success">Venta #@item.IdVenta</span>
+                            <span class="badge bg-dark">@tiempoMinutos min est.</span>
                         </div>
 
-                        <h5 class="card-title fw-bold mb-3">Envío ID: @item.IdDespacho</h5>
+                        <h5 class="fw-bold">Envío #@item.IdDespacho</h5>
                         
-                        <div class="bg-light p-3 rounded-3 mb-4">
-                            <div class="row text-center">
+                        <div class="bg-light p-3 rounded-3 mb-3">
+                            <div class="row text-center small">
                                 <div class="col-6 border-end">
-                                    <p class="mb-0 small text-muted">Peso Carga</p>
+                                    <p class="mb-0 text-muted">Carga</p>
                                     <span class="fw-bold text-dark">@item.PesoTotalKg kg</span>
                                 </div>
                                 <div class="col-6">
-                                    <p class="mb-0 small text-muted">Distancia</p>
+                                    <p class="mb-0 text-muted">Distancia</p>
                                     <span class="fw-bold text-dark">@item.KmObtenidos km</span>
                                 </div>
                             </div>
                         </div>
 
                         <div class="d-grid gap-2">
-                            <a asp-controller="Transporte" asp-action="MarcarEntregado" asp-route-id="@item.IdDespacho"
-                                   class="btn btn-success fw-bold rounded-pill py-2 shadow-sm">
-                                <i class="fas fa-check-circle me-2"></i> Confirmar Entrega
-                            </a>
+                            <button onclick="trazarRuta(@item.LatitudDestino.ToString().Replace(",", "."), @item.LongitudDestino.ToString().Replace(",", "."))"
+                                    class="btn btn-outline-primary btn-sm rounded-pill">
+                                <i class="fas fa-map-marker-alt me-1"></i> Ver Ubicación
+                            </button>
+                            
+                            <button type="button"
+                                    onclick="validarLlegada(@item.LatitudDestino.ToString().Replace(",", "."), @item.LongitudDestino.ToString().Replace(",", "."), @item.IdDespacho)"
+                                    class="btn btn-success fw-bold rounded-pill shadow-sm">
+                                <i class="fas fa-check-circle me-1"></i> Confirmar Entrega
+                            </button>
                         </div>
                     </div>
                 </div>
@@ -67,3 +83,78 @@
         }
     </div>
 </div>
+
+<script>
+    // 1. Configuración Inicial (Ubicación Galpón La VeguitaClick [cite: 8])
+    var galponLat = -33.4833;
+    var galponLng = -70.5500;
+    var map = L.map('map').setView([galponLat, galponLng], 13);
+
+    // 2. Capa de Mapa [cite: 91]
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    attribution: '&copy; OpenStreetMap'
+    }).addTo(map);
+
+    // 3. Marcador Galpón
+    L.marker([galponLat, galponLng]).addTo(map)
+    .bindPopup('<b>Galpón La VeguitaClick</b><br>Salida de pedidos.')
+    .openPopup();
+
+    // 4. Seguimiento GPS del Transportista [cite: 34, 84]
+    function iniciarSeguimiento() {
+    if (navigator.geolocation) {
+    navigator.geolocation.watchPosition(function(position) {
+    var lat = position.coords.latitude;
+    var lng = position.coords.longitude;
+
+    if (window.markerTransportista) {
+    window.markerTransportista.setLatLng([lat, lng]);
+    } else {
+    window.markerTransportista = L.marker([lat, lng], {
+    icon: L.icon({
+    iconUrl: 'https://cdn-icons-png.flaticon.com/512/684/684908.png',
+    iconSize: [35, 35]
+    })
+    }).addTo(map).bindPopup("Tu ubicación actual");
+    }
+    }, null, { enableHighAccuracy: true });
+    }
+    }
+    iniciarSeguimiento();
+
+    // 5. Trazar Ruta al Cliente
+    var currentPolyline = null;
+    function trazarRuta(destinoLat, destinoLng) {
+    if(currentPolyline) map.removeLayer(currentPolyline);
+        
+    var latlngs = [[galponLat, galponLng], [destinoLat, destinoLng]];
+    currentPolyline = L.polyline(latlngs, {color: '#2ecc71', weight: 4, dashArray: '5, 10'}).addTo(map);
+        
+    map.fitBounds(currentPolyline.getBounds(), {padding: [50, 50]});
+    L.marker([destinoLat, destinoLng]).addTo(map).bindPopup("Entrega de Cliente").openPopup();
+    }
+
+    // 6 . Validar Llegada para Confirmar Entrega
+
+    function validarLlegada(destinoLat, destinoLng, idDespacho) {
+    if (!window.markerTransportista) {
+    alert("Debes activar el GPS para confirmar la entrega.");
+    return;
+    }
+
+    var posActual = window.markerTransportista.getLatLng();
+    // Usamos la misma lógica de Leaflet para medir distancia en metros
+    var distanciaMetros = posActual.distanceTo([destinoLat, destinoLng]);
+
+    if (distanciaMetros > 200) {
+    alert("Aun no estas en el destino. Te faltan " + Math.round(distanciaMetros) + " metros.");
+    } else {
+    // Redirigir al controlador para marcar como entregado
+    window.location.href = "/Transporte/MarcarEntregado/" + idDespacho;
+    }
+    }
+
+
+
+
+</script>

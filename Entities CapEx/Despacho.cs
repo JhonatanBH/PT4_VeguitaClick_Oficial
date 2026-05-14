@@ -28,7 +28,8 @@ namespace LaVeguita.Entities
 
         public decimal PesoTotalKg { get; set; }
 
-
+        public double LatitudDestino { get; set; }
+        public double LongitudDestino { get; set; }
 
     }
 }

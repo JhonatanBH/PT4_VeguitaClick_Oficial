@@ -8,7 +8,6 @@
     <h2 style="color: #2c3e50; border-bottom: 2px solid #2ecc71; padding-bottom: 10px; margin-bottom: 25px;">
         👤 Registrar Nuevo Usuario
     </h2>
-    
 
     <div asp-validation-summary="All" class="text-danger fw-bold"></div>
 
@@ -16,19 +15,21 @@
         
         <div class="mb-4">
             <label class="form-label" style="font-weight: bold; color: #7f8c8d;">Nombre de Usuario</label>
-            <input type="text" asp-for="NombreUser" class="form-control validar-realtime"
-                   placeholder="Ej: JuanPerez" style="padding: 12px;" />
+            <input type="text" asp-for="NombreUser" class="form-control" placeholder="Ej: JuanPerez" style="padding: 12px;" />
+            <div class="invalid-feedback">El nombre es obligatorio.</div>
         </div>
 
         <div class="mb-4">
             <label class="form-label" style="font-weight: bold; color: #7f8c8d;">Contraseña</label>
             <input type="password" asp-for="Contrasena" class="form-control" style="padding: 12px;" />
+            <div class="invalid-feedback">La contraseña es obligatoria.</div>
         </div>
 
         <div class="row">
             <div class="col-md-7 mb-4">
                 <label class="form-label" style="font-weight: bold; color: #7f8c8d;">Correo</label>
                 <input type="email" asp-for="CorreoUsu" class="form-control" style="padding: 12px;" />
+                <div class="invalid-feedback">Ingrese un correo válido.</div>
             </div>
             <div class="col-md-5 mb-4">
                 <label class="form-label" style="font-weight: bold; color: #7f8c8d;">Teléfono</label>
@@ -42,6 +43,7 @@
                     asp-items="@(new SelectList(ViewBag.Roles, "IdRolUsuario", "Nombre"))">
                 <option value="">-- Seleccione un Cargo --</option>
             </select>
+            <div class="invalid-feedback">Debe asignar un rol.</div>
         </div>
 
         <div style="margin-top: 30px; display: flex; gap: 15px;">
@@ -55,21 +57,45 @@
 
 @section Scripts {
     <script>
-        document.getElementById('formCrear').addEventListener('submit', function (e) {
-            let esValido = true;
-            const inputs = this.querySelectorAll('.validar-realtime, input[type="password"], input[type="email"], select');
+        document.addEventListener("DOMContentLoaded", function () {
+            const form = document.getElementById('formCrear');
+            // Seleccionamos todos los campos que queremos validar
+            const fields = form.querySelectorAll('input[type="text"], input[type="password"], input[type="email"], select');
 
-            inputs.forEach(input => {
-                if (input.value.trim() === "") {
-                    input.style.border = "2px solid #e74c3c";
-                    esValido = false;
+            // 1. FUNCIÓN DE VALIDACIÓN INDIVIDUAL
+            const validarCampo = (campo) => {
+                if (campo.value.trim() === "") {
+                    campo.classList.add("is-invalid");
+                    campo.classList.remove("is-valid");
+                    return false;
+                } else {
+                    campo.classList.remove("is-invalid");
+                    campo.classList.add("is-valid");
+                    return true;
                 }
+            };
+
+            // 2. EVENTO EN TIEMPO REAL (Mientras el usuario escribe)
+            fields.forEach(field => {
+                field.addEventListener('input', () => validarCampo(field));
+                field.addEventListener('blur', () => validarCampo(field)); // También al salir del campo
             });
 
-            if (!esValido) {
-                e.preventDefault(); // Detiene el envío si algo falta
-                alert("⚠️ Por favor, completa todos los campos correctamente.");
-            }
+            // 3. VALIDACIÓN AL ENVIAR EL FORMULARIO
+            form.addEventListener('submit', function (e) {
+                let formValido = true;
+                
+                fields.forEach(field => {
+                    if (!validarCampo(field)) {
+                        formValido = false;
+                    }
+                });
+
+                if (!formValido) {
+                    e.preventDefault();
+                    alert("⚠️ Por favor, completa todos los campos obligatorios antes de continuar.");
+                }
+            });
         });
     </script>
 }

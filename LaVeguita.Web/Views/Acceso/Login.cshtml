@@ -24,14 +24,16 @@
             <div class="alert alert-danger">@ViewBag.Error</div>
         }
 
-        <form asp-action="Login" asp-controller="Acceso" method="post">
+        <form id="loginForm" asp-action="Login" asp-controller="Acceso" method="post">
             <div class="mb-3">
                 <label class="form-label">Nombre de Usuario</label>
-                <input type="text" name="user" class="form-control" required placeholder="Ej: admin_veguita" />
+                <input type="text" name="user" class="form-control" id="txtUser" placeholder="Ej: admin_veguita" />
+                <div class="invalid-feedback">El nombre de usuario es obligatorio.</div>
             </div>
             <div class="mb-3">
-                <label class="form-label">Contrasena</label>
-                <input type="password" name="pass" class="form-control" required />
+                <label class="form-label">Contraseña</label>
+                <input type="password" name="pass" class="form-control" id="txtPass" />
+                <div class="invalid-feedback">La contraseña es obligatoria.</div>
             </div>
             <button type="submit" class="btn btn-success w-100">Entrar al Sistema</button>
         </form>
@@ -41,6 +43,52 @@
         </p>
     </div>
 </div>
+
+<script>
+    document.addEventListener("DOMContentLoaded", function() {
+        const formulario = document.getElementById("loginForm");
+        const inputs = formulario.querySelectorAll("input");
+
+        // 1. Validación en tiempo real (Evento 'input')
+        inputs.forEach(input => {
+            input.addEventListener("input", function() {
+                validarCampo(this);
+            });
+        });
+
+        // 2. Función que marca en rojo o verde
+        function validarCampo(campo) {
+            if (campo.value.trim() === "") {
+                campo.classList.add("is-invalid"); // Borde rojo de Bootstrap
+                campo.classList.remove("is-valid");
+                return false;
+            } else {
+                campo.classList.remove("is-invalid");
+                campo.classList.add("is-valid"); // Borde verde si está OK
+                return true;
+            }
+        }
+
+        // 3. Validación final antes de enviar
+        formulario.addEventListener("submit", function(e) {
+            let formValido = true;
+            
+            inputs.forEach(input => {
+                if (!validarCampo(input)) {
+                    formValido = false;
+                }
+            });
+
+            if (!formValido) {
+                e.preventDefault(); // Detiene el envío del formulario
+                alert("Por favor, complete los campos obligatorios.");
+            }
+        });
+    });
+</script>
+
+
+
 
 </body>
 </html>

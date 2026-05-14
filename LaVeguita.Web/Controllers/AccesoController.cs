@@ -13,6 +13,7 @@ namespace LaVeguita.Web.Controllers
         // 2. Declarar la variable de la DAL
         private readonly UsuarioDAL _usuarioDal = new UsuarioDAL();
 
+
         [HttpPost]
         public IActionResult Login(string user, string pass)
         {
@@ -25,21 +26,17 @@ namespace LaVeguita.Web.Controllers
                 HttpContext.Session.SetString("UsuarioNombre", usuarioLogueado.NombreUser);
                 HttpContext.Session.SetInt32("IdCliente", usuarioLogueado.IdDireccion);
 
-                // 3. Redirección por Caso de Uso
                 switch (usuarioLogueado.IdRolUsuario)
                 {
-                    case 1:
-                    case 2:
+                    case 1: // Gerente [cite: 109]
+                    case 2: // Jefe Adm [cite: 111]
                         return RedirectToAction("Index", "Home");
 
-                    case 7:
-                        // CASO 4: Determinamos el vehículo para el transportista
-                        // Aquí podrías buscar en la DB si el usuario tiene asignada una Bici o Triciclo
-                        // Por ahora, pondremos "BICICLETA" por defecto para que la vista no falle
-                        HttpContext.Session.SetString("TipoVehiculo", "BICICLETA");
-                        return RedirectToAction("MisDespachos", "Transporte");
+                    case 7: // Transportista [cite: 121]
+                                            // En lugar de ir directo a los pedidos, debe elegir su herramienta de trabajo
+                        return RedirectToAction("SeleccionarVehiculo", "Transporte");
 
-                    case 8:
+                    case 8: // Cliente [cite: 124]
                         return RedirectToAction("Catalogo", "Tienda");
 
                     default:

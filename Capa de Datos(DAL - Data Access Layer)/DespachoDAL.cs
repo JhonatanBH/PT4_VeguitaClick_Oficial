@@ -17,11 +17,12 @@ namespace LaVeguita.DAL
             using (OracleConnection cn = _conexion.LeerConexion())
             {
                 string query = @"SELECT d.ID_DESPACHO, d.KM_OBTENIDOS, d.ID_VENTA, d.ID_TRANSPORTE, 
-                                       d.ESTADO_PEDIDO, d.PESO_TOTAL_KG, t.TIPO_MOVIL
-                                FROM DESPACHO d
-                                JOIN TRANSPORTE t ON d.ID_TRANSPORTE = t.ID_TRANSPORTE
-                                WHERE t.TIPO_MOVIL = :tipo 
-                                AND d.ESTADO_PEDIDO = 'PENDIENTE'";
+                           d.ESTADO_PEDIDO, d.PESO_TOTAL_KG, t.TIPO_MOVIL,
+                           d.LATITUD_DESTINO, d.LONGITUD_DESTINO
+                    FROM DESPACHO d
+                    JOIN TRANSPORTE t ON d.ID_TRANSPORTE = t.ID_TRANSPORTE
+                    WHERE t.TIPO_MOVIL = :tipo 
+                    AND d.ESTADO_PEDIDO = 'PENDIENTE'";
 
                 OracleCommand cmd = new OracleCommand(query, cn);
                 cmd.Parameters.Add("tipo", tipoVehiculo);
@@ -40,7 +41,11 @@ namespace LaVeguita.DAL
                                 IdVenta = dr["ID_VENTA"] != DBNull.Value ? Convert.ToInt32(dr["ID_VENTA"]) : 0,
                                 IdTransporte = dr["ID_TRANSPORTE"] != DBNull.Value ? Convert.ToInt32(dr["ID_TRANSPORTE"]) : 0,
                                 EstadoPedido = dr["ESTADO_PEDIDO"]?.ToString() ?? "PENDIENTE",
-                                PesoTotalKg = dr["PESO_TOTAL_KG"] != DBNull.Value ? Convert.ToDecimal(dr["PESO_TOTAL_KG"]) : 0
+                                PesoTotalKg = dr["PESO_TOTAL_KG"] != DBNull.Value ? Convert.ToDecimal(dr["PESO_TOTAL_KG"]) : 0,
+
+
+                                LatitudDestino = dr["LATITUD_DESTINO"] != DBNull.Value ? Convert.ToDouble(dr["LATITUD_DESTINO"]) : 0,
+                                LongitudDestino = dr["LONGITUD_DESTINO"] != DBNull.Value ? Convert.ToDouble(dr["LONGITUD_DESTINO"]) : 0
                             });
                         }
                     }
