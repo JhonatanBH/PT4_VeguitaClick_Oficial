@@ -15,115 +15,133 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
 
     <style>
-        /* Estilos Base */
-        body { 
-            margin: 0; 
-            font-family: 'Segoe UI', sans-serif; 
-            display: block; 
-            background-color: #f4f7f6; 
-            min-height: 100vh; 
-            overflow-x: hidden; 
-        }
+            /* Estilos Base */
+            body {
+                margin: 0;
+                font-family: 'Segoe UI', sans-serif;
+                display: block;
+                background-color: #f4f7f6;
+                min-height: 100vh;
+                overflow-x: hidden;
+            }
 
-        /* SIDEBAR RESTAURADO (Diseño Pro) */
-        .sidebar { 
-            width: 260px; 
-            background-color: #2c3e50; 
-            color: white; 
-            position: fixed; 
-            height: 100vh; 
-            padding: 20px; 
-            box-sizing: border-box; 
-            transition: all 0.3s ease; 
-            left: 0; 
-            z-index: 1000; 
-            box-shadow: 4px 0 10px rgba(0,0,0,0.1); 
-        }
-        .sidebar.collapsed { left: -260px; }
-        
-        .sidebar h2 { 
-            color: #2ecc71; 
-            text-align: center; 
-            font-size: 22px; 
-            margin-bottom: 30px; 
-            font-weight: bold; 
-            text-transform: uppercase;
-            letter-spacing: 1px;
-        }
+            /* SIDEBAR RESTAURADO (Diseño Pro) */
+            .sidebar {
+                width: 260px;
+                background-color: #2c3e50;
+                color: white;
+                position: fixed;
+                height: 100vh;
+                padding: 20px;
+                box-sizing: border-box;
+                transition: all 0.3s ease;
+                left: 0;
+                z-index: 1000;
+                box-shadow: 4px 0 10px rgba(0,0,0,0.1);
+            }
 
-        /* Cuadro de Bienvenida */
-        .admin-status { 
-            background: #34495e; 
-            padding: 15px; 
-            border-radius: 12px; 
-            margin-bottom: 25px; 
-            text-align: center; 
-            border-left: 5px solid #2ecc71; 
-        }
+                .sidebar.collapsed {
+                    left: -260px;
+                }
 
-        /* LINKS DEL MENÚ (Aquí quitamos los subrayados y links azules) */
-        .sidebar ul { list-style: none; padding: 0; }
-        .sidebar ul li { margin-bottom: 5px; }
-        .sidebar ul li a { 
-            color: #bdc3c7; 
-            text-decoration: none !important; /* Quita el subrayado */
-            display: flex; 
-            align-items: center; 
-            padding: 12px; 
-            border-radius: 8px; 
-            transition: 0.3s; 
-            font-size: 15px;
-        }
-        .sidebar ul li a i { 
-            width: 25px; 
-            margin-right: 10px; 
-            font-size: 18px; 
-            text-align: center;
-        }
-        
-        /* Efecto al pasar el mouse */
-        .sidebar ul li a:hover { 
-            background: #34495e; 
-            color: #2ecc71; 
-            padding-left: 20px; 
-        }
+                .sidebar h2 {
+                    color: #2ecc71;
+                    text-align: center;
+                    font-size: 22px;
+                    margin-bottom: 30px;
+                    font-weight: bold;
+                    text-transform: uppercase;
+                    letter-spacing: 1px;
+                }
 
-        /* CONTENIDO PRINCIPAL */
-        .main-content { 
-            margin-left: 260px; 
-            padding: 30px; 
-            min-height: 100vh;
-            transition: all 0.3s ease; 
-        }
-        .main-content.expanded { margin-left: 0; }
+            /* Cuadro de Bienvenida */
+            .admin-status {
+                background: #34495e;
+                padding: 15px;
+                border-radius: 12px;
+                margin-bottom: 25px;
+                text-align: center;
+                border-left: 5px solid #2ecc71;
+            }
 
-        .container-card { 
-            background: white; 
-            padding: 25px; 
-            border-radius: 15px; 
-            box-shadow: 0 4px 20px rgba(0,0,0,0.05); 
-            min-height: 80vh; 
-            margin-top: 45px;
-        }
+            /* LINKS DEL MENÚ */
+            .sidebar ul {
+                list-style: none;
+                padding: 0;
+            }
 
-        /* Botón Hamburguesa */
-        .toggle-btn { 
-            position: fixed; 
-            top: 15px; 
-            left: 15px; 
-            z-index: 1100; 
-            background: #2ecc71; 
-            color: white; 
-            border: none; 
-            padding: 10px 15px; 
-            border-radius: 8px; 
-            cursor: pointer; 
-            box-shadow: 0 4px 10px rgba(46, 204, 113, 0.3);
-            transition: 0.3s;
-        }
-        .toggle-btn:hover { background: #27ae60; transform: scale(1.05); }
+                .sidebar ul li {
+                    margin-bottom: 5px;
+                }
 
-            /* Ocultar flechas en Chrome, Safari, Edge y Opera (Celular y Escritorio) */
+                    .sidebar ul li a {
+                        color: #bdc3c7;
+                        text-decoration: none !important;
+                        display: flex;
+                        align-items: center;
+                        padding: 12px;
+                        border-radius: 8px;
+                        transition: 0.3s;
+                        font-size: 15px;
+                    }
+
+                        .sidebar ul li a i {
+                            width: 25px;
+                            margin-right: 10px;
+                            font-size: 18px;
+                            text-align: center;
+                        }
+
+                        /* Efecto al pasar el mouse */
+                        .sidebar ul li a:hover {
+                            background: #34495e;
+                            color: #2ecc71;
+                            padding-left: 20px;
+                        }
+
+            /* CONTENIDO PRINCIPAL */
+            .main-content {
+                margin-left: 260px;
+                padding: 30px;
+                min-height: 100vh;
+                transition: all 0.3s ease;
+            }
+
+                .main-content.expanded {
+                    margin-left: 0;
+                }
+
+            .container-card {
+                background: white;
+                padding: 25px;
+                border-radius: 15px;
+                box-shadow: 0 4px 20px rgba(0,0,0,0.05);
+                min-height: 80vh;
+                margin-top: 45px;
+            }
+
+            /* Botón Hamburguesa */
+            .toggle-btn {
+                position: fixed;
+                top: 15px;
+                left: 15px;
+                z-index: 1100;
+                background: #2ecc71;
+                color: white;
+                border: none;
+                padding: 10px 15px;
+                border-radius: 8px;
+                cursor: pointer;
+                box-shadow: 0 4px 10px rgba(46, 204, 113, 0.3);
+                transition: 0.3s;
+            }
+
+                .toggle-btn:hover {
+                    background: #27ae60;
+                    transform: scale(1.05);
+                }
+
+            /* Ocultar flechas en Chrome, Safari, Edge y Opera */
             input::-webkit-outer-spin-button,
             input::-webkit-inner-spin-button {
                 -webkit-appearance: none;
@@ -134,9 +152,6 @@
             input[type=number] {
                 -moz-appearance: textfield;
             }
-
-
-
     </style>
 </head>
 <body>
@@ -147,22 +162,48 @@
 
     <nav class="sidebar" id="sidebar">
         <h2 class="mt-4"><i class="fas fa-leaf me-2"></i>La Veguita</h2>
-        
+
         <div class="admin-status">
             <span style="font-size: 10px; color: #bdc3c7; display: block; text-transform: uppercase;">Sesión Activa</span>
             <strong class="d-block text-white">@nombreUser</strong>
             <span class="badge bg-success mt-2" style="font-size: 11px;">
                 @switch (rol)
                 {
-                    case 1: <span>GERENTE</span> break;
-                    case 2: <span>ADMINISTRACIÓN</span> break;
-                    case 3: <span>PRODUCCIÓN</span> break;
-                    case 4: <span>COMPRAS</span> break;
-                    case 5: <span>VENTAS</span> break;
-                    case 6: <span>DESPACHO</span> break;
-                    case 7: <span>TRANSPORTISTA</span> break;
-                    case 8: <span>CLIENTE</span> break;
-                    default: <span>INVITADO</span> break;
+                    case 1:
+                        <span>GERENTE</span>
+                        break;
+                    case 2:
+
+                        <span>ADMINISTRACIÓN</span>
+                        break;
+                    case 3:
+
+                        <span>PRODUCCIÓN</span>
+                        break;
+                    case 4:
+
+                        <span>COMPRAS</span>
+                        break;
+                    case 5:
+
+                        <span>VENTAS</span>
+                        break;
+                    case 6:
+
+                        <span>DESPACHO</span>
+                        break;
+                    case 7:
+
+                        <span>TRANSPORTISTA</span>
+                        break;
+                    case 8:
+
+                        <span>CLIENTE</span>
+                        break;
+                    default:
+
+                        <span>INVITADO</span>
+                        break;
                 }
             </span>
         </div>
@@ -173,16 +214,20 @@
             @if (rol >= 1 && rol <= 6)
             {
                 <li class="small text-muted mt-4 mb-2 px-3 fw-bold" style="letter-spacing: 1px;">GESTIÓN INTERNA</li>
-                if (rol == 1 || rol == 2) {
+                if (rol == 1 || rol == 2)
+                {
                     <li><a asp-controller="Usuarios" asp-action="Index"><i class="fas fa-users"></i> Usuarios</a></li>
                 }
-                if (rol == 1 || rol == 2 || rol == 3 || rol == 5) {
+                if (rol == 1 || rol == 2 || rol == 3 || rol == 5)
+                {
                     <li><a asp-controller="Productos" asp-action="Index"><i class="fas fa-boxes-stacked"></i> Inventario</a></li>
                     <li><a asp-controller="Categorias" asp-action="Index"><i class="fas fa-tags"></i> Categorías</a></li>
                 }
-                @if (rol == 1 || rol == 6) {
-                    <li><a asp-controller="Logistica" asp-action="GestionLogistica"><i class="fas fa-tasks"></i> Gestión de Pedidos</a></li>
-                    <li><a href="#"><i class="fas fa-clipboard-list"></i> Control de Salidas</a></li>
+                @if (rol == 1 || rol == 6)
+                {
+                    <li><a asp-controller="Bodega" asp-action="Monitor"><i class="fas fa-boxes-packing"></i> Preparación en Bodega</a></li>
+
+                    <li><a asp-controller="Logistica" asp-action="GestionLogistica"><i class="fas fa-clipboard-list"></i> Asignación de Despachos</a></li>
                 }
                 @if (rol == 1 || rol == 2)
                 {
@@ -219,48 +264,49 @@
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script>
         function toggleSidebar() {
-            const sidebar = document.getElementById('sidebar');
-            const mainContent = document.getElementById('main-content');
-            if(sidebar && mainContent) {
-                sidebar.classList.toggle('collapsed');
-                mainContent.classList.toggle('expanded');
-            }
+        const sidebar = document.getElementById('sidebar');
+        const mainContent = document.getElementById('main-content');
+        if(sidebar && mainContent) {
+        sidebar.classList.toggle('collapsed');
+        mainContent.classList.toggle('expanded');
+        }
         }
 
         document.addEventListener("DOMContentLoaded", function () {
-            // Validaciones (Regla 12, etc.)
-            function mostrarError(input, mensaje) {
-                let errorSpan = input.nextElementSibling;
-                if (!errorSpan || !errorSpan.classList.contains('error-msg')) {
-                    errorSpan = document.createElement('small');
-                    errorSpan.classList.add('error-msg', 'text-danger', 'd-block');
-                    input.parentNode.insertBefore(errorSpan, input.nextSibling);
-                }
-                errorSpan.innerText = mensaje;
-                input.style.border = "2px solid #e74c3c";
-            }
+        // Validaciones (Regla 12, etc.)
+        function mostrarError(input, mensaje) {
+        let errorSpan = input.nextElementSibling;
+        if (!errorSpan || !errorSpan.classList.contains('error-msg')) {
+        errorSpan = document.createElement('small');
+        errorSpan.classList.add('error-msg', 'text-danger', 'd-block');
+        input.parentNode.insertBefore(errorSpan, input.nextSibling);
+        }
+        errorSpan.innerText = mensaje;
+        input.style.border = "2px solid #e74c3c";
+        }
 
-            function limpiarError(input) {
-                let errorSpan = input.nextElementSibling;
-                if (errorSpan && errorSpan.classList.contains('error-msg')) {
-                    errorSpan.innerText = '';
-                }
-                input.style.border = "2px solid #2ecc71";
-            }
+        // Limpieza de errores en tiempo real
+        function limpiarError(input) {
+        let errorSpan = input.nextElementSibling;
+        if (errorSpan && errorSpan.classList.contains('error-msg')) {
+        errorSpan.innerText = '';
+        }
+        input.style.border = "2px solid #2ecc71";
+        }
 
-            document.querySelectorAll('.validar-realtime').forEach(input => {
-                input.addEventListener('input', function() {
-                    const tildes = /[áéíóúÁÉÍÓÚ]/;
-                    if (this.value.trim() === "") {
-                        mostrarError(this, "⚠️ Requerido");
-                    } else if (tildes.test(this.value)) {
-                        mostrarError(this, "❌ Sin tildes (Regla 12)");
-                        this.value = this.value.replace(tildes, ''); 
-                    } else {
-                        limpiarError(this);
-                    }
-                });
-            });
+        document.querySelectorAll('.validar-realtime').forEach(input => {
+        input.addEventListener('input', function() {
+        const tildes = /[áéíóúÁÉÍÓÚ]/;
+        if (this.value.trim() === "") {
+        mostrarError(this, "⚠️ Requerido");
+        } else if (tildes.test(this.value)) {
+        mostrarError(this, "❌ Sin tildes (Regla 12)");
+        this.value = this.value.replace(tildes, '');
+        } else {
+        limpiarError(this);
+        }
+        });
+        });
         });
     </script>
 

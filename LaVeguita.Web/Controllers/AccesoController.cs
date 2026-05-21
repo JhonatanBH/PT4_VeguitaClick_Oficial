@@ -42,6 +42,10 @@ namespace LaVeguita.Web.Controllers
                     case 2: // Jefe Adm
                         return RedirectToAction("Index", "Home");
 
+                    case 6: // Asistente Despacho / Bodeguero
+                        // JUGADA MAESTRA: Si entra el Bodeguero, directo a despachar
+                        return RedirectToAction("Monitor", "Bodega");
+
                     case 7: // Transportista
                         return RedirectToAction("SeleccionarVehiculo", "Transporte");
 

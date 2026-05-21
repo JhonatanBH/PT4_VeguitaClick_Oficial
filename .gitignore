@@ -361,3 +361,13 @@ MigrationBackup/
 
 # Fody - auto-generated XML schema
 FodyWeavers.xsd
+
+
+# Tu Wallet real de la Veguita
+[Ww]allet_VCDB2026/
+
+# Archivo de salida de Docker que va al Pendrive
+veguita-app.tar
+
+# Archivos temporales de Visual Studio 2026
+.slnx.user

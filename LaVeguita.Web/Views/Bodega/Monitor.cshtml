@@ -1,0 +1,85 @@
+﻿@using System.Data
+@model DataTable
+
+@{
+    ViewData["Title"] = "Monitor de Bodega y Despacho";
+}
+
+<div class="container mt-4">
+    <div class="p-4 mb-4 bg-dark text-white rounded-3 shadow-sm">
+        <div class="d-flex justify-content-between align-items-center">
+            <div>
+                <h2 class="m-0 fw-bold">🚚 Monitor de Bodega y Despachos</h2>
+                <p class="m-0 text-muted">Panel central para la preparación de órdenes — La VeguitaClick</p>
+            </div>
+            <span class="badge bg-primary fs-6 px-3 py-2">Módulo Bodeguero</span>
+        </div>
+    </div>
+
+    @if (TempData["Mensaje"] != null)
+    {
+        <div class="alert alert-success alert-dismissible fade show shadow-sm" role="alert">
+            <strong>✅ Operación Realizada:</strong> @TempData["Mensaje"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    }
+
+    <div class="card shadow">
+        <div class="card-header bg-secondary text-white fw-bold d-flex justify-content-between align-items-center">
+            <span>📋 Órdenes Pendientes de Salida</span>
+            <span class="badge bg-light text-dark">@Model.Rows.Count en cola</span>
+        </div>
+        <div class="card-body p-0">
+            @if (Model.Rows.Count == 0)
+            {
+                <div class="p-5 text-center text-muted">
+                    <h3 class="my-3">🎉 ¡Bodega al día!</h3>
+                    <p class="m-0">No quedan órdenes pendientes de preparación en este momento.</p>
+                </div>
+            }
+            else
+            {
+                <div class="table-responsive">
+                    <table class="table table-hover table-striped m-0 align-middle">
+                        <thead class="table-dark">
+                            <tr>
+                                <th>N° Venta</th>
+                                <th>Fecha Compra</th>
+                                <th>Tipo de Envío</th>
+                                <th>Carga (KG)</th>
+                                <th>Estado Entrega</th>
+                                <th class="text-center">Acción</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (DataRow row in Model.Rows)
+                            {
+                                <tr>
+                                    <td class="fw-bold text-primary">#@row["ID_VENTA"]</td>
+                                    <td>@Convert.ToDateTime(row["FECHA_VENTA"]).ToString("dd/MM/yyyy HH:mm")</td>
+                                    <td>
+                                        <span class="badge bg-info text-dark font-monospace text-uppercase">
+                                            @row["TIPO_ENVIO"]
+                                        </span>
+                                    </td>
+                                    <td class="fw-bold">@row["PESO_TOTAL_KG"] kg</td>
+                                    <td>
+                                        <span class="badge bg-warning text-dark px-2 py-1">⚠️ En Preparación</span>
+                                    </td>
+                                    <td class="text-center">
+                                        <form asp-action="Despachar" method="post" class="m-0">
+                                            <input type="hidden" name="idVenta" value="@row["ID_VENTA"]" />
+                                            <button type="submit" class="btn btn-sm btn-success px-3 fw-bold shadow-sm">
+                                                📦 Despachar Móvil
+                                            </button>
+                                        </form>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            }
+        </div>
+    </div>
+</div>

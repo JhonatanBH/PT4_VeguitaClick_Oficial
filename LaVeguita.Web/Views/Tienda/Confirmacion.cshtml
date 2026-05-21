@@ -1,8 +1,119 @@
-﻿<div class="text-center py-5">
-    <div class="display-1 text-success mb-4">
+﻿@using System.Data
+@model DataTable
+
+@{
+    ViewData["Title"] = "Confirmación de Compra";
+
+    // Extraemos los datos generales de la cabecera si es que vienen datos
+    DataRow cabecera = Model.Rows.Count > 0 ? Model.Rows[0] : null;
+}
+
+<style>
+    /* Usamos doble arroba para engañar a Razor y que no tire error */
+    @@media print {
+        /* Escondemos menús, botones, pie de página y el check de éxito */
+        .no-imprimir, nav, footer, .btn, .display-1, h2, .alert-info {
+            display: none !important;
+        }
+        /* Centramos la boleta en la hoja */
+        .card {
+            border: none !important;
+            box-shadow: none !important;
+        }
+
+        .card-header {
+            background-color: #fff !important;
+            color: #000 !important;
+            border-bottom: 2px dashed #000 !important;
+        }
+    }
+</style>
+
+<div class="container mt-4 text-center">
+    <div class="display-1 text-success mb-3">
         <i class="fas fa-check-circle"></i>
     </div>
     <h2 class="fw-bold">¡Orden Generada con Éxito!</h2>
-    <p class="text-muted">Tu pedido ha sido recibido. El equipo de logística de La Veguita Click está preparando tu despacho.</p>
-    <a asp-action="Catalogo" class="btn btn-success rounded-pill px-5">Seguir Comprando</a>
+    <p class="text-muted mb-4">Tu pedido ha sido recibido. El equipo de logística de La Veguita Click está preparando tu despacho.</p>
+
+    @if (cabecera != null)
+    {
+        <div class="row justify-content-center text-start">
+            <div class="col-md-6 col-lg-5">
+                <div class="card shadow border-dark mb-4">
+                    <div class="card-header bg-dark text-white text-center py-3">
+                        <h4 class="m-0 font-monospace fw-bold">LA VEGUITA CLICK</h4>
+                        <small class="text-muted font-monospace">BOLETA ELECTRÓNICA</small>
+                    </div>
+                    <div class="card-body font-monospace fs-7">
+                        <div class="d-flex justify-content-between mb-2">
+                            <span><strong>N° Boleta:</strong></span>
+                            <span class="text-primary fw-bold">#@cabecera["ID_VENTA"]</span>
+                        </div>
+                        <div class="d-flex justify-content-between mb-2">
+                            <span><strong>Fecha:</strong></span>
+                            <span>@Convert.ToDateTime(cabecera["FECHA_VENTA"]).ToString("dd/MM/yyyy HH:mm")</span>
+                        </div>
+                        <div class="d-flex justify-content-between mb-3">
+                            <span><strong>Envío:</strong></span>
+                            <span class="text-uppercase">@cabecera["TIPO_ENVIO"]</span>
+                        </div>
+
+                        <hr style="border-top: 2px dashed #000;" />
+
+                        <table class="table table-sm table-borderless my-3">
+                            <thead>
+                                <tr class="border-bottom">
+                                    <th>Item</th>
+                                    <th class="text-center">Cant.</th>
+                                    <th class="text-end">Total</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (DataRow row in Model.Rows)
+                                {
+                                    <tr>
+                                        <td>@row["NOMBRE_PROD"]</td>
+                                        <td class="text-center">@row["CANTIDAD"]</td>
+                                        <td class="text-end">$@string.Format("{0:N0}", row["SUBTOTAL"])</td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+
+                        <hr style="border-top: 2px dashed #000;" />
+
+                        <div class="d-flex justify-content-between align-items-center mt-3 fs-5">
+                            <span class="fw-bold">TOTAL PAGADO:</span>
+                            <span class="fw-bold text-success">$@string.Format("{0:N0}", cabecera["TOTAL"])</span>
+                        </div>
+
+                        <div class="text-center text-muted mt-4 fs-8">
+                            <small>Gracias por comprar en La Veguita Click<br />¡Producto Fresco a un Click!</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="mb-5 no-imprimir">
+            <button onclick="window.print();" class="btn btn-outline-dark rounded-pill px-4 me-2 shadow-sm fw-bold">
+                <i class="fas fa-print me-2"></i> Imprimir Boleta / Guardar PDF
+            </button>
+            <a asp-action="Catalogo" class="btn btn-success rounded-pill px-5 shadow-sm fw-bold">
+                Seguir Comprando
+            </a>
+        </div>
+    }
+    else
+    {
+        <div class="alert alert-info my-4 no-imprimir">
+            No se encontraron detalles físicos para la boleta actual o la sesión expiró.
+        </div>
+        <div class="mb-5 no-imprimir">
+            <a asp-action="Catalogo" class="btn btn-success rounded-pill px-5 shadow-sm fw-bold">
+                Volver al Catálogo
+            </a>
+        </div>
+    }
 </div>

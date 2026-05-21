@@ -161,6 +161,87 @@ namespace LaVeguita.DAL
             }
         }
 
+        public DataTable ListarOrdenesEnPreparacion()
+        {
+            DataTable dt = new DataTable();
+            using (OracleConnection cn = _conexion.LeerConexion())
+            {
+                // Unimos ORDEN_VENTA con DESPACHO para mostrar la info completa al bodeguero
+                string query = @"SELECT v.ID_VENTA, v.FECHA_VENTA, v.TOTAL, v.TIPO_ENVIO, d.ESTADO_ENTREGA, d.PESO_TOTAL_KG 
+                                 FROM ORDEN_VENTA v
+                                 JOIN DESPACHO d ON v.ID_VENTA = d.ID_VENTA
+                                 WHERE d.ESTADO_ENTREGA = 'EN PREPARACION'
+                                 ORDER BY v.FECHA_VENTA DESC";
+
+                using (OracleCommand cmd = new OracleCommand(query, cn))
+                {
+                    using (OracleDataAdapter da = new OracleDataAdapter(cmd))
+                    {
+                        da.Fill(dt);
+                    }
+                }
+            }
+            return dt;
+        }
+
+        // 2. Cambiar el estado de la entrega a "DESPACHADO"
+        public bool MarcarComoDespachado(int idVenta)
+        {
+            using (OracleConnection cn = _conexion.LeerConexion())
+            {
+                cn.Open();
+                string query = "UPDATE DESPACHO SET ESTADO_ENTREGA = 'DESPACHADO' WHERE ID_VENTA = :idVenta";
+                using (OracleCommand cmd = new OracleCommand(query, cn))
+                {
+                    cmd.Parameters.Add("idVenta", OracleDbType.Int32).Value = idVenta;
+                    int filasAfectadas = cmd.ExecuteNonQuery();
+                    return filasAfectadas > 0;
+                }
+            }
+        }
+
+
+
+
+        // 3. Obtener los datos de la boleta (Cabecera y detalles unidos)
+        public DataTable ObtenerDetalleBoleta(int idVenta)
+        {
+            DataTable dt = new DataTable();
+            using (OracleConnection cn = _conexion.LeerConexion())
+            {
+                // SQL TOTALMENTE AJUSTADO: Agregamos v.TIPO_ENVIO de vuelta
+                string query = @"SELECT v.ID_VENTA, 
+                                v.FECHA_VENTA, 
+                                v.TOTAL, 
+                                v.TIPO_ENVIO, 
+                                d.CANTIDAD, 
+                                d.PRECIO, 
+                                (d.CANTIDAD * d.PRECIO) AS SUBTOTAL,
+                                p.NOM_PRODUCTO AS NOMBRE_PROD
+                         FROM ORDEN_VENTA v
+                         JOIN DETALLE_VENTA d ON v.ID_VENTA = d.ID_VENTA
+                         JOIN PRODUCTOS p ON d.ID_PRODUCTO = p.ID_PRODUCTO
+                         WHERE v.ID_VENTA = :idVenta";
+
+                using (OracleCommand cmd = new OracleCommand(query, cn))
+                {
+                    cmd.Parameters.Add("idVenta", OracleDbType.Int32).Value = idVenta;
+                    using (OracleDataAdapter da = new OracleDataAdapter(cmd))
+                    {
+                        try
+                        {
+                            cn.Open();
+                            da.Fill(dt);
+                        }
+                        catch (Exception ex)
+                        {
+                            throw new Exception("Error al rellenar el DataTable de la boleta: " + ex.Message);
+                        }
+                    }
+                }
+            }
+            return dt;
+        }
 
 
 

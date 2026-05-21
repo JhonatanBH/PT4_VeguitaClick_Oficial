@@ -117,28 +117,31 @@ namespace LaVeguita.DAL
         }
 
         // 4. ACCIÓN: Crear un nuevo despacho desde el Panel de Control Logístico
+        // 4. ACCIÓN: Actualiza el despacho existente desde el Panel de Control Logístico
+        // JUGADA MAESTRA: Cambiamos el INSERT por un UPDATE para modificar la fila real de Oracle Cloud
         public bool InsertarDespacho(int idVenta, int idTransporte, int idUsuarioEmpleado, decimal pesoTotal, decimal kmObtenidos)
         {
             using (OracleConnection cn = _conexion.LeerConexion())
             {
-                // Usamos una subquery para autogenerar el ID_DESPACHO basado en el máximo existente
-                // Fijamos coordenadas por defecto en Peñalolén (-33.4833, -70.5500) para evitar nulos en el mapa
-                string query = @"INSERT INTO DESPACHO 
-                        (ID_DESPACHO, KM_OBTENIDOS, ID_VENTA, ID_TRANSPORTE, ID_EMPLEADO, 
-                         ESTADO_PEDIDO, PESO_TOTAL_KG, ESTADO_ENTREGA, LATITUD_DESTINO, LONGITUD_DESTINO) 
-                        VALUES 
-                        ((SELECT NVL(MAX(ID_DESPACHO), 0) + 1 FROM DESPACHO), 
-                         :km, :venta, :transporte, :empleado, 'PENDIENTE', :peso, 'EN PREPARACION', -33.4833, -70.5500)";
+                // Modificamos el registro existente usando el ID_VENTA como llave.
+                // Cambiamos ESTADO_ENTREGA a 'ASIGNADO' para sacarlo de la bodega de forma definitiva.
+                string query = @"UPDATE DESPACHO 
+                                SET KM_OBTENIDOS = :km, 
+                                    ID_TRANSPORTE = :transporte, 
+                                    ID_EMPLEADO = :empleado, 
+                                    ESTADO_PEDIDO = 'PENDIENTE', 
+                                    ESTADO_ENTREGA = 'ASIGNADO', 
+                                    PESO_TOTAL_KG = :peso
+                                WHERE ID_VENTA = :venta";
 
                 OracleCommand cmd = new OracleCommand(query, cn);
                 cmd.BindByName = true;
 
                 cmd.Parameters.Add("km", OracleDbType.Decimal).Value = kmObtenidos;
-                cmd.Parameters.Add("venta", OracleDbType.Int32).Value = idVenta;
                 cmd.Parameters.Add("transporte", OracleDbType.Int32).Value = idTransporte;
-                // Vinculamos al ID_USUARIO del transportista para mantener consistencia con los inicios de sesión
                 cmd.Parameters.Add("empleado", OracleDbType.Int32).Value = idUsuarioEmpleado;
                 cmd.Parameters.Add("peso", OracleDbType.Decimal).Value = pesoTotal;
+                cmd.Parameters.Add("venta", OracleDbType.Int32).Value = idVenta;
 
                 try
                 {
@@ -148,7 +151,7 @@ namespace LaVeguita.DAL
                 }
                 catch (Exception ex)
                 {
-                    throw new Exception("Error en DespachoDAL al insertar nuevo despacho: " + ex.Message);
+                    throw new Exception("Error en DespachoDAL al actualizar la asignación logística: " + ex.Message);
                 }
             }
         }

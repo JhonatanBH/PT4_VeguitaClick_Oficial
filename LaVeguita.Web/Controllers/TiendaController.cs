@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.Mvc;
 using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
+using System.Data;
 using System.Linq;
 
 namespace LaVeguita.Web.Controllers
@@ -12,6 +13,8 @@ namespace LaVeguita.Web.Controllers
     public class TiendaController : Controller
     {
         private readonly ProductoDAL _productoDal = new ProductoDAL();
+        // SOLUCIÓN AL ROJO: Declaramos e instanciamos la variable global de VentaDAL
+        private readonly VentaDAL _ventaDAL = new VentaDAL();
 
         // 1. Catálogo de Productos
         public IActionResult Catalogo()
@@ -112,10 +115,8 @@ namespace LaVeguita.Web.Controllers
             switch (tipoEnvio)
             {
                 case "ECONOMICO":
-                    // Regra: Se reciben agendamientos hasta las 17:00 hrs. Envio dia habil siguiente entre 9:00 y 18:00 [cite: 36, 37]
                     if (ahora.Hour >= 17)
                     {
-                        // Si pasa de las 17:00, se cuenta como agendado el dia siguiente, por ende entrega el subsiguiente
                         fechaEstimadaEntrega = ahora.AddDays(2).Date.AddHours(9);
                     }
                     else
@@ -125,10 +126,9 @@ namespace LaVeguita.Web.Controllers
                     break;
 
                 case "NORMAL":
-                    // Regra: Envio dentro de las siguientes 6 horas[cite: 38]. Si es despues de las 12:00, se realiza el dia siguiente dentro de las 6 primeras horas [cite: 39]
                     if (ahora.Hour >= 12)
                     {
-                        fechaEstimadaEntrega = ahora.AddDays(1).Date.AddHours(9); // Siguiente dia a primera hora (9:00 am)
+                        fechaEstimadaEntrega = ahora.AddDays(1).Date.AddHours(9);
                     }
                     else
                     {
@@ -137,7 +137,6 @@ namespace LaVeguita.Web.Controllers
                     break;
 
                 case "FIJO":
-                    // Regra: El cliente elige la hora. No antes de 2 horas de ser agendado [cite: 40, 41]
                     if (string.IsNullOrEmpty(horaFijo))
                     {
                         mensajeBloqueo = "Para la opcion de envio FIJO debe especificar una hora valida.";
@@ -157,7 +156,6 @@ namespace LaVeguita.Web.Controllers
                     break;
 
                 case "URGENTE":
-                    // Regra: Gestion inmediata, maximo de finalizacion de 2 horas desde agendamiento [cite: 42]
                     fechaEstimadaEntrega = ahora.AddHours(2);
                     break;
 
@@ -166,24 +164,43 @@ namespace LaVeguita.Web.Controllers
                     break;
             }
 
-            // Si una regra de restriccion no se cumplio, devolvemos al carrito con el aviso
             if (!string.IsNullOrEmpty(mensajeBloqueo))
             {
                 TempData["Error"] = mensajeBloqueo;
                 return RedirectToAction("Carrito");
             }
 
-            VentaDAL dal = new VentaDAL();
-
             try
             {
-                // Pasamos el tipo de envio y la fecha exacta calculada por el motor logico a la DAL
-                bool exito = dal.GenerarOrdenCompletaConEnvio(idClienteFinal, idUsuario.Value, total, carrito, tipoEnvio, fechaEstimadaEntrega);
+                // JUGADA MAESTRA: Modificamos para llamar a GenerarOrdenCompletaConEnvio.
+                // Como este método en tu VentaDAL ya gestiona la cabecera, detalles y despacho,
+                // vamos a capturar el ID de la venta consultando el último ingresado o pasando un parámetro si lo necesitas.
+                // Para mantener tu estructura actual intacta sin romper firmas, ejecutamos la compra:
+                bool exito = _ventaDAL.GenerarOrdenCompletaConEnvio(idClienteFinal, idUsuario.Value, total, carrito, tipoEnvio, fechaEstimadaEntrega);
 
                 if (exito)
                 {
+                    // Buscamos el ID de la última orden de este usuario para pasárselo a la boleta sin alterar la firma del método
+                    int idUltimaVenta = 0;
+                    using (Oracle.ManagedDataAccess.Client.OracleConnection cn = new Conexion().LeerConexion())
+                    {
+                        cn.Open();
+                        string query = "SELECT MAX(ID_VENTA) FROM ORDEN_VENTA WHERE ID_USUARIO = :idUser";
+                        using (Oracle.ManagedDataAccess.Client.OracleCommand cmd = new Oracle.ManagedDataAccess.Client.OracleCommand(query, cn))
+                        {
+                            cmd.Parameters.Add("idUser", Oracle.ManagedDataAccess.Client.OracleDbType.Int32).Value = idUsuario.Value;
+                            var res = cmd.ExecuteScalar();
+                            if (res != null && res != DBNull.Value)
+                            {
+                                idUltimaVenta = int.Parse(res.ToString());
+                            }
+                        }
+                    }
+
                     HttpContext.Session.Remove("CarritoVeguita");
-                    return RedirectToAction("Confirmacion");
+
+                    // Pasamos el ID real de la venta a la pantalla de confirmación
+                    return RedirectToAction("Confirmacion", new { idVenta = idUltimaVenta });
                 }
             }
             catch (Exception ex)
@@ -194,10 +211,12 @@ namespace LaVeguita.Web.Controllers
             return RedirectToAction("Carrito");
         }
 
-        // 6. Confirmación de pedido
-        public IActionResult Confirmacion()
+        // 6. Confirmación de pedido (Boleta Dinámica)
+        public IActionResult Confirmacion(int idVenta)
         {
-            return View();
+            // Busca los datos reales usando tu método de la DAL
+            DataTable dt = _ventaDAL.ObtenerDetalleBoleta(idVenta);
+            return View(dt);
         }
 
         // --- MÉTODOS DE APOYO (Private) ---
@@ -213,7 +232,7 @@ namespace LaVeguita.Web.Controllers
             }
             catch
             {
-                return new List<CarritoItem>(); // Blindaje ante error de serialización
+                return new List<CarritoItem>();
             }
         }
 
