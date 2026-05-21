@@ -24,5 +24,7 @@ namespace LaVeguita.Entities
 
 
         public string NomTipo { get; set; }
+
+        public string UnidadMedida { get; set; } // UNIDAD, KG, GRAMO
     }
 }

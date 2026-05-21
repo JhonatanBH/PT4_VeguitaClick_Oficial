@@ -1,0 +1,148 @@
+﻿@model LaVeguita.Entities.Usuario
+@{
+    ViewData["Title"] = "Crear Cuenta - La Veguita";
+    Layout = null;
+}
+
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Registro de Clientes - La VeguitaClick</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@@5.3.0/dist/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/releases/v6.0.0/css/all.min.css" />
+    <style>
+            body {
+                display: flex;
+                align-items: center;
+                min-height: 100vh;
+            }
+            /* Ocultar flechas nativas del input fono para que se vea limpio */
+            input::-webkit-outer-spin-button, input::-webkit-inner-spin-button {
+                -webkit-appearance: none;
+                margin: 0;
+            }
+
+            input[type=number] {
+                -moz-appearance: textfield;
+            }
+    </style>
+</head>
+<body class="bg-light">
+
+    <div class="container py-4">
+        <div class="row justify-content-center">
+            <div class="col-12 col-md-6 col-lg-5">
+                <div class="card border-0 shadow-lg p-3" style="border-radius: 20px;">
+                    <div class="card-body">
+
+                        <div class="text-center mb-4">
+                            <span class="fs-1">🌿</span>
+                            <h3 class="fw-bold text-success mt-2">Unete a La VeguitaClick</h3>
+                            <p class="text-muted small">Crea tu cuenta de Cliente para acceder al catalogo ecologico</p>
+                        </div>
+
+                        @if (ViewData["Error"] != null)
+                        {
+                            <div class="alert alert-danger small py-2 rounded-3"><i class="fas fa-exclamation-circle me-1"></i> @ViewData["Error"]</div>
+                        }
+
+                        <form asp-action="Registrar" method="post" id="formRegistro">
+
+                            <div class="mb-3">
+                                <label class="form-label small fw-bold text-muted">Nombre de Usuario</label>
+                                <div class="input-group">
+                                    <span class="input-group-text bg-white text-muted"><i class="far fa-user"></i></span>
+                                    <input asp-for="NombreUser" class="form-control" placeholder="Ej: juan.perez" required />
+                                </div>
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="form-label small fw-bold text-muted">Correo Electronico</label>
+                                <div class="input-group">
+                                    <span class="input-group-text bg-white text-muted"><i class="far fa-envelope"></i></span>
+                                    <input asp-for="CorreoUsu" type="email" class="form-control" placeholder="juan@correo.com" required />
+                                </div>
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="form-label small fw-bold text-muted">Telefono de Contacto</label>
+                                <div class="input-group">
+                                    <span class="input-group-text bg-white text-muted"><i class="fas fa-phone"></i></span>
+                                    <input asp-for="Fono" type="number" inputmode="numeric" pattern="[0-9]*" class="form-control" placeholder="Ej: 912345678" required />
+                                </div>
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="form-label small fw-bold text-muted">Contrasena de Acceso</label>
+                                <div class="input-group">
+                                    <span class="input-group-text bg-white text-muted"><i class="fas fa-lock"></i></span>
+                                    <input asp-for="Contrasena" type="password" id="txtClave" class="form-control" placeholder="Ingrese su clave" required />
+                                </div>
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="form-label small fw-bold text-muted">Confirmar Contrasena</label>
+                                <div class="input-group">
+                                    <span class="input-group-text bg-white text-muted"><i class="fas fa-shield-alt"></i></span>
+                                    <input type="password" name="confirmarPass" id="txtConfirmar" class="form-control" placeholder="Repita su clave" required />
+                                </div>
+                                <div id="mensajeError" class="text-danger small mt-1 d-none">❌ Las contrasenas no coinciden.</div>
+                            </div>
+
+                            <button type="submit" id="btnEnviar" class="btn btn-success w-100 fw-bold py-2.5 rounded-pill shadow mt-3">
+                                <i class="fas fa-user-plus me-1"></i> Registrarme Ahora
+                            </button>
+
+                            <div class="text-center mt-4">
+                                <a asp-action="Login" class="text-decoration-none small text-muted">¿Ya tienes cuenta? <span class="text-success fw-bold">Inicia Sesion</span></a>
+                            </div>
+                        </form>
+
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+            document.addEventListener("DOMContentLoaded", function () {
+                const txtClave = document.getElementById("txtClave");
+                const txtConfirmar = document.getElementById("txtConfirmar");
+                const mensajeError = document.getElementById("mensajeError");
+                const btnEnviar = document.getElementById("btnEnviar");
+                const form = document.getElementById("formRegistro");
+
+                function evaluarSimetriaClaves() {
+                    if (txtConfirmar.value === "") {
+                        mensajeError.classList.add("d-none");
+                        btnEnviar.removeAttribute("disabled");
+                        return;
+                    }
+
+                    if (txtClave.value !== txtConfirmar.value) {
+                        mensajeError.classList.remove("d-none");
+                        txtConfirmar.classList.add("is-invalid");
+                        btnEnviar.setAttribute("disabled", "disabled");
+                    } else {
+                        mensajeError.classList.add("d-none");
+                        txtConfirmar.classList.remove("is-invalid");
+                        txtConfirmar.classList.add("is-valid");
+                        btnEnviar.removeAttribute("disabled");
+                    }
+                }
+
+                txtConfirmar.addEventListener("input", evaluarSimetriaClaves);
+                txtClave.addEventListener("input", evaluarSimetriaClaves);
+
+                form.addEventListener("submit", function (e) {
+                    if (txtClave.value !== txtConfirmar.value) {
+                        e.preventDefault();
+                        alert("⚠️ Las contrasenas no coinciden de forma simetrica.");
+                    }
+                });
+            });
+    </script>
+</body>
+</html>

@@ -9,7 +9,6 @@
     </div>
 
     <div class="row">
-        @* Tarjeta 1: Inventario *@
         <div class="col-xl-4 col-md-6 mb-4">
             <div class="card border-left-success shadow h-100 py-2" style="border-left: 5px solid #2ecc71;">
                 <div class="card-body">
@@ -26,13 +25,12 @@
             </div>
         </div>
 
-        @* Tarjeta 2: Stock Crítico *@
         <div class="col-xl-4 col-md-6 mb-4">
             <div class="card border-left-danger shadow h-100 py-2" style="border-left: 5px solid #e74c3c;">
                 <div class="card-body">
                     <div class="row no-gutters align-items-center">
                         <div class="col mr-2">
-                            <div class="text-xs font-weight-bold text-danger text-uppercase mb-1">Stock Crítico</div>
+                            <div class="text-xs font-weight-bold text-danger text-uppercase mb-1">Stock Critico</div>
                             <div class="h5 mb-0 font-weight-bold text-gray-800">@ViewBag.StockCritico Alertas</div>
                         </div>
                         <div class="col-auto">
@@ -43,14 +41,12 @@
             </div>
         </div>
 
-        @* Tarjeta 3: Logística (Caso 4) *@
         <div class="col-xl-4 col-md-6 mb-4">
             <div class="card border-left-info shadow h-100 py-2" style="border-left: 5px solid #3498db;">
                 <div class="card-body">
                     <div class="row no-gutters align-items-center">
                         <div class="col mr-2">
                             <div class="text-xs font-weight-bold text-info text-uppercase mb-1">Despachos en Curso</div>
-                            @* Aquí mostramos los pendientes reales de Oracle *@
                             <div class="h5 mb-0 font-weight-bold text-gray-800">@ViewBag.PendientesEntrega Pendientes</div>
                         </div>
                         <div class="col-auto">
@@ -62,8 +58,31 @@
         </div>
     </div>
 
-    <div class="row mt-4">
-        @* Acciones rápidas *@
+    <div class="row mt-2">
+        <div class="col-xl-6 col-lg-6 mb-4">
+            <div class="card shadow">
+                <div class="card-header py-3 bg-white d-flex justify-content-between align-items-center">
+                    <h6 class="m-0 font-weight-bold text-success"><i class="fas fa-chart-pie me-1"></i> Demanda por Modalidad de Envio</h6>
+                </div>
+                <div class="card-body" style="position: relative; height:300px;">
+                    <canvas id="chartModalidad"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-6 col-lg-6 mb-4">
+            <div class="card shadow">
+                <div class="card-header py-3 bg-white d-flex justify-content-between align-items-center">
+                    <h6 class="m-0 font-weight-bold text-success"><i class="fas fa-chart-bar me-1"></i> Asignacion de Vehiculos por Cubicaje</h6>
+                </div>
+                <div class="card-body" style="position: relative; height:300px;">
+                    <canvas id="chartFlota"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row mt-2">
         <div class="col-lg-6">
             <div class="card shadow mb-4">
                 <div class="card-header py-3 bg-light d-flex justify-content-between align-items-center">
@@ -71,7 +90,7 @@
                     <i class="fas fa-user-shield text-muted"></i>
                 </div>
                 <div class="card-body">
-                    <p>Gestión de datos maestros según reglas de negocio.</p>
+                    <p>Gestion de datos maestros segun reglas de negocio.</p>
                     <div class="d-flex gap-2">
                         <a asp-controller="Productos" asp-action="Index" class="btn btn-success btn-sm">
                             <i class="fas fa-apple-alt me-1"></i> Inventario
@@ -83,8 +102,7 @@
                 </div>
             </div>
         </div>
-        
-        @* Regla N°12 *@
+
         <div class="col-lg-6">
             <div class="card shadow mb-4">
                 <div class="card-header py-3 bg-light">
@@ -93,10 +111,69 @@
                 <div class="card-body">
                     <div class="alert alert-warning border-0 small mb-0">
                         <i class="fas fa-info-circle me-2"></i>
-                        <strong>Recordatorio:</strong> No se permite el uso de tildes en nombres de usuario ni productos para asegurar la compatibilidad con el sistema de búsqueda.
+                        <strong>Recordatorio:</strong> No se permite el uso de tildes en nombres de usuario ni productos para asegurar la compatibilidad con el sistema de busqueda.
                     </div>
                 </div>
             </div>
         </div>
     </div>
 </div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    document.addEventListener("DOMContentLoaded", function() {
+
+    // 1. CONFIGURACION DEL GRAFICO DE MODALIDADES DE ENVIO (PIE)
+    const ctxModalidad = document.getElementById('chartModalidad').getContext('2d');
+    new Chart(ctxModalidad, {
+    type: 'pie',
+    data: {
+    labels: ['Normal (6h)', 'Economico (Next Day)', 'Urgente (2h)', 'Fijo (Agendado)'],
+    datasets: [{
+    data: [
+    @ViewBag.GraficoNormal,
+    @ViewBag.GraficoEconomico,
+    @ViewBag.GraficoUrgente,
+    @ViewBag.GraficoFijo
+    ],
+    backgroundColor: ['#3498db', '#f1c40f', '#e74c3c', '#9b59b6'],
+    borderWidth: 2
+    }]
+    },
+    options: {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: {
+    legend: { position: 'bottom' }
+    }
+    }
+    });
+
+    // 2. CONFIGURACION DEL GRAFICO DE RENDIMIENTO DE FLOTA (BAR)
+    const ctxFlota = document.getElementById('chartFlota').getContext('2d');
+    new Chart(ctxFlota, {
+    type: 'bar',
+    data: {
+    labels: ['Bicicletas (< 5kg)', 'Triciclos (>= 5kg)'],
+    datasets: [{
+    label: 'Vehiculos Activos en Ruta',
+    data: [@ViewBag.FlotaBicicletas, @ViewBag.FlotaTriciclos],
+    backgroundColor: ['#2ecc71', '#e67e22'],
+    borderRadius: 8,
+    borderWidth: 1
+    }]
+    },
+    options: {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: {
+    legend: { display: false }
+    },
+    scales: {
+    y: { beginAtZero: true, ticks: { stepSize: 2 } }
+    }
+    }
+    });
+
+    });
+</script>

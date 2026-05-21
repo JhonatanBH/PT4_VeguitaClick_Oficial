@@ -1,0 +1,185 @@
+﻿@model LaVeguita.Entities.Empleado
+@{
+    ViewData["Title"] = "Nuevo Colaborador";
+}
+
+<style>
+    /* Chrome, Safari, Edge, Opera */
+    input::-webkit-outer-spin-button,
+    input::-webkit-inner-spin-button {
+        -webkit-appearance: none;
+        margin: 0;
+    }
+
+    /* Firefox */
+    input[type=number] {
+        -moz-appearance: textfield;
+    }
+</style>
+
+<div style="max-width: 800px; margin: 30px auto; background: white; padding: 40px; border-radius: 15px; box-shadow: 0 4px 20px rgba(0,0,0,0.1);">
+    <h2 style="color: #2c3e50; border-bottom: 3px solid #3498db; padding-bottom: 12px; margin-bottom: 30px;">
+        🪪 Registro de Contratación y Alta Laboral Formal
+    </h2>
+
+    @if (ViewBag.Error != null)
+    {
+        <div class="alert alert-danger">@ViewBag.Error</div>
+    }
+
+    <form asp-controller="Empleados" asp-action="Crear" method="post" id="formCrearEmpleado" novalidate>
+
+        <h5 class="text-primary fw-bold mb-3"><i class="fas fa-user me-2"></i>1. Datos Personales Legales</h5>
+        <div class="row">
+            <div class="col-md-6 mb-3">
+                <label class="form-label fw-bold text-muted">Primer Nombre <span class="text-danger">*</span></label>
+                <input type="text" asp-for="PnombreEmp" class="form-control" style="padding: 10px;" id="txtPnombre" placeholder="Ej: Juan" />
+                <div class="invalid-feedback">El primer nombre es obligatorio (solo letras).</div>
+            </div>
+            <div class="col-md-6 mb-3">
+                <label class="form-label fw-bold text-muted">Segundo Nombre</label>
+                <input type="text" asp-for="SnombreEmp" class="form-control" style="padding: 10px;" id="txtSnombre" placeholder="Ej: Alberto" />
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="col-md-6 mb-3">
+                <label class="form-label fw-bold text-muted">Apellido Paterno <span class="text-danger">*</span></label>
+                <input type="text" asp-for="Appaterno" class="form-control" style="padding: 10px;" id="txtAppaterno" placeholder="Ej: Pérez" />
+                <div class="invalid-feedback">El apellido paterno es obligatorio.</div>
+            </div>
+            <div class="col-md-6 mb-3">
+                <label class="form-label fw-bold text-muted">Apellido Materno</label>
+                <input type="text" asp-for="Apmaterno" class="form-control" style="padding: 10px;" id="txtApmaterno" placeholder="Ej: Galdames" />
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="col-md-6 mb-3">
+                <label class="form-label fw-bold text-muted">Correo Electrónico <span class="text-danger">*</span></label>
+                <input type="email" asp-for="CorreoEmp" class="form-control" style="padding: 10px;" id="txtCorreo" placeholder="juan.perez@laveguita.cl" />
+                <div class="invalid-feedback">Ingrese un correo electrónico válido.</div>
+            </div>
+            <div class="col-md-6 mb-3">
+                <label class="form-label fw-bold text-muted">Teléfono de Contacto (9 dígitos) <span class="text-danger">*</span></label>
+                <input type="number" asp-for="TelefonoEmp" class="form-control" style="padding: 10px;" id="txtTelefono" placeholder="Ej: 912345678" />
+                <div class="invalid-feedback">El teléfono debe tener exactamente 9 dígitos numéricos.</div>
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="col-md-6 mb-3">
+                <label class="form-label fw-bold text-muted">Fecha de Nacimiento <span class="text-danger">*</span></label>
+                <input type="date" asp-for="FecNacEmp" class="form-control" style="padding: 10px;" id="txtFecNac" />
+                <div class="invalid-feedback">Debe ser mayor de 18 años para ser contratado.</div>
+            </div>
+            <div class="col-md-6 mb-4">
+                <label class="form-label fw-bold text-muted">Asignar Cargo Funcional <span class="text-danger">*</span></label>
+                <select asp-for="IdRolUsuario" class="form-select" style="padding: 10px;" id="ddlRol"
+                        asp-items="@(new SelectList(ViewBag.Roles, "IdRolUsuario", "Nombre"))">
+                    <option value="">-- Seleccione Cargo --</option>
+                </select>
+                <div class="invalid-feedback">Debe seleccionar un cargo operativo.</div>
+            </div>
+        </div>
+
+        <hr class="my-4" />
+
+        <h5 class="text-success fw-bold mb-3"><i class="fas fa-key me-2"></i>2. Credenciales del Sistema de Seguridad</h5>
+        <div class="row">
+            <div class="col-md-6 mb-3">
+                <label class="form-label fw-bold text-muted">Nombre de Usuario (Login) <span class="text-danger">*</span></label>
+                <input type="text" name="username" class="form-control" style="padding: 10px;" id="txtUsername" placeholder="Ej: j_perez" />
+                <div class="invalid-feedback">El nombre de usuario es obligatorio (sin espacios).</div>
+            </div>
+            <div class="col-md-6 mb-3">
+                <label class="form-label fw-bold text-muted">Contraseña Provisional <span class="text-danger">*</span></label>
+                <input type="password" name="contrasena" class="form-control" style="padding: 10px;" id="txtContrasena" placeholder="••••••••" />
+                <div class="invalid-feedback">La contraseña provisional es obligatoria.</div>
+            </div>
+        </div>
+
+        <div style="margin-top: 35px; display: flex; gap: 15px;">
+            <button type="submit" class="btn btn-primary" style="flex: 2; padding: 14px; font-weight: bold; background-color: #3498db; border: none; border-radius: 8px;">
+                💾 Enrolar en Empresa
+            </button>
+            <a asp-action="Index" class="btn btn-secondary" style="flex: 1; padding: 14px; border-radius: 8px;">Volver</a>
+        </div>
+    </form>
+</div>
+
+@section Scripts {
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
+            const form = document.getElementById('formCrearEmpleado');
+
+            // Mapeo completo de todos los campos obligatorios y sus reglas
+            const fields = {
+                pnombre: { el: document.getElementById('txtPnombre'), regex: /^[a-zA-ZáéíóúÁÉÍÓÚñÑ ]+$/ },
+                appaterno: { el: document.getElementById('txtAppaterno'), regex: /^[a-zA-ZáéíóúÁÉÍÓÚñÑ ]+$/ },
+                correo: { el: document.getElementById('txtCorreo'), regex: /^[^\s@@]+@@[^\s@@]+\.[^\s@@]+$/ },
+                telefono: { el: document.getElementById('txtTelefono'), regex: /^\d{9}$/ },
+                fecNac: { el: document.getElementById('txtFecNac'), isDate: true },
+                rol: { el: document.getElementById('ddlRol'), isSelect: true },
+                username: { el: document.getElementById('txtUsername'), regex: /^\S+$/ }, // Sin espacios
+                contrasena: { el: document.getElementById('txtContrasena'), isRequired: true }
+            };
+
+            // Función validadora en tiempo real
+            function validarCampo(field) {
+                const input = field.el;
+                let valido = true;
+
+                if (input.value.trim() === "") {
+                    valido = false;
+                } else if (field.regex && !field.regex.test(input.value)) {
+                    valido = false;
+                } else if (field.isDate) {
+                    // Validación estricta de mayoría de edad (18 años)
+                    const fechaNac = new Date(input.value);
+                    const hoy = new Date();
+                    let edad = hoy.getFullYear() - fechaNac.getFullYear();
+                    const m = hoy.getMonth() - fechaNac.getMonth();
+                    if (m < 0 || (m === 0 && hoy.getDate() < fechaNac.getDate())) {
+                        edad--;
+                    }
+                    if (isNaN(fechaNac.getTime()) || edad < 18) valido = false;
+                }
+
+                // Pintar la interfaz de Bootstrap en tiempo real
+                if (!valido) {
+                    input.classList.add('is-invalid');
+                    input.classList.remove('is-valid');
+                    return false;
+                } else {
+                    input.classList.remove('is-invalid');
+                    input.classList.add('is-valid');
+                    return true;
+                }
+            }
+
+            // Registrar los eventos input y blur en tiempo real para el alta laboral
+            Object.values(fields).forEach(field => {
+                field.el.addEventListener('input', () => validarCampo(field));
+                field.el.addEventListener('blur', () => validarCampo(field));
+            });
+
+            // Validación perimetral final al presionar el botón de enviar
+            form.addEventListener('submit', function (e) {
+                let formValido = true;
+
+                Object.values(fields).forEach(field => {
+                    if (!validarCampo(field)) {
+                        formValido = false;
+                    }
+                });
+
+                if (!formValido) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    alert("⚠️ Formulario Incompleto: Por favor, complete correctamente los datos requeridos e intente nuevamente.");
+                }
+            });
+        });
+    </script>
+}

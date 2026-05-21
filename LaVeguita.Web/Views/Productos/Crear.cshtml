@@ -5,73 +5,94 @@
 
 <div style="max-width: 800px; margin: 20px auto; background: white; padding: 30px; border-radius: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.1);">
     <h2 style="color: #2c3e50; border-bottom: 2px solid #2ecc71; padding-bottom: 10px;">🍎 Registrar Producto</h2>
-    
+
     <form asp-action="Crear" method="post" id="formProducto" novalidate style="margin-top: 20px;">
         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
-            
+
             <div>
                 <label style="display:block; font-weight:bold;">Nombre</label>
-                <input asp-for="NomProducto" class="form-control"
-                       onkeypress="return validarSinTildes(event)"
-                       style="width:100%; padding:8px;" />
+                <input asp-for="NomProducto" class="form-control" onkeypress="return validarSinTildes(event)" style="width:100%; padding:8px;" required />
                 <div class="invalid-feedback">El nombre es obligatorio.</div>
             </div>
-            
-            <div>
-                <label style="display:block; font-weight:bold;">Precio Unitario</label>
-                <input asp-for="PrecioUnd" type="number" step="0.01" class="form-control" style="width:100%; padding:8px;" />
-                <div class="invalid-feedback">Ingrese un precio válido.</div>
-            </div>
 
             <div>
-                <label style="display:block; font-weight:bold;">Stock Actual</label>
-                <input asp-for="StockActual" type="number" class="form-control" style="width:100%; padding:8px;" />
-                <div class="invalid-feedback">Ingrese el stock inicial.</div>
-            </div>
-
-            <div>
-                <label style="display:block; font-weight:bold;">Peso Estimado (kg)</label>
-                <input asp-for="PesoUnitEstimado" type="number" step="0.01" class="form-control" style="width:100%; padding:8px;" />
-                <div class="invalid-feedback">El peso es necesario para el despacho.</div>
-            </div>
-
-            <div>
-                <label style="display:block; font-weight:bold;">Categoría (Tipo)</label>
-                <select asp-for="IdTipoProducto" class="form-select" style="width:100%; padding:8px;"
-                        asp-items="@(new SelectList(ViewBag.Tipos, "IdTipoProducto", "NomTipo"))">
-                    <option value="">-- Seleccione Categoría --</option>
+                <label style="display:block; font-weight:bold;">Proveedor</label>
+                <select asp-for="IdProveedor" class="form-select" style="width:100%; padding:8px;" asp-items="@(new SelectList(ViewBag.Proveedores, "IdProveedor", "NomProveedor"))" required>
+                    <option value="">-- Seleccione Proveedor --</option>
                 </select>
-                <div class="invalid-feedback">Seleccione una categoría.</div>
+                <div class="invalid-feedback">Seleccione un proveedor.</div>
             </div>
 
             <div>
-                <label style="display:block; font-weight:bold;">¿Es Orgánico?</label>
+                <label style="display:block; font-weight:bold;">Precio Unitario ($)</label>
+                <input asp-for="PrecioUnd" type="number" step="0.01" class="form-control" style="width:100%; padding:8px;" required />
+                <div class="invalid-feedback">Ingrese un precio valido.</div>
+            </div>
+
+            <div>
+                <label style="display:block; font-weight:bold;">Stock Inicial</label>
+                <div class="input-group">
+                    <input asp-for="StockActual" type="number" class="form-control" style="padding:8px;" required />
+                    <select asp-for="UnidadMedida" class="form-select text-primary fw-bold" style="max-width: 120px;" required>
+                        <option value="UND">und</option>
+                        <option value="KG">Kg</option>
+                        <option value="GRAMO">g</option>
+                    </select>
+                </div>
+                <div class="invalid-feedback">Ingrese el stock inicial y su unidad.</div>
+            </div>
+
+            <div>
+                <label style="display:block; font-weight:bold;">Peso Estimado (Carga Logistica)</label>
+                <div class="input-group">
+                    <input asp-for="PesoUnitEstimado" type="number" step="0.01" class="form-control" style="padding:8px;" required />
+                    <select name="unidadPeso" id="ddlUnidadPeso" class="form-select text-success fw-bold" style="max-width: 90px;">
+                        <option value="Kg">Kg</option>
+                        <option value="g">g</option>
+                    </select>
+                </div>
+                <div class="form-text text-muted small" style="font-size: 11px;">Si selecciona gramos (g), se calculara matematicamente a Kg en el servidor.</div>
+                <div class="invalid-feedback">El peso estimado es obligatorio.</div>
+            </div>
+
+            <div>
+                <label style="display:block; font-weight:bold;">Categoria (Tipo)</label>
+                <select asp-for="IdTipoProducto" class="form-select" style="width:100%; padding:8px;" asp-items="@(new SelectList(ViewBag.Tipos, "IdTipoProducto", "NomTipo"))" required>
+                    <option value="">-- Seleccione Categoria --</option>
+                </select>
+                <div class="invalid-feedback">Seleccione una categoria.</div>
+            </div>
+
+            <div>
+                <label style="display:block; font-weight:bold;">Calidad Comercial</label>
+                <select asp-for="IdCalidad" class="form-select" style="width:100%; padding:8px;" asp-items="@(new SelectList(ViewBag.Calidades, "IdCalidad", "NomCalidad"))">
+                    <option value="0">-- Seleccione Calidad (Opcional) --</option>
+                </select>
+            </div>
+
+            <div>
+                <label style="display:block; font-weight:bold;">¿Es Organico?</label>
                 <select asp-for="EsOrganico" class="form-select" style="width:100%; padding:8px;">
-                    <option value="S">Sí</option>
+                    <option value="S">Si</option>
                     <option value="N">No</option>
                 </select>
             </div>
         </div>
 
         <div style="margin-top:20px;">
-            <label style="display:block; font-weight:bold;">Descripción</label>
-            <textarea asp-for="Descripcion" class="form-control"
-                      onkeypress="return validarSinTildes(event)"
-                      style="width:100%; padding:8px;" rows="2" placeholder="Ej: Manzanas rojas..."></textarea>
-            <div class="invalid-feedback">La descripción es obligatoria.</div>
+            <label style="display:block; font-weight:bold;">Descripcion del Producto</label>
+            <textarea asp-for="Descripcion" class="form-control" onkeypress="return validarSinTildes(event)" style="width:100%; padding:8px;" rows="2"></textarea>
         </div>
 
-        <input type="hidden" asp-for="Packing" value="Estándar" />
+        <input type="hidden" asp-for="Packing" value="Estandar" />
         <input type="hidden" asp-for="StockMin" value="5" />
         <input type="hidden" asp-for="StockMax" value="500" />
 
         <div style="margin-top: 30px; display: flex; gap: 10px;">
-            <button type="submit" style="background:#2ecc71; color:white; border:none; padding:12px 25px; border-radius:8px; cursor:pointer; font-weight:bold;">
+            <button type="submit" style="background:#2ecc71; color:white; border:none; padding:12px 25px; border-radius:8px; font-weight:bold; cursor:pointer;">
                 💾 Guardar Producto
             </button>
-            <a asp-action="Index" style="background:#95a5a6; color:white; padding:12px 25px; border-radius:8px; text-decoration:none; font-weight:bold;">
-                ❌ Cancelar
-            </a>
+            <a asp-action="Index" style="background:#95a5a6; color:white; padding:12px 25px; border-radius:8px; text-decoration:none; font-weight:bold;">❌ Cancelar</a>
         </div>
     </form>
 </div>
@@ -79,13 +100,13 @@
 <script>
     document.addEventListener("DOMContentLoaded", function() {
         const form = document.getElementById("formProducto");
-        // Seleccionamos los campos a validar
-        const inputs = form.querySelectorAll("input[type='text'], input[type='number'], select, textarea");
+        const inputs = form.querySelectorAll("input[required], select[required], textarea[required]");
 
         const validar = (campo) => {
-            // Si el campo está vacío, ponemos borde rojo (is-invalid), si no, lo quitamos.
-            // No agregamos is-valid para evitar el check verde.
-            if (campo.value.trim() === "" && campo.type !== "hidden") {
+            // Si el campo pertenece a un input-group, buscamos el ancestro correcto para pintar el error
+            let contenedorElemento = campo.closest(".input-group") ? campo.closest(".input-group").parentElement : campo.parentElement;
+
+            if (campo.value.trim() === "") {
                 campo.classList.add("is-invalid");
                 return false;
             } else {
@@ -94,7 +115,6 @@
             }
         };
 
-        // Validación mientras se escribe o se sale del campo (blur)
         inputs.forEach(input => {
             input.addEventListener("input", () => validar(input));
             input.addEventListener("blur", () => validar(input));
@@ -108,7 +128,7 @@
 
             if (!esValido) {
                 e.preventDefault();
-                alert("⚠️ Error: Hay campos obligatorios vacíos en el formulario.");
+                alert("⚠️ Error: Hay campos obligatorios vacios o mal configurados en el formulario.");
             }
         });
     });

@@ -1,0 +1,178 @@
+﻿@model LaVeguita.Entities.Empleado
+@{
+    ViewData["Title"] = "Modificar Ficha Laboral";
+}
+
+<style>
+    /* Chrome, Safari, Edge, Opera */
+    input::-webkit-outer-spin-button,
+    input::-webkit-inner-spin-button {
+        -webkit-appearance: none;
+        margin: 0;
+    }
+
+    /* Firefox */
+    input[type=number] {
+        -moz-appearance: textfield;
+    }
+</style>
+
+<div style="max-width: 800px; margin: 30px auto; background: white; padding: 40px; border-radius: 15px; box-shadow: 0 4px 20px rgba(0,0,0,0.1);">
+    <h2 style="color: #2c3e50; border-bottom: 3px solid #f39c12; padding-bottom: 12px; margin-bottom: 30px;">
+        💼 Actualización Formal de Contrato Laboral
+    </h2>
+
+    @if (ViewBag.Error != null)
+    {
+        <div class="alert alert-danger">@ViewBag.Error</div>
+    }
+
+    <form asp-controller="Empleados" asp-action="Editar" method="post" id="formEditarEmpleado" novalidate>
+        <input type="hidden" asp-for="IdEmpleado" />
+
+        <h5 class="text-warning fw-bold mb-3"><i class="fas fa-id-card me-2"></i> 1. Identidad del Colaborador</h5>
+        <div class="row">
+            <div class="col-md-6 mb-3">
+                <label class="form-label fw-bold text-muted">Primer Nombre <span class="text-danger">*</span></label>
+                <input type="text" asp-for="PnombreEmp" class="form-control" style="padding: 10px;" id="txtPnombre" />
+                <div class="invalid-feedback">El primer nombre es obligatorio (solo letras).</div>
+            </div>
+            <div class="col-md-6 mb-3">
+                <label class="form-label fw-bold text-muted">Segundo Nombre</label>
+                <input type="text" asp-for="SnombreEmp" class="form-control" style="padding: 10px;" id="txtSnombre" />
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="col-md-6 mb-3">
+                <label class="form-label fw-bold text-muted">Apellido Paterno <span class="text-danger">*</span></label>
+                <input type="text" asp-for="Appaterno" class="form-control" style="padding: 10px;" id="txtAppaterno" />
+                <div class="invalid-feedback">El apellido paterno es obligatorio.</div>
+            </div>
+            <div class="col-md-6 mb-3">
+                <label class="form-label fw-bold text-muted">Apellido Materno</label>
+                <input type="text" asp-for="Apmaterno" class="form-control" style="padding: 10px;" id="txtApmaterno" />
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="col-md-6 mb-3">
+                <label class="form-label fw-bold text-muted">Fecha de Nacimiento <span class="text-danger">*</span></label>
+                <input type="date" asp-for="FecNacEmp" class="form-control" style="padding: 10px;" id="txtFecNac" />
+                <div class="invalid-feedback">Debe ingresar una fecha válida (mayor de 18 años).</div>
+            </div>
+            <div class="col-md-6 mb-3">
+                <label class="form-label fw-bold text-muted">Fecha de Ingreso a la Empresa</label>
+                <input type="text" class="form-control" style="padding: 10px; background-color: #e9ecef;"
+                       value="@(Model.FechaIngreso != null ? Model.FechaIngreso.ToString("dd/MM/yyyy") : "Vigente")" disabled />
+            </div>
+        </div>
+
+        <hr class="my-4" />
+
+        <h5 class="text-primary fw-bold mb-3"><i class="fas fa-briefcase me-2"></i> 2. Contacto Corporativo y Asignación</h5>
+        <div class="row">
+            <div class="col-md-6 mb-3">
+                <label class="form-label fw-bold text-muted">Correo Institucional <span class="text-danger">*</span></label>
+                <input type="email" asp-for="CorreoEmp" class="form-control" style="padding: 10px;" id="txtCorreo" placeholder="ejemplo@laveguita.cl" />
+                <div class="invalid-feedback">Ingrese un correo electrónico institucional válido.</div>
+            </div>
+            <div class="col-md-6 mb-3">
+                <label class="form-label fw-bold text-muted">Teléfono Móvil (9 dígitos) <span class="text-danger">*</span></label>
+                <input type="number" asp-for="TelefonoEmp" class="form-control" style="padding: 10px;" id="txtTelefono" placeholder="Ej: 912345678" />
+                <div class="invalid-feedback">El teléfono debe ser numérico y contener 9 dígitos.</div>
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="col-md-12 mb-4">
+                <label class="form-label fw-bold text-danger">Modificar Escalafón / Cargo <span class="text-danger">*</span></label>
+                <select asp-for="IdRolUsuario" class="form-select" style="padding: 10px; border: 1px solid #f39c12;" id="ddlRol"
+                        asp-items="@(new SelectList(ViewBag.Roles, "IdRolUsuario", "Nombre"))">
+                    <option value="">-- Seleccione Nuevo Cargo --</option>
+                </select>
+                <div class="invalid-feedback">Debe asignar un rol operativo válido.</div>
+            </div>
+        </div>
+
+        <div style="margin-top: 35px; display: flex; gap: 15px;">
+            <button type="submit" class="btn btn-warning text-dark" style="flex: 2; padding: 14px; font-weight: bold; border: none; border-radius: 8px;">
+                💾 Actualizar Contrato Operativo
+            </button>
+            <a asp-action="Index" class="btn btn-secondary" style="flex: 1; padding: 14px; border-radius: 8px;">Cancelar</a>
+        </div>
+    </form>
+</div>
+
+@section Scripts {
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
+            const form = document.getElementById('formEditarEmpleado');
+
+            // Elementos a validar
+            const fields = {
+                pnombre: { el: document.getElementById('txtPnombre'), regex: /^[a-zA-ZáéíóúÁÉÍÓÚñÑ ]+$/ },
+                appaterno: { el: document.getElementById('txtAppaterno'), regex: /^[a-zA-ZáéíóúÁÉÍÓÚñÑ ]+$/ },
+                fecNac: { el: document.getElementById('txtFecNac'), isDate: true },
+                correo: { el: document.getElementById('txtCorreo'), regex: /^[^\s@@]+@@[^\s@@]+\.[^\s@@]+$/ },
+                telefono: { el: document.getElementById('txtTelefono'), regex: /^\d{9}$/ },
+                rol: { el: document.getElementById('ddlRol'), isSelect: true }
+            };
+
+            // Función de validación en tiempo real campo por campo
+            function validarCampo(field) {
+                const input = field.el;
+                let valido = true;
+
+                if (input.value.trim() === "") {
+                    valido = false;
+                } else if (field.regex && !field.regex.test(input.value)) {
+                    valido = false;
+                } else if (field.isDate) {
+                    // Validar que el empleado tenga al menos 18 años
+                    const fechaNac = new Date(input.value);
+                    const hoy = new Date();
+                    let edad = hoy.getFullYear() - fechaNac.getFullYear();
+                    const m = hoy.getMonth() - fechaNac.getMonth();
+                    if (m < 0 || (m === 0 && hoy.getDate() < fechaNac.getDate())) {
+                        edad--;
+                    }
+                    if (isNaN(fechaNac.getTime()) || edad < 18) valido = false;
+                }
+
+                if (!valido) {
+                    input.classList.add('is-invalid');
+                    input.classList.remove('is-valid');
+                    return false;
+                } else {
+                    input.classList.remove('is-invalid');
+                    input.classList.add('is-valid');
+                    return true;
+                }
+            }
+
+            // Asignar eventos de escucha en tiempo real (input y blur)
+            Object.values(fields).forEach(field => {
+                field.el.addEventListener('input', () => validarCampo(field));
+                field.el.addEventListener('blur', () => validarCampo(field));
+            });
+
+            // Control de envío final
+            form.addEventListener('submit', function (e) {
+                let formValido = true;
+
+                Object.values(fields).forEach(field => {
+                    if (!validarCampo(field)) {
+                        formValido = false;
+                    }
+                });
+
+                if (!formValido) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    alert("⚠️ Error: Revise los campos marcados en rojo y asegúrese de que cumplan con las reglas corporativas.");
+                }
+            });
+        });
+    </script>
+}

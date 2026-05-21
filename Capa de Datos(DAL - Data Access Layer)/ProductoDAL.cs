@@ -20,12 +20,14 @@ namespace LaVeguita.DAL
 
             using (OracleConnection conn = conexion.LeerConexion())
             {
+                // 1. Agregamos PESO_UNIT_ESTIMADO y UNIDAD_MEDIDA al SELECT
                 string query = @"SELECT p.ID_PRODUCTO, p.NOM_PRODUCTO, p.DESCRIPCION, p.PRECIO_UND, 
-                                       p.STOCK_ACTUAL, p.STOCK_MIN, p.ES_ORGANICO, p.ID_TIPO_PRODUCTO,
-                                       t.NOM_TIPO
-                                FROM PRODUCTOS p
-                                JOIN TIPO_PRODUCTO t ON p.ID_TIPO_PRODUCTO = t.ID_TIPO_PRODUCTO
-                                ORDER BY p.ID_PRODUCTO DESC";
+                                p.STOCK_ACTUAL, p.STOCK_MIN, p.ES_ORGANICO, p.ID_TIPO_PRODUCTO,
+                                p.PESO_UNIT_ESTIMADO, p.UNIDAD_MEDIDA,
+                                t.NOM_TIPO
+                        FROM PRODUCTOS p
+                        JOIN TIPO_PRODUCTO t ON p.ID_TIPO_PRODUCTO = t.ID_TIPO_PRODUCTO
+                        ORDER BY p.ID_PRODUCTO DESC";
 
                 OracleCommand cmd = new OracleCommand(query, conn);
 
@@ -38,7 +40,7 @@ namespace LaVeguita.DAL
                         {
                             Producto prod = new Producto
                             {
-                                // Blindaje contra nulos aplicado aquí
+                                // Blindaje contra nulos aplicado aqui
                                 IdProducto = reader["ID_PRODUCTO"] != DBNull.Value ? Convert.ToInt32(reader["ID_PRODUCTO"]) : 0,
                                 NomProducto = reader["NOM_PRODUCTO"] != DBNull.Value ? reader["NOM_PRODUCTO"].ToString() : "",
                                 Descripcion = reader["DESCRIPCION"] != DBNull.Value ? reader["DESCRIPCION"].ToString() : "",
@@ -47,7 +49,11 @@ namespace LaVeguita.DAL
                                 StockMin = reader["STOCK_MIN"] != DBNull.Value ? Convert.ToInt32(reader["STOCK_MIN"]) : 0,
                                 EsOrganico = reader["ES_ORGANICO"] != DBNull.Value ? reader["ES_ORGANICO"].ToString() : "",
                                 IdTipoProducto = reader["ID_TIPO_PRODUCTO"] != DBNull.Value ? Convert.ToInt32(reader["ID_TIPO_PRODUCTO"]) : 0,
-                                NomTipo = reader["NOM_TIPO"] != DBNull.Value ? reader["NOM_TIPO"].ToString() : ""
+                                NomTipo = reader["NOM_TIPO"] != DBNull.Value ? reader["NOM_TIPO"].ToString() : "",
+
+                                // 2. AQUI ESTA LA SOLUCION: Leemos el peso y la unidad desde Oracle
+                                PesoUnitEstimado = reader["PESO_UNIT_ESTIMADO"] != DBNull.Value ? Convert.ToDecimal(reader["PESO_UNIT_ESTIMADO"]) : 0,
+                                UnidadMedida = reader["UNIDAD_MEDIDA"] != DBNull.Value ? reader["UNIDAD_MEDIDA"].ToString() : "UND"
                             };
                             lista.Add(prod);
                         }
@@ -65,38 +71,31 @@ namespace LaVeguita.DAL
         {
             using (OracleConnection con = conexion.LeerConexion())
             {
-                string query = @"INSERT INTO PRODUCTOS (
-                            ID_PRODUCTO, NOM_PRODUCTO, DESCRIPCION, PRECIO_UND, 
-                            STOCK_ACTUAL, ID_PROVEEDOR, STOCK_MIN, STOCK_MAX, 
-                            PESO_UNIT_ESTIMADO, ES_ORGANICO, ID_TIPO_PRODUCTO, 
-                            ID_CALIDAD, PACKING
-                        ) VALUES (
-                            SEQ_PRODUCTOS.NEXTVAL, :nom, :descr, :precio, 
-                            :stock, :prov, :smin, :smax, 
-                            :peso, :organico, :tipoID, 
-                            :calid, :pack
-                        )";
+                OracleCommand cmd = new OracleCommand("PKG_INVENTARIO.SP_REGISTRAR_PRODUCTO", con);
+                cmd.CommandType = System.Data.CommandType.StoredProcedure;
 
-                OracleCommand cmd = new OracleCommand(query, con);
+                cmd.Parameters.Add("p_nom", OracleDbType.Varchar2).Value = p.NomProducto;
+                cmd.Parameters.Add("p_desc", OracleDbType.Varchar2).Value = (object)p.Descripcion ?? DBNull.Value;
+                cmd.Parameters.Add("p_precio", OracleDbType.Decimal).Value = p.PrecioUnd;
+                cmd.Parameters.Add("p_stock", OracleDbType.Int32).Value = p.StockActual;
+                cmd.Parameters.Add("p_prov", OracleDbType.Int32).Value = p.IdProveedor > 0 ? (object)p.IdProveedor : DBNull.Value;
+                cmd.Parameters.Add("p_smin", OracleDbType.Int32).Value = p.StockMin;
+                cmd.Parameters.Add("p_smax", OracleDbType.Int32).Value = p.StockMax;
+                cmd.Parameters.Add("p_peso", OracleDbType.Decimal).Value = p.PesoUnitEstimado;
+                cmd.Parameters.Add("p_org", OracleDbType.Varchar2).Value = p.EsOrganico;
+                cmd.Parameters.Add("p_tipo", OracleDbType.Int32).Value = p.IdTipoProducto;
+                cmd.Parameters.Add("p_calid", OracleDbType.Int32).Value = p.IdCalidad > 0 ? (object)p.IdCalidad : DBNull.Value;
+                cmd.Parameters.Add("p_pack", OracleDbType.Varchar2).Value = (object)p.Packing ?? DBNull.Value;
 
-                cmd.BindByName = true;
+                // Pasamos la unidad de medida al registrar
+                cmd.Parameters.Add("p_uom", OracleDbType.Varchar2).Value = string.IsNullOrEmpty(p.UnidadMedida) ? "UND" : p.UnidadMedida;
 
-                cmd.Parameters.Add("nom", p.NomProducto);
-                cmd.Parameters.Add("descr", (object)p.Descripcion ?? DBNull.Value);
-                cmd.Parameters.Add("precio", p.PrecioUnd);
-                cmd.Parameters.Add("stock", p.StockActual);
-                cmd.Parameters.Add("prov", p.IdProveedor);
-                cmd.Parameters.Add("smin", p.StockMin);
-                cmd.Parameters.Add("smax", p.StockMax);
-                cmd.Parameters.Add("peso", p.PesoUnitEstimado);
-                cmd.Parameters.Add("organico", p.EsOrganico);
-                cmd.Parameters.Add("tipoID", p.IdTipoProducto);
-                cmd.Parameters.Add("calid", p.IdCalidad);
-                cmd.Parameters.Add("pack", (object)p.Packing ?? DBNull.Value);
+                OracleParameter outExito = new OracleParameter("p_exito", OracleDbType.Int32, System.Data.ParameterDirection.Output);
+                cmd.Parameters.Add(outExito);
 
                 con.Open();
-                int filas = cmd.ExecuteNonQuery();
-                return filas > 0;
+                cmd.ExecuteNonQuery();
+                return Convert.ToInt32(outExito.Value.ToString()) == 1;
             }
         }
 
@@ -154,47 +153,40 @@ namespace LaVeguita.DAL
         {
             using (var conn = conexion.LeerConexion())
             {
-                string sql = @"UPDATE PRODUCTOS SET 
-                        NOM_PRODUCTO = :v_nom, 
-                        DESCRIPCION = :v_desc, 
-                        PRECIO_UND = :v_precio, 
-                        STOCK_ACTUAL = :v_stock, 
-                        ID_PROVEEDOR = :v_idProv, 
-                        STOCK_MIN = :v_sMin, 
-                        STOCK_MAX = :v_sMax, 
-                        PESO_UNIT_ESTIMADO = :v_peso, 
-                        ES_ORGANICO = :v_org, 
-                        ID_TIPO_PRODUCTO = :v_tipo, 
-                        ID_CALIDAD = :v_calidad, 
-                        PACKING = :v_pack
-                      WHERE ID_PRODUCTO = :v_id";
+                OracleCommand cmd = new OracleCommand("PKG_INVENTARIO.SP_ACTUALIZAR_PRODUCTO", conn);
+                cmd.CommandType = System.Data.CommandType.StoredProcedure;
 
-                OracleCommand cmd = new OracleCommand(sql, conn);
-                cmd.BindByName = true; // Indispensable
+                // Pasamos exactamente los mismos parámetros que el Package espera en la base de datos
+                cmd.Parameters.Add("p_id", OracleDbType.Int32).Value = p.IdProducto;
+                cmd.Parameters.Add("p_nom", OracleDbType.Varchar2).Value = p.NomProducto;
+                cmd.Parameters.Add("p_desc", OracleDbType.Varchar2).Value = (object)p.Descripcion ?? DBNull.Value;
+                cmd.Parameters.Add("p_precio", OracleDbType.Decimal).Value = p.PrecioUnd;
+                cmd.Parameters.Add("p_stock", OracleDbType.Int32).Value = p.StockActual;
+                cmd.Parameters.Add("p_prov", OracleDbType.Int32).Value = p.IdProveedor > 0 ? (object)p.IdProveedor : DBNull.Value;
+                cmd.Parameters.Add("p_smin", OracleDbType.Int32).Value = p.StockMin;
+                cmd.Parameters.Add("p_smax", OracleDbType.Int32).Value = p.StockMax;
+                cmd.Parameters.Add("p_peso", OracleDbType.Decimal).Value = p.PesoUnitEstimado;
+                cmd.Parameters.Add("p_org", OracleDbType.Varchar2).Value = p.EsOrganico;
+                cmd.Parameters.Add("p_tipo", OracleDbType.Int32).Value = p.IdTipoProducto;
+                cmd.Parameters.Add("p_calid", OracleDbType.Int32).Value = p.IdCalidad > 0 ? (object)p.IdCalidad : DBNull.Value;
+                cmd.Parameters.Add("p_pack", OracleDbType.Varchar2).Value = (object)p.Packing ?? DBNull.Value;
 
-                cmd.Parameters.Add("v_nom", p.NomProducto);
-                cmd.Parameters.Add("v_desc", (object)p.Descripcion ?? DBNull.Value);
-                cmd.Parameters.Add("v_precio", p.PrecioUnd);
-                cmd.Parameters.Add("v_stock", p.StockActual);
-                cmd.Parameters.Add("v_idProv", p.IdProveedor > 0 ? (object)p.IdProveedor : DBNull.Value);
-                cmd.Parameters.Add("v_sMin", p.StockMin);
-                cmd.Parameters.Add("v_sMax", p.StockMax);
-                cmd.Parameters.Add("v_peso", p.PesoUnitEstimado);
-                cmd.Parameters.Add("v_org", p.EsOrganico);
-                cmd.Parameters.Add("v_tipo", p.IdTipoProducto);
-                cmd.Parameters.Add("v_calidad", p.IdCalidad > 0 ? (object)p.IdCalidad : DBNull.Value);
-                cmd.Parameters.Add("v_pack", (object)p.Packing ?? DBNull.Value);
-                cmd.Parameters.Add("v_id", p.IdProducto);
+                // --- ESTE ERA EL PARAMETRO FALTRANTE QUE CAUSABA EL ERROR ---
+                cmd.Parameters.Add("p_uom", OracleDbType.Varchar2).Value = string.IsNullOrEmpty(p.UnidadMedida) ? "UND" : p.UnidadMedida;
+
+                // Parámetro de salida OUT de control
+                OracleParameter outExito = new OracleParameter("p_exito", OracleDbType.Int32, System.Data.ParameterDirection.Output);
+                cmd.Parameters.Add(outExito);
 
                 try
                 {
                     conn.Open();
-                    int filas = cmd.ExecuteNonQuery();
-                    return filas > 0;
+                    cmd.ExecuteNonQuery();
+                    return Convert.ToInt32(outExito.Value.ToString()) == 1;
                 }
                 catch (Exception ex)
                 {
-                    throw new Exception("Error al ejecutar UPDATE en Oracle: " + ex.Message);
+                    throw new Exception("Error al ejecutar SP_ACTUALIZAR_PRODUCTO en Cloud: " + ex.Message);
                 }
             }
         }

@@ -1,38 +1,40 @@
 ﻿@model LaVeguita.Entities.Producto
 
 @{
-    ViewData["Title"] = "Editar Producto - La Veguita Click";
+    ViewData["Title"] = "Editar Producto";
+
+    // --- LOGICA MATEMATICA INVERSA EN VISTA (CASO 4) ---
+    // Si el peso es menor a 1 kg (ej: 0.25), asumimos despliegue amigable en gramos (250 g)
+    decimal pesoDespliegue = Model.PesoUnitEstimado;
+    string unidadPreseleccionada = "Kg";
+
+    if (Model.PesoUnitEstimado > 0 && Model.PesoUnitEstimado < 1)
+    {
+        pesoDespliegue = Model.PesoUnitEstimado * 1000m;
+        unidadPreseleccionada = "g";
+    }
 }
 
-<div class="container-card">
-    <h2>Editar Producto: @Model.NomProducto</h2>
-    <hr />
-    
+<div class="container-card" style="max-width: 800px; margin: 20px auto; background: white; padding: 30px; border-radius: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.1);">
+    <h2 style="color: #2c3e50; border-bottom: 2px solid #f39c12; padding-bottom: 10px;">✏️ Editar Producto: @Model.NomProducto</h2>
+
     @if (ViewData["Error"] != null)
     {
-        <div class="alert alert-danger">
-            @ViewData["Error"]
-        </div>
+        <div class="alert alert-danger">@ViewData["Error"]</div>
     }
-    
-    <form asp-action="Editar" method="post">
-        <div asp-validation-summary="ModelOnly" class="text-danger"></div>
-    
+
+    <form asp-action="Editar" method="post" id="formEditarProducto" style="margin-top: 20px;">
         <input type="hidden" asp-for="IdProducto" />
 
         <div class="row">
             <div class="col-md-6 mb-3">
-                <label class="form-label">Nombre del Producto</label>
-                <input asp-for="NomProducto"
-                       class="form-control"
-                       onkeypress="return validarSinTildes(event)"
-                       required />
+                <label class="form-label fw-bold">Nombre del Producto</label>
+                <input asp-for="NomProducto" class="form-control" onkeypress="return validarSinTildes(event)" required />
             </div>
 
             <div class="col-md-6 mb-3">
-                <label class="form-label">Proveedor</label>
-                <select asp-for="IdProveedor" class="form-control"
-                        asp-items="@(new SelectList(ViewBag.Proveedores, "IdProveedor", "NomProveedor"))">
+                <label class="form-label fw-bold">Proveedor</label>
+                <select asp-for="IdProveedor" class="form-control" asp-items="@(new SelectList(ViewBag.Proveedores, "IdProveedor", "NomProveedor"))" required>
                     <option value="">-- Seleccione Proveedor --</option>
                 </select>
             </div>
@@ -40,64 +42,92 @@
 
         <div class="row">
             <div class="col-md-4 mb-3">
-                <label class="form-label">Precio Unitario</label>
-                <input asp-for="PrecioUnd" class="form-control" type="number" step="0.01" />
+                <label class="form-label fw-bold">Precio Unitario ($)</label>
+                <input asp-for="PrecioUnd" class="form-control" type="number" step="0.01" required />
             </div>
 
             <div class="col-md-4 mb-3">
-                <label class="form-label">Stock Actual</label>
-                <input asp-for="StockActual" class="form-control" type="number" />
+                <label class="form-label fw-bold">Stock Actual</label>
+                <div class="input-group">
+                    <input asp-for="StockActual" class="form-control" type="number" required />
+                    <select asp-for="UnidadMedida" class="form-select text-primary fw-bold" style="max-width: 90px;" required>
+                        <option value="UND">und</option>
+                        <option value="KG">Kg</option>
+                        <option value="GRAMO">g</option>
+                    </select>
+                </div>
             </div>
 
             <div class="col-md-4 mb-3">
-                <label class="form-label">Tipo de Producto</label>
-                <select asp-for="IdTipoProducto" class="form-control"
-                        asp-items="@(new SelectList(ViewBag.Tipos, "IdTipoProducto", "NomTipo"))">
+                <label class="form-label fw-bold text-success">Peso Estimado</label>
+                <div class="input-group">
+                    <input name="PesoUnitEstimado" value="@pesoDespliegue.ToString("G29").Replace(",", ".")" class="form-control" type="number" step="0.01" required />
+                    <select name="unidadPeso" class="form-select text-success fw-bold" style="max-width: 80px;">
+                        <!== Evaluamos dinamicamente cual dejar marcado por defecto ==>
+                        @if (unidadPreseleccionada == "Kg")
+                        {
+                            <option value="Kg" selected>Kg</option>
+                            <option value="g">g</option>
+                        }
+                        else
+                        {
+                            <option value="Kg">Kg</option>
+                            <option value="g" selected>g</option>
+                        }
+                    </select>
+                </div>
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="col-md-6 mb-3">
+                <label class="form-label fw-bold">Tipo de Producto</label>
+                <select asp-for="IdTipoProducto" class="form-control" asp-items="@(new SelectList(ViewBag.Tipos, "IdTipoProducto", "NomTipo"))" required></select>
+            </div>
+
+            <div class="col-md-6 mb-3">
+                <label class="form-label fw-bold">Calidad</label>
+                <select asp-for="IdCalidad" class="form-control" asp-items="@(new SelectList(ViewBag.Calidades, "IdCalidad", "NomCalidad"))">
+                    <option value="0">-- Seleccione Calidad --</option>
                 </select>
             </div>
         </div>
 
         <div class="mb-3">
-            <label class="form-label">Descripción</label>
-            <textarea asp-for="Descripcion"
-                      class="form-control"
-                      onkeypress="return validarSinTildes(event)"
-                      rows="3"></textarea>
-        </div>
-
-        <div class="form-group">
-            <label>Calidad</label>
-            <select asp-for="IdCalidad" class="form-control"
-                    asp-items="@(new SelectList(ViewBag.Calidades, "IdCalidad", "NomCalidad"))">
-                <option value="0">-- Seleccione Calidad (Opcional) --</option>
-            </select>
+            <label class="form-label fw-bold">Descripcion</label>
+            <textarea asp-for="Descripcion" class="form-control" onkeypress="return validarSinTildes(event)" rows="2"></textarea>
         </div>
 
         <div class="row">
             <div class="col-md-4 mb-3">
-                <label class="form-label">Stock Mínimo</label>
+                <label class="form-label fw-bold">Stock Minimo</label>
                 <input asp-for="StockMin" class="form-control" type="number" />
             </div>
             <div class="col-md-4 mb-3">
-                <label class="form-label">Es Orgánico</label>
+                <label class="form-label fw-bold">Es Organico</label>
                 <select asp-for="EsOrganico" class="form-control">
-                    <option value="S">Sí</option>
+                    <option value="S">Si</option>
                     <option value="N">No</option>
                 </select>
             </div>
             <div class="col-md-4 mb-3">
-                <label class="form-label">Packing</label>
-                <input asp-for="Packing"
-                       class="form-control"
-                       onkeypress="return validarSinTildes(event)" />
+                <label class="form-label fw-bold">Packing</label>
+                <input asp-for="Packing" class="form-control" onkeypress="return validarSinTildes(event)" />
             </div>
         </div>
 
         <div class="mt-4">
-            <button type="submit" class="btn btn-primary" style="background-color: #2ecc71; border: none;">
-                💾 Guardar Cambios
-            </button>
+            <button type="submit" class="btn btn-warning fw-bold text-dark">💾 Guardar Cambios</button>
             <a asp-action="Index" class="btn btn-secondary">Cancelar</a>
         </div>
     </form>
 </div>
+
+<script>
+    function validarSinTildes(e) {
+        var key = e.keyCode || e.which;
+        var tecla = String.fromCharCode(key).toLowerCase();
+        var letras = " abcdefghijklmnopqrstuvwxyz0123456789";
+        if (letras.indexOf(tecla) == -1) return false;
+    }
+</script>

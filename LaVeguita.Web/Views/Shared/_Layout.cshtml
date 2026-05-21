@@ -123,6 +123,20 @@
         }
         .toggle-btn:hover { background: #27ae60; transform: scale(1.05); }
 
+            /* Ocultar flechas en Chrome, Safari, Edge y Opera (Celular y Escritorio) */
+            input::-webkit-outer-spin-button,
+            input::-webkit-inner-spin-button {
+                -webkit-appearance: none;
+                margin: 0;
+            }
+
+            /* Ocultar flechas en Firefox */
+            input[type=number] {
+                -moz-appearance: textfield;
+            }
+
+
+
     </style>
 </head>
 <body>
@@ -169,6 +183,12 @@
                 @if (rol == 1 || rol == 6) {
                     <li><a asp-controller="Logistica" asp-action="GestionLogistica"><i class="fas fa-tasks"></i> Gestión de Pedidos</a></li>
                     <li><a href="#"><i class="fas fa-clipboard-list"></i> Control de Salidas</a></li>
+                }
+                @if (rol == 1 || rol == 2)
+                {
+                    <li><a asp-controller="Usuarios" asp-action="Index"><i class="fas fa-users"></i> Gestión Usuarios</a></li>
+                    @* EL NUEVO BOTÓN PARA GESTIONAR EMPLEADOS *@
+                    <li><a asp-controller="Empleados" asp-action="Index"><i class="fas fa-id-card"></i> Gestión Empleados</a></li>
                 }
             }
             else if (rol == 7)

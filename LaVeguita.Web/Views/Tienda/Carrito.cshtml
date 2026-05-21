@@ -3,7 +3,7 @@
 @if (TempData["Error"] != null)
 {
     <div class="alert alert-danger alert-dismissible fade show" role="alert">
-        <strong>¡Error al procesar!</strong> @TempData["Error"]
+        <strong>¡Alerta de Restriccion!</strong> @TempData["Error"]
         <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
     </div>
 }
@@ -13,13 +13,13 @@
 
     @if (Model == null || !Model.Any())
     {
-        <div class="alert alert-info">Tu carrito está vacío. ¡Ve al catálogo y elige algo rico!</div>
-        <a asp-action="Catalogo" class="btn btn-success">Volver al Catálogo</a>
+        <div class="alert alert-info">Tu carrito esta vacio. ¡Ve al catalogo y elige algo rico!</div>
+        <a asp-action="Catalogo" class="btn btn-success">Volver al Catalogo</a>
     }
     else
     {
         <div class="row">
-            <div class="col-12 mb-4">
+            <div class="col-12 col-xl-7 mb-4">
                 <div class="table-responsive">
                     <table class="table table-hover bg-white shadow-sm" style="border-radius: 10px; overflow: hidden;">
                         <thead class="bg-success text-white">
@@ -29,7 +29,7 @@
                                 <th style="width: 100px;">Cant.</th>
                                 <th>Peso Subtotal</th>
                                 <th>Subtotal</th>
-                                <th>Acción</th>
+                                <th>Accion</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -59,17 +59,17 @@
                 </div>
             </div>
 
-            <div class="col-12 col-lg-6 mx-auto">
-                <div class="card shadow-sm border-0">
-                    <div class="card-body">
-                        <h4 class="card-title text-center">Resumen de Compra</h4>
+            <div class="col-12 col-xl-5 mx-auto">
+                <div class="card shadow-sm border-0" style="border-radius: 15px;">
+                    <div class="card-body p-4">
+                        <h4 class="card-title text-center fw-bold text-dark mb-3">Resumen de Compra</h4>
                         <hr>
                         <div class="d-flex justify-content-between mb-2">
                             <span>Total Productos:</span>
                             <strong>@Model.Sum(x => x.Cantidad)</strong>
                         </div>
                         <div class="d-flex justify-content-between mb-2">
-                            <span>Peso Total:</span>
+                            <span>Peso Total de Carga:</span>
                             <strong class="text-primary">@Model.Sum(x => x.PesoSubtotal) kg</strong>
                         </div>
                         <div class="d-flex justify-content-between mb-3">
@@ -77,15 +77,33 @@
                             <strong style="font-size: 1.2rem;" class="text-success">$@Model.Sum(x => x.Subtotal).ToString("N0")</strong>
                         </div>
 
-                        @* Lógica visual del Caso 4 *@
-                        <div class="alert @(Model.Sum(x => x.PesoSubtotal) < 5 ? "alert-info" : "alert-warning") text-center">
-                            <strong>Logística:</strong>
-                            @(Model.Sum(x => x.PesoSubtotal) < 5 ? "Pedido liviano. Se asignará Bicicleta." : "Pedido pesado. Se asignará Triciclo.")
+                        <div class="alert @(Model.Sum(x => x.PesoSubtotal) < 5 ? "alert-info" : "alert-warning") text-center small py-2">
+                            <i class="fas fa-truck-loading me-1"></i> <strong>Logistica:</strong>
+                            @(Model.Sum(x => x.PesoSubtotal) < 5 ? "Pedido liviano. Se asignara Bicicleta." : "Pedido pesado. Se asignara Triciclo.")
                         </div>
 
-                        <form asp-action="FinalizarCompra" method="post">
-                            <button type="submit" class="btn btn-success w-100 fw-bold py-3 shadow">
-                                ✅ Confirmar y Generar Orden
+                        <form asp-action="FinalizarCompra" method="post" id="formCheckout">
+
+                            <div class="mb-3 p-3 rounded-3" style="background-color: #f8f9fa; border: 1px solid #e9ecef;">
+                                <label class="form-label fw-bold text-muted"><i class="fas fa-shipping-fast text-success me-1"></i> Seleccione Modalidad de Envio</label>
+                                <select name="tipoEnvio" id="ddlTipoEnvio" class="form-select" required style="padding: 10px;">
+                                    <option value="NORMAL">NORMAL (Entrega dentro de las proximas 6 horas)</option>
+                                    <option value="ECONOMICO">ECONOMICO (Dia habil siguiente 9:00 a 18:00 hrs)</option>
+                                    <option value="URGENTE">URGENTE (Despacho inmediato, maximo 2 horas)</option>
+                                    <option value="FIJO">FIJO (Usted agenda la hora exacta de entrega)</option>
+                                </select>
+                            </div>
+
+                            <div id="contenedorHoraFijo" class="mb-3 p-3 rounded-3 d-none" style="background-color: #fff3cd; border: 1px solid #ffeeba;">
+                                <label class="form-label fw-bold text-warning-emphasis"><i class="far fa-clock me-1"></i> Indique Hora de Retiro/Entrega</label>
+                                <input type="time" name="horaFijo" id="txtHoraFijo" class="form-control" style="padding: 10px;" />
+                                <div id="feedbackHora" class="text-danger small mt-1 d-none">
+                                    Regra: Debe agendar con un minimo de 2 horas de anticipacion.
+                                </div>
+                            </div>
+
+                            <button type="submit" id="btnPagar" class="btn btn-success w-100 fw-bold py-3 shadow mt-2" style="border-radius: 10px; font-size: 1.1rem;">
+                                <i class="fas fa-credit-card me-1"></i> Confirmar y Generar Orden
                             </button>
                         </form>
                     </div>
@@ -94,3 +112,71 @@
         </div>
     }
 </div>
+
+@section Scripts {
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
+            const ddlTipoEnvio = document.getElementById('ddlTipoEnvio');
+            const contenedorHoraFijo = document.getElementById('contenedorHoraFijo');
+            const txtHoraFijo = document.getElementById('txtHoraFijo');
+            const feedbackHora = document.getElementById('feedbackHora');
+            const btnPagar = document.getElementById('btnPagar');
+            const formCheckout = document.getElementById('formCheckout');
+
+            // 1. CONTROL DE VISIBILIDAD EN TIEMPO REAL
+            ddlTipoEnvio.addEventListener('change', function () {
+                if (this.value === 'FIJO') {
+                    contenedorHoraFijo.classList.remove('d-none');
+                    txtHoraFijo.setAttribute('required', 'required');
+                    validarHoraFijo();
+                } else {
+                    contenedorHoraFijo.classList.add('d-none');
+                    txtHoraFijo.removeAttribute('required');
+                    txtHoraFijo.classList.remove('is-invalid');
+                    feedbackHora.classList.add('d-none');
+                    btnPagar.removeAttribute('disabled');
+                }
+            });
+
+            // 2. MOTOR DE REGLA HORARIA EN TIEMPO REAL (MÍNIMO 2 HORAS)
+            function validarHoraFijo() {
+                if (ddlTipoEnvio.value !== 'FIJO' || txtHoraFijo.value === '') return true;
+
+                const ahora = new Date();
+                const [horasSeleccionadas, minutosSeleccionados] = txtHoraFijo.value.split(':');
+
+                // Creamos un objeto de fecha con la hora elegida por el cliente para hoy
+                const horaAgendada = new Date();
+                horaAgendada.setHours(parseInt(horasSeleccionadas), parseInt(minutosSeleccionados), 0, 0);
+
+                // Calculamos el limite minimo (Hora actual + 2 horas de preparacion)
+                const horaLimiteMinima = new Date(ahora.getTime() + (2 * 60 * 60 * 1000));
+
+                if (horaAgendada < horaLimiteMinima) {
+                    txtHoraFijo.classList.add('is-invalid');
+                    txtHoraFijo.classList.remove('is-valid');
+                    feedbackHora.classList.remove('d-none');
+                    btnPagar.setAttribute('disabled', 'disabled');
+                    return false;
+                } else {
+                    txtHoraFijo.classList.remove('is-invalid');
+                    txtHoraFijo.classList.add('is-valid');
+                    feedbackHora.classList.add('d-none');
+                    btnPagar.removeAttribute('disabled');
+                    return true;
+                }
+            }
+
+            txtHoraFijo.addEventListener('input', validarHoraFijo);
+            txtHoraFijo.addEventListener('blur', validarHoraFijo);
+
+            // 3. VALIDACIÓN PERIMETRAL AL ENVIAR
+            formCheckout.addEventListener('submit', function (e) {
+                if (ddlTipoEnvio.value === 'FIJO' && !validarHoraFijo()) {
+                    e.preventDefault();
+                    alert("⚠️ No cumple regra horaria: Modifique la hora del envio Fijo para proceder.");
+                }
+            });
+        });
+    </script>
+}

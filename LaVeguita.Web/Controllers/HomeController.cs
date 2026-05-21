@@ -19,10 +19,10 @@ namespace LaVeguita.Web.Controllers
         {
             int? rol = HttpContext.Session.GetInt32("RolUsuario");
 
-            // 1. Si no hay sesión, al Login
+            // 1. Si no hay sesion, al Login
             if (rol == null) return RedirectToAction("Login", "Acceso");
 
-            // 2. Redirección por Rol (El "Semáforo")
+            // 2. Redireccion por Rol (El "Semaforo")
             switch (rol)
             {
                 case 8: // CLIENTE
@@ -32,16 +32,15 @@ namespace LaVeguita.Web.Controllers
                     return RedirectToAction("MisDespachos", "Transporte");
 
                 case 1: // GERENTE
-                case 2: // JEFE ADMINISTRACIÓN
-                    // El Gerente sí se queda en el Home para ver el Dashboard
+                case 2: // JEFE ADMINISTRACION
                     break;
 
                 default:
-                    // Roles intermedios (Producción, Ventas, etc.) pueden ir al inventario
                     return RedirectToAction("Index", "Productos");
             }
 
-            // 3. Lógica del Dashboard para el Gerente (Rol 1 y 2)
+            // 3. Logica del Dashboard para el Gerente (Rol 1 y 2)
+            // 3. Logica del Dashboard para el Gerente (Rol 1 y 2)
             var listaProductos = _productoDal.ListarProductos();
             var despachoDal = new LaVeguita.DAL.DespachoDAL();
             var despachosPendientes = despachoDal.ListarDespachosPendientes();
@@ -50,6 +49,21 @@ namespace LaVeguita.Web.Controllers
             ViewBag.TotalProductos = listaProductos.Count;
             ViewBag.StockCritico = listaProductos.Count(p => p.StockActual <= p.StockMin);
             ViewBag.NombreUsuario = HttpContext.Session.GetString("UsuarioNombre");
+
+            // --- MAPEO DIGITAL Y DINAMICO PARA CHART.JS (BORRA EL COLOR ROJO) ---
+            // Invocamos el nuevo motor de agrupacion de Oracle
+            var conteosDinamicos = despachoDal.ObtenerConteosPorTipoEnvio();
+
+            // Extraemos los valores de forma directa y fluida desde el Diccionario
+            ViewBag.GraficoNormal = conteosDinamicos["NORMAL"];
+            ViewBag.GraficoEconomico = conteosDinamicos["ECONOMICO"];
+            ViewBag.GraficoUrgente = conteosDinamicos["URGENTE"];
+            ViewBag.GraficoFijo = conteosDinamicos["FIJO"];
+
+            // Rendimiento dinamico de la flota ecologica
+            // Filtramos la lista real de despachos en curso segun las cotas metricas fijadas (< 5kg y >= 5kg)
+            ViewBag.FlotaBicicletas = despachosPendientes.Count(d => d.PesoTotalKg < 5);
+            ViewBag.FlotaTriciclos = despachosPendientes.Count(d => d.PesoTotalKg >= 5);
 
             return View();
         }

@@ -299,5 +299,40 @@ namespace LaVeguita.DAL
             return user;
         }
 
+        public List<LaVeguita.Entities.Empleado> ListarEmpleadosDespacho()
+        {
+            List<LaVeguita.Entities.Empleado> lista = new List<LaVeguita.Entities.Empleado>();
+            using (OracleConnection conn = conexion.LeerConexion())
+            {
+                // AGREGAMOS ID_ROL_USUARIO A LA CONSULTA SQL
+                string query = "SELECT ID_EMPLEADO, PNOMBRE_EMP, APPATERNO, ID_ROL_USUARIO FROM EMPLEADOS ORDER BY PNOMBRE_EMP ASC";
+                OracleCommand cmd = new OracleCommand(query, conn);
+
+                try
+                {
+                    conn.Open();
+                    using (var reader = cmd.ExecuteReader())
+                    {
+                        while (reader.Read())
+                        {
+                            lista.Add(new LaVeguita.Entities.Empleado
+                            {
+                                IdEmpleado = Convert.ToInt32(reader["ID_EMPLEADO"]),
+                                PnombreEmp = reader["PNOMBRE_EMP"].ToString(),
+                                Appaterno = reader["APPATERNO"].ToString(),
+                                // LEEMOS EL ROL DESDE ORACLE CLOUD
+                                IdRolUsuario = Convert.ToInt32(reader["ID_ROL_USUARIO"])
+                            });
+                        }
+                    }
+                }
+                catch (Exception ex)
+                {
+                    throw new Exception("Error al listar empleados desde la base de datos: " + ex.Message);
+                }
+            }
+            return lista;
+        }
+
     }
 }

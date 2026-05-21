@@ -51,22 +51,28 @@ namespace LaVeguita.Web.Controllers
         }
 
         [HttpPost]
-        public IActionResult Crear(Producto p)
+        // Recibimos un parametro extra 'unidadPeso' que viene del select de la vista
+        public IActionResult Crear(Producto p, string unidadPeso)
         {
+            // LOGICA MATEMATICA DE PESO:
+            // Si el usuario escribio "500" y selecciono gramos ("g")
+            // Lo convertimos a 0.5 Kg para que la base de datos y la logistica no se rompan
+            if (unidadPeso == "g")
+            {
+                p.PesoUnitEstimado = p.PesoUnitEstimado / 1000m;
+            }
+
             try
             {
-                _productoBll.InsertarProducto(p);
+                _productoBll.InsertarProducto(p); // (Asegurate que tu DAL y BLL envien p.UnidadMedida a p_uom)
                 return RedirectToAction("Index");
             }
             catch (Exception ex)
             {
                 ModelState.AddModelError("", "Error al crear: " + ex.Message);
-
-                // Recargamos TODO para que la vista no explote al reintentar
                 ViewBag.Tipos = _productoDAL.ListarTipos();
                 ViewBag.Proveedores = _productoDAL.ListarProveedores();
                 ViewBag.Calidades = _productoDAL.ListarCalidades();
-
                 return View(p);
             }
         }
@@ -90,16 +96,22 @@ namespace LaVeguita.Web.Controllers
         }
 
         [HttpPost]
-        public IActionResult Editar(Producto p)
+        public IActionResult Editar(Producto p, string unidadPeso)
         {
-            // Eliminamos la línea 'var producto = _productoDAL.ObtenerPorId(id);' 
-            // ya que el ID ya viene dentro del objeto 'p' (p.IdProducto)
-
-            // Limpiamos validaciones de objetos complejos (NomTipo, etc)
+            // Limpiamos validaciones de objetos complejos o dinamicos para que no traben el flujo
             ModelState.ClearValidationState(nameof(Producto));
+
+            // --- MOTOR DE REGLA MATEMATICA DE PESO (CASO 4) ---
+            // Si el usuario edito el producto colocandolo en gramos (g)
+            // dividimos por 1000 para forzar el almacenamiento en Kg puros en la base de datos
+            if (unidadPeso == "g")
+            {
+                p.PesoUnitEstimado = p.PesoUnitEstimado / 1000m;
+            }
 
             try
             {
+                // Invocamos el metodo que ahora si mapea el parametro p_uom hacia el Package
                 bool exito = _productoDAL.EditarProducto(p);
 
                 if (exito)
@@ -108,7 +120,7 @@ namespace LaVeguita.Web.Controllers
                 }
                 else
                 {
-                    ViewData["Error"] = "No se pudo actualizar. Verifique si el ID existe.";
+                    ViewData["Error"] = "No se pudo actualizar el registro. Verifique si el ID existe en el inventario.";
                 }
             }
             catch (Exception ex)
@@ -116,7 +128,8 @@ namespace LaVeguita.Web.Controllers
                 ViewData["Error"] = "Error de base de datos: " + ex.Message;
             }
 
-            // Si llegamos aquí, algo falló. Repoblamos TODAS las listas.
+            // Si llegamos aqui, significa que ocurrio un error transaccional. 
+            // Repoblamos de forma obligatoria las bolsas de datos para los selectores de la vista.
             ViewBag.Proveedores = _productoDAL.ListarProveedores();
             ViewBag.Tipos = _productoDAL.ListarTipos();
             ViewBag.Calidades = _productoDAL.ListarCalidades();

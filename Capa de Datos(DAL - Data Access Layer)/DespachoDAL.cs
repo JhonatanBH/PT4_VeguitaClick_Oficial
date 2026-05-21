@@ -116,8 +116,86 @@ namespace LaVeguita.DAL
             return ListarTodoParaGestion();
         }
 
+        // 4. ACCIÓN: Crear un nuevo despacho desde el Panel de Control Logístico
+        public bool InsertarDespacho(int idVenta, int idTransporte, int idUsuarioEmpleado, decimal pesoTotal, decimal kmObtenidos)
+        {
+            using (OracleConnection cn = _conexion.LeerConexion())
+            {
+                // Usamos una subquery para autogenerar el ID_DESPACHO basado en el máximo existente
+                // Fijamos coordenadas por defecto en Peñalolén (-33.4833, -70.5500) para evitar nulos en el mapa
+                string query = @"INSERT INTO DESPACHO 
+                        (ID_DESPACHO, KM_OBTENIDOS, ID_VENTA, ID_TRANSPORTE, ID_EMPLEADO, 
+                         ESTADO_PEDIDO, PESO_TOTAL_KG, ESTADO_ENTREGA, LATITUD_DESTINO, LONGITUD_DESTINO) 
+                        VALUES 
+                        ((SELECT NVL(MAX(ID_DESPACHO), 0) + 1 FROM DESPACHO), 
+                         :km, :venta, :transporte, :empleado, 'PENDIENTE', :peso, 'EN PREPARACION', -33.4833, -70.5500)";
 
+                OracleCommand cmd = new OracleCommand(query, cn);
+                cmd.BindByName = true;
 
+                cmd.Parameters.Add("km", OracleDbType.Decimal).Value = kmObtenidos;
+                cmd.Parameters.Add("venta", OracleDbType.Int32).Value = idVenta;
+                cmd.Parameters.Add("transporte", OracleDbType.Int32).Value = idTransporte;
+                // Vinculamos al ID_USUARIO del transportista para mantener consistencia con los inicios de sesión
+                cmd.Parameters.Add("empleado", OracleDbType.Int32).Value = idUsuarioEmpleado;
+                cmd.Parameters.Add("peso", OracleDbType.Decimal).Value = pesoTotal;
+
+                try
+                {
+                    cn.Open();
+                    int filas = cmd.ExecuteNonQuery();
+                    return filas > 0;
+                }
+                catch (Exception ex)
+                {
+                    throw new Exception("Error en DespachoDAL al insertar nuevo despacho: " + ex.Message);
+                }
+            }
+        }
+
+        public Dictionary<string, int> ObtenerConteosPorTipoEnvio()
+        {
+            Dictionary<string, int> resultados = new Dictionary<string, int>();
+
+            // Inicializamos las 4 modalidades base exigidas por el Caso 4 para que no arranquen en vacio
+            resultados["NORMAL"] = 0;
+            resultados["ECONOMICO"] = 0;
+            resultados["URGENTE"] = 0;
+            resultados["FIJO"] = 0;
+
+            using (OracleConnection cn = _conexion.LeerConexion())
+            {
+                // Cruzamos la tabla DESPACHO con la de cabecera ORDEN_VENTA para agrupar por el tipo real
+                string query = @"SELECT o.TIPO_ENVIO, COUNT(*) AS TOTAL
+                        FROM DESPACHO d
+                        JOIN ORDEN_VENTA o ON d.ID_VENTA = o.ID_VENTA
+                        WHERE d.ESTADO_PEDIDO = 'PENDIENTE'
+                        GROUP BY o.TIPO_ENVIO";
+
+                OracleCommand cmd = new OracleCommand(query, cn);
+                try
+                {
+                    cn.Open();
+                    using (OracleDataReader dr = cmd.ExecuteReader())
+                    {
+                        while (dr.Read())
+                        {
+                            string tipo = dr["TIPO_ENVIO"]?.ToString()?.ToUpper() ?? "NORMAL";
+                            int total = dr["TOTAL"] != DBNull.Value ? Convert.ToInt32(dr["TOTAL"]) : 0;
+
+                            // Almacenamos el conteo real de la base de datos distribuidora
+                            resultados[tipo] = total;
+                        }
+                    }
+                }
+                catch (Exception ex)
+                {
+                    // Si por alguna razon la tabla de cabecera tiene nombres vacios, evitamos que el sistema colapse
+                    throw new Exception("Error en ObtenerConteosPorTipoEnvio: " + ex.Message);
+                }
+            }
+            return resultados;
+        }
 
     }
 }
