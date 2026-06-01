@@ -34,7 +34,7 @@ namespace LaVeguita.Web.Controllers
                 HttpContext.Session.SetInt32("IdUsuario", usuarioLogueado.IdUsuario);
                 HttpContext.Session.SetInt32("RolUsuario", usuarioLogueado.IdRolUsuario);
                 HttpContext.Session.SetString("UsuarioNombre", usuarioLogueado.NombreUser);
-                HttpContext.Session.SetInt32("IdCliente", usuarioLogueado.IdDireccion);
+                HttpContext.Session.SetInt32("IdCliente", usuarioLogueado.IdUsuario);
 
                 switch (usuarioLogueado.IdRolUsuario)
                 {
@@ -42,8 +42,11 @@ namespace LaVeguita.Web.Controllers
                     case 2: // Jefe Adm
                         return RedirectToAction("Index", "Home");
 
+                    case 5: // Asistente de Ventas 🚀
+                            // Redirección directa a su panel comercial al iniciar sesión
+                        return RedirectToAction("AsistenteVentas", "Ventas");
+
                     case 6: // Asistente Despacho / Bodeguero
-                        // JUGADA MAESTRA: Si entra el Bodeguero, directo a despachar
                         return RedirectToAction("Monitor", "Bodega");
 
                     case 7: // Transportista
@@ -86,7 +89,7 @@ namespace LaVeguita.Web.Controllers
         }
 
         [HttpPost]
-        public IActionResult Registrar(Usuario nuevoUsuario, string confirmarPass)
+        public IActionResult Registrar(Usuario nuevoUsuario, string confirmarPass, string calleDir, int numeroDir, int idComunaDir)
         {
             ModelState.Remove("NombreRol");
             ModelState.Remove("IdUsuario");
@@ -94,41 +97,74 @@ namespace LaVeguita.Web.Controllers
             ModelState.Remove("FechaRegistro");
 
             nuevoUsuario.IdRolUsuario = 8; // Rol Cliente estricto
-            nuevoUsuario.IdDireccion = 100; // Constante de consistencia para la base de datos Oracle
 
             try
             {
-                // SOLUCIONADO: Se utiliza la propiedad real 'Contrasena' de la Entidad
                 if (nuevoUsuario.Contrasena != confirmarPass)
                 {
-                    ViewData["Error"] = "Las contrasenas ingresadas no coinciden de forma simetrica.";
+                    ViewData["Error"] = "Las contraseñas ingresadas no coinciden.";
                     return View(nuevoUsuario);
                 }
 
-                bool exito = _usuarioBll.AgregarUsuario(nuevoUsuario);
+                // 1. Instanciamos la DAL directamente para usar la Transacción Maestra
+                UsuarioDAL _usuarioDalLocal = new UsuarioDAL();
+
+                // 2. Creamos el objeto Dirección con lo que tipeó el usuario
+                Direccion nuevaDir = new Direccion
+                {
+                    NombreDir = calleDir,
+                    NumeroDir = numeroDir,
+                    IdComuna = idComunaDir
+                };
+
+                // 3. Ejecutamos la inserción doble (Dirección + Usuario)
+                bool exito = _usuarioDalLocal.RegistrarUsuarioCompleto(nuevoUsuario, nuevaDir);
 
                 if (exito)
                 {
-                    TempData["ExitoRegistro"] = "Su cuenta de Cliente ha sido creada de forma exitosa. Inicie sesion para comprar.";
+                    TempData["ExitoRegistro"] = "Cuenta creada. Inicie sesión para comprar.";
                     return RedirectToAction("Login");
                 }
                 else
                 {
-                    ViewData["Error"] = "No se pudo completar la transaccion de registro en Oracle Cloud.";
+                    ViewData["Error"] = "No se pudo registrar en Oracle Cloud.";
                 }
             }
             catch (Exception ex)
             {
-                ViewData["Error"] = "Error transaccional en base de datos distribuida: " + ex.Message;
+                ViewData["Error"] = ex.Message;
             }
 
             return View(nuevoUsuario);
         }
 
+
+        [HttpGet]
         public IActionResult Logout()
         {
-            HttpContext.Session.Clear();
+            try
+            {
+                // 1. Limpiamos las variables de sesión del servidor
+                HttpContext.Session.Clear();
+
+                // 2. Borramos la cookie de sesión para obligar al navegador a desloguearse por completo
+                if (Request.Cookies[".AspNetCore.Session"] != null)
+                {
+                    Response.Cookies.Delete(".AspNetCore.Session");
+                }
+            }
+            catch (Exception)
+            {
+                // Si ya estaba vacía, ignoramos el error para no trabar la redirección
+            }
+
+            // 3. Redirección absoluta y limpia hacia la vista de Login
             return RedirectToAction("Login", "Acceso");
         }
+
+
+
+
+
     }
 }

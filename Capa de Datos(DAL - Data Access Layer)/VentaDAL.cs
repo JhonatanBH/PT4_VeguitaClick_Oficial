@@ -243,7 +243,45 @@ namespace LaVeguita.DAL
             return dt;
         }
 
+        public DataTable ObtenerHistorialCliente(int idUsuario)
+        {
+            DataTable dt = new DataTable();
+            using (OracleConnection cn = _conexion.LeerConexion())
+            {
+                // Usamos LEFT JOIN para que si el despacho aún no se crea o no se asigna, 
+                // el pedido aparezca de todas formas en el historial del cliente.
+                string query = @"SELECT v.ID_VENTA, v.FECHA_VENTA, v.TOTAL, v.TIPO_ENVIO, 
+                                NVL(d.ESTADO_ENTREGA, 'EN ESPERA DE PAGO') AS ESTADO_ENTREGA
+                         FROM ORDEN_VENTA v
+                         LEFT JOIN DESPACHO d ON v.ID_VENTA = d.ID_VENTA
+                         WHERE v.ID_USUARIO = :idUsu
+                         ORDER BY v.FECHA_VENTA DESC";
+
+                using (OracleCommand cmd = new OracleCommand(query, cn))
+                {
+                    cmd.Parameters.Add("idUsu", OracleDbType.Int32).Value = idUsuario;
+                    using (OracleDataAdapter da = new OracleDataAdapter(cmd))
+                    {
+                        try
+                        {
+                            cn.Open();
+                            da.Fill(dt);
+                        }
+                        catch (Exception ex)
+                        {
+                            throw new Exception("Error al obtener historial del cliente: " + ex.Message);
+                        }
+                    }
+                }
+            }
+            return dt;
+        }
+
+
 
 
     }
 }
+
+
+

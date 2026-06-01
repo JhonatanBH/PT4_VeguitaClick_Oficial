@@ -1,0 +1,88 @@
+﻿@using System.Data
+@model DataTable
+@{
+    ViewData["Title"] = "Mis Pedidos - La VeguitaClick";
+}
+
+<div class="container mt-2">
+    <div class="d-flex align-items-center mb-4">
+        <span class="fs-2 me-2">📦</span>
+        <h2 class="text-success fw-bold m-0">Mis Pedidos Realizados</h2>
+    </div>
+
+    <p class="text-muted small">Revisa el estado en tiempo real de tus compras y solicitudes de despacho ecológico.</p>
+
+    @if (ViewBag.Error != null)
+    {
+        <div class="alert alert-danger small rounded-3">@ViewBag.Error</div>
+    }
+
+    <div class="card border-0 shadow-sm mt-3" style="border-radius: 15px;">
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0" style="overflow: hidden;">
+                    <thead class="bg-success text-white">
+                        <tr>
+                            <th class="ps-4 py-3">N° Orden</th>
+                            <th class="py-3">Fecha de Compra</th>
+                            <th class="py-3">Modalidad Envío</th>
+                            <th class="py-3">Total Pagado</th>
+                            <th class="py-3">Estado Logístico</th>
+                            <th class="pe-4 py-3 text-center">Acción</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @if (Model == null || Model.Rows.Count == 0)
+                        {
+                            <tr>
+                                <td colspan="6" class="text-center py-5 text-muted">
+                                    <i class="fas fa-shopping-basket d-block fs-1 mb-2 text-black-50"></i>
+                                    Aún no has realizado ninguna compra en La VeguitaClick.
+                                </td>
+                            </tr>
+                        }
+                        else
+                        {
+                            foreach (DataRow row in Model.Rows)
+                            {
+                                <tr>
+                                    <td class="ps-4 fw-bold text-primary">#@row["ID_VENTA"]</td>
+                                    <td>@Convert.ToDateTime(row["FECHA_VENTA"]).ToString("dd/MM/yyyy HH:mm")</td>
+                                    <td>
+                                        <span class="badge bg-light text-dark border px-2.5 py-1.5 text-uppercase">
+                                            <i class="fas fa-shipping-fast text-success me-1"></i> @row["TIPO_ENVIO"]
+                                        </span>
+                                    </td>
+                                    <td class="fw-bold text-success">$@string.Format("{0:N0}", row["TOTAL"])</td>
+                                    <td>
+                                        @{
+                                            string estado = row["ESTADO_ENTREGA"].ToString().ToUpper();
+                                            string badgeClass = "bg-warning text-dark"; // En preparación / Pendiente
+
+                                            if (estado == "DESPACHADO" || estado == "ENTREGADO")
+                                            {
+                                                badgeClass = "bg-success text-white";
+                                            }
+                                            else if (estado == "EN ESPERA DE PAGO")
+                                            {
+                                                badgeClass = "bg-secondary text-white";
+                                            }
+                                        }
+                                        <span class="badge @badgeClass px-3 py-2 rounded-pill font-monospace" style="font-size: 11px;">
+                                            @estado
+                                        </span>
+                                    </td>
+                                    <td class="pe-4 text-center">
+                                        <a asp-action="Confirmacion" asp-route-idVenta="@row["ID_VENTA"]" class="btn btn-sm btn-outline-dark rounded-pill px-3 fw-bold">
+                                            <i class="fas fa-receipt me-1"></i> Ver Boleta
+                                        </a>
+                                    </td>
+                                </tr>
+                            }
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>

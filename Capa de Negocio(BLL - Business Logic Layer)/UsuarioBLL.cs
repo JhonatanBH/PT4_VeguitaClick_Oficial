@@ -26,7 +26,7 @@ namespace LaVeguita.BLL
             // u.IdRolUsuario = 1;  <-- ¡BORRA ESTA LÍNEA! O todos serán siempre Admin
 
             if (u.IdRolUsuario <= 0) u.IdRolUsuario = 8; // Por defecto Cliente si no eliges nada
-            u.IdDireccion = 100;
+            
 
             return dal.InsertarUsuario(u);
         }

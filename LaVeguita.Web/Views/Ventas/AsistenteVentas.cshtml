@@ -1,0 +1,244 @@
+﻿@using LaVeguita.Entities
+@{
+    ViewData["Title"] = "Panel de Ventas Comerciales - La VeguitaClick";
+    var productos = ViewBag.Productos as List<Producto> ?? new List<Producto>();
+    var comunas = ViewBag.Comunas as List<dynamic>;
+}
+
+<div class="container mt-2">
+    <div class="d-flex align-items-center mb-3">
+        <span class="fs-2 me-2">👨‍💼</span>
+        <h2 class="text-success fw-bold m-0">Gestión Comercial de Ventas</h2>
+    </div>
+
+    <div class="row">
+
+        <!-- COLUMNA IZQUIERDA: FORMULARIO DE INGRESO -->
+        <div class="col-md-5">
+            <!-- Sección 1: Selección de Ítems -->
+            <div class="card border-0 shadow-sm p-3 mb-3" style="border-radius: 15px;">
+                <div class="card-body">
+                    <h6 class="fw-bold text-success mb-3"><i class="fas fa-cart-plus me-1"></i> 1. Añadir al Pedido Actual</h6>
+                    <div class="mb-3">
+                        <label class="form-label small fw-bold text-muted">Seleccione Producto</label>
+                        <select id="cmbProducto" class="form-select">
+                            <option value="">Elija un producto...</option>
+                            @foreach (var p in productos)
+                            {
+                                <option value="@p.IdProducto">@p.NomProducto (Stock: @p.StockActual)</option>
+                            }
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label small fw-bold text-muted">Cantidad</label>
+                        <input type="number" id="txtCantidad" class="form-control" value="1" min="1" />
+                    </div>
+                    <button type="button" id="btnAñadirItem" class="btn btn-outline-success rounded-pill fw-bold w-100 py-2">
+                        <i class="fas fa-shield-halved me-1"></i> Verificar y Añadir ítem
+                    </button>
+                </div>
+            </div>
+
+            <!-- Sección 2: Datos del Comprador y Dirección de Despacho -->
+            <div class="card border-0 shadow-sm p-3" style="border-radius: 15px;">
+                <div class="card-body">
+                    <h6 class="fw-bold text-success mb-3"><i class="fas fa-map-marker-alt me-1"></i> 2. Destino de Despacho</h6>
+                    <div class="mb-2">
+                        <label class="form-label small text-muted mb-1">Nombre Comprador</label>
+                        <input type="text" id="txtNombreCliente" class="form-control" placeholder="Ej: Juan Pérez" />
+                    </div>
+                    <div class="mb-2">
+                        <label class="form-label small text-muted mb-1">Calle / Pasaje</label>
+                        <input type="text" id="txtCalle" class="form-control" placeholder="Ej: Av. Tobalaba" />
+                    </div>
+                    <div class="row mb-2">
+                        <div class="col-md-6">
+                            <label class="form-label small text-muted mb-1">Número</label>
+                            <input type="text" id="txtNumero" class="form-control" placeholder="Ej: 1420" />
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label small text-muted mb-1">Comuna</label>
+                            <select id="cmbComuna" class="form-select">
+                                <option value="">Seleccione...</option>
+                                @if (comunas != null)
+                                {
+                                    foreach (var c in comunas)
+                                    {
+                                        <option value="@c.IdComuna">@c.NombreComuna</option>
+                                    }
+                                }
+                            </select>
+                        </div>
+                    </div>
+                    <div class="mb-2">
+                        <label class="form-label small text-muted mb-1">Modalidad de Envío (Requerimiento del Caso)</label>
+                        <select id="cmbTipoEnvio" class="form-select">
+                            <option value="NORMAL">NORMAL (Despacho Estándar Electromóvil)</option>
+                            <option value="URGENTE">URGENTE (Despacho Prioritario - 2 Horas)</option>
+                            <option value="ECONOMICO">ECONÓMICO (Despacho Día Siguiente)</option>
+                            <option value="RETIRO">RETIRO EN TIENDA (Click & Collect)</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- COLUMNA DERECHA: TABLA DINÁMICA DE LA CANASTA -->
+        <div class="col-md-7">
+            <div class="card border-0 shadow-sm p-3 h-100" style="border-radius: 15px;">
+                <div class="card-body d-flex flex-column justify-content-between">
+                    <div>
+                        <h5 class="fw-bold text-dark mb-3"><i class="fas fa-list-check text-success me-1"></i> Detalle de la Canasta Comercial</h5>
+                        <div class="table-responsive">
+                            <table class="table table-sm align-middle" id="tablaDetalle">
+                                <thead class="table-light small">
+                                    <tr>
+                                        <th>Producto</th>
+                                        <th>Cant.</th>
+                                        <th>Precio</th>
+                                        <th>Subtotal</th>
+                                        <th class="text-center">Acción</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="tbodyDetalle">
+                                    <tr>
+                                        <td colspan="5" class="text-center py-4 text-muted small">No hay productos agregados al pedido tradicional aún.</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <div class="border-top pt-3 mt-3">
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <span class="fw-bold text-muted">Total Neto + IVA:</span>
+                            <span class="fs-4 fw-bold text-success" id="lblTotalVenta">$0</span>
+                        </div>
+                        <!-- BOTÓN ÚNICO Y CORREGIDO -->
+                        <button type="button" class="btn btn-success w-100 fw-bold rounded-pill py-2 shadow-sm" id="btnFinalizarVenta" disabled>
+                            <i class="fas fa-receipt me-1"></i> Confirmar Compra y Generar Boleta Real
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
+            const cmbProducto = document.getElementById("cmbProducto");
+            const txtCantidad = document.getElementById("txtCantidad");
+            const btnAñadirItem = document.getElementById("btnAñadirItem");
+
+            const tbodyDetalle = document.getElementById("tbodyDetalle");
+            const lblTotalVenta = document.getElementById("lblTotalVenta");
+            const btnFinalizarVenta = document.getElementById("btnFinalizarVenta");
+
+            const txtNombreCliente = document.getElementById("txtNombreCliente");
+            const txtCalle = document.getElementById("txtCalle");
+            const txtNumero = document.getElementById("txtNumero");
+            const cmbComuna = document.getElementById("cmbComuna");
+            const cmbTipoEnvio = document.getElementById("cmbTipoEnvio");
+
+            function actualizarTabla(items, total) {
+                if (!items || items.length === 0) {
+                    tbodyDetalle.innerHTML = `<tr><td colspan="5" class="text-center py-4 text-muted small">No hay productos agregados al pedido tradicional aún.</td></tr>`;
+                    lblTotalVenta.innerText = "$0";
+                    btnFinalizarVenta.setAttribute("disabled", "disabled");
+                    return;
+                }
+
+                let html = "";
+                items.forEach(item => {
+                    html += `
+                        <tr class="small">
+                            <td class="fw-bold text-dark">${item.nombre}</td>
+                            <td><span class="badge bg-light text-dark border">${item.cantidad}</span></td>
+                            <td>$${item.precio.toLocaleString('es-CL')}</td>
+                            <td class="fw-bold text-success">$${(item.precio * item.cantidad).toLocaleString('es-CL')}</td>
+                            <td class="text-center">
+                                <button type="button" class="btn btn-link btn-sm text-danger p-0 btn-quitar" data-id="${item.idProducto}">
+                                    <i class="fas fa-trash-can"></i>
+                                </button>
+                            </td>
+                        </tr>`;
+                });
+
+                tbodyDetalle.innerHTML = html;
+                lblTotalVenta.innerText = `$${total.toLocaleString('es-CL')}`;
+                btnFinalizarVenta.removeAttribute("disabled");
+
+                // Re-amarrar el evento de quitar productos de la canasta
+                document.querySelectorAll(".btn-quitar").forEach(btn => {
+                    btn.onclick = function() {
+                        const id = this.getAttribute("data-id");
+                        fetch(`/Ventas/QuitarItem?idProducto=${id}`, { method: 'POST' })
+                        .then(r => r.json())
+                        .then(data => { if(data.exito) actualizarTabla(data.items, data.total); });
+                    };
+                });
+            }
+
+            // EVENTO 1: VERIFICAR STOCK CRÍTICO Y AÑADIR A LA CANASTA
+            btnAñadirItem.addEventListener("click", function () {
+                const idProd = cmbProducto.value;
+                const cant = txtCantidad.value;
+
+                if (!idProd || !cant || cant <= 0) {
+                    alert("⚠️ Seleccione un producto ecológico y digite una cantidad válida.");
+                    return;
+                }
+
+                fetch(`/Ventas/VerificarYAñadir?idProducto=${idProd}&cantidad=${cant}`, { method: 'POST' })
+                .then(r => r.json())
+                .then(data => {
+                    if (data.exito) {
+                        actualizarTabla(data.items, data.total);
+                        txtCantidad.value = 1;
+                        cmbProducto.value = "";
+                    } else {
+                        alert("❌ " + data.mensaje);
+                    }
+                }).catch(() => alert("Error de comunicación con Oracle Cloud."));
+            });
+
+            // EVENTO 2: CONFIRMAR COMPRA Y GENERAR TRANSACCIÓN REAL (BOTÓN ACTIVADO)
+            btnFinalizarVenta.addEventListener("click", function () {
+                const nom = txtNombreCliente.value.trim();
+                const clle = txtCalle.value.trim();
+                const num = txtNumero.value.trim();
+                const com = cmbComuna.value;
+                const envio = cmbTipoEnvio.value;
+
+                if (!nom || !clle || !num || !com) {
+                    alert("⚠️ Datos obligatorios faltantes: complete el nombre y la dirección física completa para procesar la venta externa.");
+                    return;
+                }
+
+                btnFinalizarVenta.setAttribute("disabled", "disabled");
+                btnFinalizarVenta.innerHTML = `<i class="fas fa-spinner fa-spin me-1"></i> Confirmando en Oracle Cloud...`;
+
+                fetch(`/Ventas/FinalizarVentaTradicional?nombreCliente=${encodeURIComponent(nom)}&calle=${encodeURIComponent(clle)}&numero=${encodeURIComponent(num)}&idComuna=${com}&tipoEnvio=${envio}`, {
+                    method: 'POST'
+                })
+                .then(r => r.json())
+                .then(data => {
+                    if (data.exito) {
+                        alert("🎉 ¡Venta Tradicional procesada con éxito! Redirigiendo a la boleta oficial.");
+                        window.location.href = data.redirectUrl;
+                    } else {
+                        alert("❌ Error: " + data.mensaje);
+                        btnFinalizarVenta.removeAttribute("disabled");
+                        btnFinalizarVenta.innerHTML = `<i class="fas fa-receipt me-1"></i> Confirmar Compra y Generar Boleta Real`;
+                    }
+                }).catch(() => {
+                    alert("Error crítico en la transacción distribuida.");
+                    btnFinalizarVenta.removeAttribute("disabled");
+                });
+            });
+        });
+    </script>
+}

@@ -214,26 +214,34 @@
             @if (rol >= 1 && rol <= 6)
             {
                 <li class="small text-muted mt-4 mb-2 px-3 fw-bold" style="letter-spacing: 1px;">GESTIÓN INTERNA</li>
-                if (rol == 1 || rol == 2)
-                {
-                    <li><a asp-controller="Usuarios" asp-action="Index"><i class="fas fa-users"></i> Usuarios</a></li>
-                }
-                if (rol == 1 || rol == 2 || rol == 3 || rol == 5)
-                {
-                    <li><a asp-controller="Productos" asp-action="Index"><i class="fas fa-boxes-stacked"></i> Inventario</a></li>
-                    <li><a asp-controller="Categorias" asp-action="Index"><i class="fas fa-tags"></i> Categorías</a></li>
-                }
-                @if (rol == 1 || rol == 6)
-                {
-                    <li><a asp-controller="Bodega" asp-action="Monitor"><i class="fas fa-boxes-packing"></i> Preparación en Bodega</a></li>
 
-                    <li><a asp-controller="Logistica" asp-action="GestionLogistica"><i class="fas fa-clipboard-list"></i> Asignación de Despachos</a></li>
-                }
                 @if (rol == 1 || rol == 2)
                 {
                     <li><a asp-controller="Usuarios" asp-action="Index"><i class="fas fa-users"></i> Gestión Usuarios</a></li>
-                    @* EL NUEVO BOTÓN PARA GESTIONAR EMPLEADOS *@
                     <li><a asp-controller="Empleados" asp-action="Index"><i class="fas fa-id-card"></i> Gestión Empleados</a></li>
+                }
+
+                @if (rol == 1 || rol == 2 || rol == 3 || rol == 4 || rol == 5)
+                {
+                    <li><a asp-controller="Productos" asp-action="Index"><i class="fas fa-boxes-stacked"></i> Inventario global</a></li>
+                }
+
+                @* PESTAÑA NUEVA: ÁREA DE PRODUCCIÓN (Rol 1, 2 y Jefe de Producción 3) *@
+                @if (rol == 1 || rol == 2 || rol == 3)
+                {
+                    <li><a asp-controller="Produccion" asp-action="PanelOperaciones"><i class="fas fa-tools"></i> Planta de Producción</a></li>
+                }
+
+                @* PESTAÑA NUEVA: ASISTENTE DE VENTAS (Rol 1, 2 y Ventas 5) *@
+                @if (rol == 1 || rol == 2 || rol == 5)
+                {
+                    <li><a asp-controller="Ventas" asp-action="AsistenteVentas"><i class="fas fa-cash-register"></i> Asistente de Ventas</a></li>
+                }
+
+                @if (rol == 1 || rol == 6)
+                {
+                    <li><a asp-controller="Bodega" asp-action="Monitor"><i class="fas fa-boxes-packing"></i> Preparación en Bodega</a></li>
+                    <li><a asp-controller="Logistica" asp-action="GestionLogistica"><i class="fas fa-clipboard-list"></i> Asignación de Despachos</a></li>
                 }
             }
             else if (rol == 7)
@@ -246,7 +254,7 @@
                 <li class="small text-muted mt-4 mb-2 px-3 fw-bold">MI TIENDA</li>
                 <li><a asp-controller="Tienda" asp-action="Catalogo"><i class="fas fa-store"></i> Comprar</a></li>
                 <li><a asp-controller="Tienda" asp-action="Carrito"><i class="fas fa-shopping-cart"></i> Mi Carrito</a></li>
-                <li><a href="#"><i class="fas fa-receipt"></i> Mis Pedidos</a></li>
+                <li><a asp-controller="Tienda" asp-action="Historial"><i class="fas fa-receipt"></i> Mis Pedidos</a></li>
             }
 
             <li style="margin-top: 50px;">

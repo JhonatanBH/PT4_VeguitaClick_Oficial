@@ -93,6 +93,26 @@
                                     <option value="FIJO">FIJO (Usted agenda la hora exacta de entrega)</option>
                                 </select>
                             </div>
+                            <div class="mb-3 p-3 rounded-3 border">
+                                <label class="form-label fw-bold text-muted"><i class="fas fa-map text-primary me-1"></i> Confirmar Zona de Despacho</label>
+                                <select id="ddlZonaDespacho" class="form-select border-primary" style="padding: 10px;">
+                                    <option value="0">Seleccione comuna de destino...</option>
+                                    <option value="2">Peñalolén (Matriz - 2 km)</option>
+                                    <option value="4">Macul (Aprox. 4 km)</option>
+                                    <option value="5">Ñuñoa (Aprox. 5 km)</option>
+                                    <option value="6">La Reina (Aprox. 6 km)</option>
+                                    <option value="9">Providencia (Aprox. 9 km)</option>
+                                    <option value="12">Santiago Centro (Aprox. 12 km)</option>
+                                    <option value="22">Maipú (Aprox. 22 km - Fuera de Rango)</option>
+                                    <option value="25">Quilicura (Aprox. 25 km - Fuera de Rango)</option>
+                                </select>
+                                <div id="alertaDistancia" class="alert alert-danger mt-2 d-none py-2 small">
+                                    <i class="fas fa-ban me-1"></i> <strong>Radio Excedido:</strong> La comuna seleccionada supera el límite máximo de 15 km de cobertura logística para despachos.
+                                </div>
+                            </div>
+
+
+
 
                             <div id="contenedorHoraFijo" class="mb-3 p-3 rounded-3 d-none" style="background-color: #fff3cd; border: 1px solid #ffeeba;">
                                 <label class="form-label fw-bold text-warning-emphasis"><i class="far fa-clock me-1"></i> Indique Hora de Retiro/Entrega</label>
@@ -122,6 +142,12 @@
             const feedbackHora = document.getElementById('feedbackHora');
             const btnPagar = document.getElementById('btnPagar');
             const formCheckout = document.getElementById('formCheckout');
+
+            const ddlZonaDespacho = document.getElementById('ddlZonaDespacho');
+            const alertaDistancia = document.getElementById('alertaDistancia');
+
+
+
 
             // 1. CONTROL DE VISIBILIDAD EN TIEMPO REAL
             ddlTipoEnvio.addEventListener('change', function () {
@@ -177,6 +203,37 @@
                     alert("⚠️ No cumple regra horaria: Modifique la hora del envio Fijo para proceder.");
                 }
             });
+
+
+            ddlZonaDespacho.addEventListener('change', function () {
+                // Obtenemos el kilometraje desde el value del option
+                const kilometros = parseInt(this.value);
+
+                if (kilometros === 0) {
+                    btnPagar.setAttribute('disabled', 'disabled');
+                    alertaDistancia.classList.add('d-none');
+                } else if (kilometros > 15) {
+                    // Bloqueo estricto del Caso 4
+                    btnPagar.setAttribute('disabled', 'disabled');
+                    alertaDistancia.classList.remove('d-none');
+                } else {
+                    // Dentro del rango de 15 km
+                    alertaDistancia.classList.add('d-none');
+                    // Validamos también que la regla de "Fijo" se esté cumpliendo antes de habilitar
+                    if (document.getElementById('ddlTipoEnvio').value !== 'FIJO' || txtHoraFijo.classList.contains('is-valid')) {
+                        btnPagar.removeAttribute('disabled');
+                    }
+                }
+            });
+
+            // Deshabilitar el botón Pagar al cargar la página hasta que seleccione zona
+            btnPagar.setAttribute('disabled', 'disabled');
+
+
+
+
+
+
         });
     </script>
 }

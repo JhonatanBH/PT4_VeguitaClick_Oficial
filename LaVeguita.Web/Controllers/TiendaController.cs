@@ -93,7 +93,6 @@ namespace LaVeguita.Web.Controllers
             }
 
             int? idUsuario = HttpContext.Session.GetInt32("IdUsuario");
-            int? idClienteSesion = HttpContext.Session.GetInt32("IdCliente");
 
             if (idUsuario == null || idUsuario == 0)
             {
@@ -101,7 +100,9 @@ namespace LaVeguita.Web.Controllers
                 return RedirectToAction("Login", "Acceso");
             }
 
-            int idClienteFinal = (idClienteSesion == null || idClienteSesion == 0) ? 100 : idClienteSesion.Value;
+            // Al asignarle directamente el idUsuario.Value, garantizamos que calce 
+            // al 100% con la llave foránea FK_OV_USUARIO que creamos en Oracle.
+            int idClienteFinal = idUsuario.Value;
             decimal total = carrito.Sum(x => x.Subtotal);
 
             // --- MOTOR DE REGLAS DE TIEMPO DEL CASO 4 ---
@@ -210,6 +211,42 @@ namespace LaVeguita.Web.Controllers
 
             return RedirectToAction("Carrito");
         }
+
+        [HttpGet]
+        public IActionResult Historial()
+        {
+            // 1. Validamos seguridad: Rescatamos el ID del usuario desde la sesión
+            int? idUsuario = HttpContext.Session.GetInt32("IdUsuario");
+            int? rol = HttpContext.Session.GetInt32("RolUsuario");
+
+            if (idUsuario == null || idUsuario == 0 || rol != 8)
+            {
+                TempData["Error"] = "Acceso denegado o sesión expirada.";
+                return RedirectToAction("Login", "Acceso");
+            }
+
+            try
+            {
+                // 2. Instanciamos tu VentaDAL para traer el DataTable con los registros históricos
+                LaVeguita.DAL.VentaDAL ventaDal = new LaVeguita.DAL.VentaDAL();
+                System.Data.DataTable dtHistorial = ventaDal.ObtenerHistorialCliente(idUsuario.Value);
+
+                // 3. Enviamos el DataTable directo a la vista
+                return View(dtHistorial);
+            }
+            catch (Exception ex)
+            {
+                ViewBag.Error = "Error al cargar el historial de Oracle: " + ex.Message;
+                return View(new System.Data.DataTable());
+            }
+        }
+
+
+
+
+
+
+
 
         // 6. Confirmación de pedido (Boleta Dinámica)
         public IActionResult Confirmacion(int idVenta)

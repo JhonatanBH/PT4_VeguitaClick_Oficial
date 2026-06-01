@@ -56,7 +56,7 @@ namespace LaVeguita.Web.Controllers
             {
                 if (ModelState.IsValid)
                 {
-                    nuevoUser.IdDireccion = 100; // Valor fijo para Oracle
+                    nuevoUser.IdDireccion = 0; // Valor fijo para Oracle
 
                     bool inserto = _usuarioBll.AgregarUsuario(nuevoUser);
 
@@ -102,7 +102,7 @@ namespace LaVeguita.Web.Controllers
             int? rol = HttpContext.Session.GetInt32("RolUsuario");
             if (rol == null || rol != 1) return RedirectToAction("Login", "Acceso");
 
-            usuarioEditado.IdDireccion = 100;
+            usuarioEditado.IdDireccion = 0;
 
             if (_usuarioBll.ActualizarUsuario(usuarioEditado))
             {

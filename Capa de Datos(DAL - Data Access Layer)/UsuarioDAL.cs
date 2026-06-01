@@ -98,17 +98,17 @@ namespace LaVeguita.DAL
                                "VALUES (SEQ_USUARIO.NEXTVAL, :nombre, :pass, :fono, :correo, :idRol, :idDir)";
 
                 OracleCommand cmd = new OracleCommand(query, conn);
-
-                // VITAL: Esto evita que el orden de los parámetros cause errores
                 cmd.BindByName = true;
 
-                // Definimos tipos específicos para asegurar compatibilidad con Oracle
                 cmd.Parameters.Add("nombre", OracleDbType.Varchar2).Value = nuevoUser.NombreUser;
                 cmd.Parameters.Add("pass", OracleDbType.Varchar2).Value = nuevoUser.Contrasena;
                 cmd.Parameters.Add("fono", OracleDbType.Int64).Value = nuevoUser.Fono;
                 cmd.Parameters.Add("correo", OracleDbType.Varchar2).Value = nuevoUser.CorreoUsu;
                 cmd.Parameters.Add("idRol", OracleDbType.Int32).Value = nuevoUser.IdRolUsuario;
-                cmd.Parameters.Add("idDir", OracleDbType.Int32).Value = nuevoUser.IdDireccion;
+
+                // JUGADA DE PROTECCIÓN: Si el ID es 0 o menor (o sea, no se ingresó dirección), 
+                // le pasamos DBNull.Value para que Oracle lo guarde como NULL en vez de rebotar con error.
+                cmd.Parameters.Add("idDir", OracleDbType.Int32).Value = nuevoUser.IdDireccion > 0 ? nuevoUser.IdDireccion : (object)DBNull.Value;
 
                 try
                 {
@@ -118,7 +118,6 @@ namespace LaVeguita.DAL
                 }
                 catch (Exception ex)
                 {
-                    // Este throw te mostrará el error real de Oracle (ej: "Unique constraint violated")
                     throw new Exception("Error al insertar usuario: " + ex.Message);
                 }
             }
@@ -160,7 +159,56 @@ namespace LaVeguita.DAL
             }
         }
 
+        public bool RegistrarUsuarioCompleto(Usuario nuevoUser, Direccion nuevaDir)
+        {
+            DireccionDAL dirDal = new DireccionDAL();
 
+            using (OracleConnection conn = conexion.LeerConexion())
+            {
+                conn.Open();
+                // INICIAMOS TRANSACCIÓN: Si falla el usuario, la dirección se borra automáticamente
+                using (OracleTransaction tr = conn.BeginTransaction())
+                {
+                    try
+                    {
+                        // 1. Insertamos la dirección y capturamos su nuevo ID real (Ej: 101, 102...)
+                        int idDireccionGenerado = dirDal.InsertarDireccionRetornandoId(nuevaDir, conn);
+
+                        // 2. Asignamos ese ID real al usuario antes de guardarlo
+                        nuevoUser.IdDireccion = idDireccionGenerado;
+
+                        // 3. Insertamos el Usuario
+                        string queryUser = @"INSERT INTO USUARIOS (ID_USUARIO, NOMBRE_USER, CONTRASENA, FONO, CORREO_USU, ID_ROL_USUARIO, ID_DIRECCION) 
+                                     VALUES (SEQ_USUARIO.NEXTVAL, :nombre, :pass, :fono, :correo, :idRol, :idDir)";
+
+                        using (OracleCommand cmdUser = new OracleCommand(queryUser, conn))
+                        {
+                            cmdUser.BindByName = true;
+                            cmdUser.Parameters.Add("nombre", OracleDbType.Varchar2).Value = nuevoUser.NombreUser;
+                            cmdUser.Parameters.Add("pass", OracleDbType.Varchar2).Value = nuevoUser.Contrasena;
+                            cmdUser.Parameters.Add("fono", OracleDbType.Int64).Value = nuevoUser.Fono;
+                            cmdUser.Parameters.Add("correo", OracleDbType.Varchar2).Value = nuevoUser.CorreoUsu;
+                            cmdUser.Parameters.Add("idRol", OracleDbType.Int32).Value = nuevoUser.IdRolUsuario;
+
+                            // AQUÍ ESTÁ LA MAGIA: Pasamos el ID real de la base de datos
+                            cmdUser.Parameters.Add("idDir", OracleDbType.Int32).Value = nuevoUser.IdDireccion;
+
+                            cmdUser.ExecuteNonQuery();
+                        }
+
+                        // Si todo salió perfecto, confirmamos los cambios en Oracle
+                        tr.Commit();
+                        return true;
+                    }
+                    catch (Exception ex)
+                    {
+                        // Si algo falla (ej: correo duplicado), cancelamos todo para que no queden direcciones huérfanas
+                        tr.Rollback();
+                        throw new Exception("Error al registrar cliente y dirección: " + ex.Message);
+                    }
+                }
+            }
+        }
 
 
 

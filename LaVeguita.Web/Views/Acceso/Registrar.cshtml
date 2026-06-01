@@ -90,6 +90,33 @@
                                 </div>
                                 <div id="mensajeError" class="text-danger small mt-1 d-none">❌ Las contrasenas no coinciden.</div>
                             </div>
+                            <div class="mb-3 p-3 rounded-3" style="background-color: #f8f9fa; border: 1px solid #e9ecef;">
+                                <label class="form-label small fw-bold text-muted"><i class="fas fa-map-marker-alt text-danger me-1"></i> Dirección de Despacho</label>
+
+                                <input type="text" name="calleDir" class="form-control mb-2" placeholder="Ej: Av. Grecia" required />
+
+                                <div class="row">
+                                    <div class="col-4">
+                                        <input type="number" name="numeroDir" class="form-control" placeholder="N°" required />
+                                    </div>
+                                    <div class="col-8">
+                                        <select name="idComunaDir" class="form-select" required>
+                                            <option value="">Seleccione Comuna...</option>
+                                            <option value="1">Peñalolén</option>
+                                            <option value="2">Ñuñoa</option>
+                                            <option value="3">Macul</option>
+                                            <option value="4">La Reina</option>
+                                            <option value="5">Providencia</option>
+                                            <option value="6">Santiago Centro</option>
+                                            <option value="7">Maipú</option>
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
+
+
+
+
 
                             <button type="submit" id="btnEnviar" class="btn btn-success w-100 fw-bold py-2.5 rounded-pill shadow mt-3">
                                 <i class="fas fa-user-plus me-1"></i> Registrarme Ahora
