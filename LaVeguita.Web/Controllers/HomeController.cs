@@ -31,12 +31,24 @@ namespace LaVeguita.Web.Controllers
                 case 7: // TRANSPORTISTA
                     return RedirectToAction("MisDespachos", "Transporte");
 
+                case 6: // DESPACHO / BODEGA
+                    return RedirectToAction("Monitor", "Bodega");
+
+                case 5: // ASISTENTE DE VENTAS
+                    return RedirectToAction("AsistenteVentas", "Ventas");
+
+                case 4: // COMPRAS
+                    return RedirectToAction("Index", "Compras"); // Ajusta el controlador si se llama distinto
+
+                case 3: // JEFE DE PRODUCCION 🚀 (¡AQUÍ ESTÁ LA SOLUCIÓN!)
+                    return RedirectToAction("Index", "Produccion");
+
                 case 1: // GERENTE
                 case 2: // JEFE ADMINISTRACION
-                    break;
+                    break; // Estos sí pasan de largo a ver los gráficos de abajo
 
                 default:
-                    return RedirectToAction("Index", "Productos");
+                    return RedirectToAction("Login", "Acceso");
             }
 
             // 3. Logica del Dashboard para el Gerente (Rol 1 y 2)

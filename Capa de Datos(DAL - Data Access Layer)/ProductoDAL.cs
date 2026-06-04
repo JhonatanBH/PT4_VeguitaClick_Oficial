@@ -281,5 +281,59 @@ namespace LaVeguita.DAL
             return lista;
         }
 
+
+        public List<LaVeguita.Entities.DetalleLote> ListarLotesPendientes()
+        {
+            List<LaVeguita.Entities.DetalleLote> lista = new List<LaVeguita.Entities.DetalleLote>();
+
+            // Consulta SQL adaptada milimetricamente a la nueva tabla DETALLE_LOTES
+            string query = @"
+        SELECT D.ID_LOTE, D.ID_RECEPCION, D.ID_PRODUCTO, D.PESO_REAL_LOCAL, D.DESCRIPCION_LOTE, D.ESTADO,
+               P.NOM_PRODUCTO, P.PESO_UNIT_ESTIMADO, G.ID_PROVEEDOR, PROV.NOM_PROVEEDOR
+        FROM DETALLE_LOTES D
+        JOIN RECEPCION_GUIAS G ON D.ID_RECEPCION = G.ID_RECEPCION
+        JOIN PRODUCTOS P ON D.ID_PRODUCTO = P.ID_PRODUCTO
+        JOIN PROVEEDORES PROV ON G.ID_PROVEEDOR = PROV.ID_PROVEEDOR
+        WHERE D.ESTADO = 'PENDIENTE'
+        ORDER BY D.ID_LOTE ASC";
+
+            try
+            {
+                using (Oracle.ManagedDataAccess.Client.OracleConnection cn = new Conexion().LeerConexion())
+                {
+                    using (Oracle.ManagedDataAccess.Client.OracleCommand cmd = new Oracle.ManagedDataAccess.Client.OracleCommand(query, cn))
+                    {
+                        cn.Open();
+                        using (Oracle.ManagedDataAccess.Client.OracleDataReader dr = cmd.ExecuteReader())
+                        {
+                            while (dr.Read())
+                            {
+                                lista.Add(new LaVeguita.Entities.DetalleLote
+                                {
+                                    IdLote = Convert.ToInt32(dr["ID_LOTE"]),
+                                    IdRecepcion = Convert.ToInt32(dr["ID_RECEPCION"]),
+                                    IdProducto = Convert.ToInt32(dr["ID_PRODUCTO"]),
+                                    PesoRealLocal = Convert.ToDecimal(dr["PESO_REAL_LOCAL"]),
+                                    Estado = dr["ESTADO"].ToString(),
+                                    DescripcionLote = dr["DESCRIPCION_LOTE"].ToString(),
+                                    NomProducto = dr["NOM_PRODUCTO"].ToString(),
+                                    PesoUnitEstimado = Convert.ToDecimal(dr["PESO_UNIT_ESTIMADO"])
+                                });
+                            }
+                        }
+                    }
+                }
+            }
+            catch (Exception)
+            {
+                // Retorna lista vacia en caso de error transaccional para evitar caidas en cascada
+            }
+
+            return lista;
+        }
+
+
+
+
     }
 }

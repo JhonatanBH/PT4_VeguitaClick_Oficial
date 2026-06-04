@@ -42,8 +42,10 @@ namespace LaVeguita.Web.Controllers
                     case 2: // Jefe Adm
                         return RedirectToAction("Index", "Home");
 
-                    case 5: // Asistente de Ventas 🚀
-                            // Redirección directa a su panel comercial al iniciar sesión
+                    case 3: // Jefe de Produccion 🚀
+                        return RedirectToAction("Index", "Produccion");
+
+                    case 5: // Asistente de Ventas
                         return RedirectToAction("AsistenteVentas", "Ventas");
 
                     case 6: // Asistente Despacho / Bodeguero

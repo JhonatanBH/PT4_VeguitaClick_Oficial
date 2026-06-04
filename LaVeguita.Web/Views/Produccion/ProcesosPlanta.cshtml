@@ -1,0 +1,295 @@
+﻿@using LaVeguita.Entities
+@{
+    ViewData["Title"] = "Auditoria de Produccion y Mermas";
+    // 🚀 CORREGIDO: Ahora el casteo lee la lista con la nueva entidad DetalleLote
+    var lotes = ViewBag.LotesPendientes as List<DetalleLote> ?? new List<DetalleLote>();
+}
+
+<div class="container mt-1">
+    <div class="d-flex align-items-center justify-content-between mb-4 border-bottom pb-3">
+        <div class="d-flex align-items-center">
+            <span class="fs-2 me-2">📋</span>
+            <div>
+                <h3 class="text-dark fw-bold m-0">Auditoria de Procesos en Planta</h3>
+                <small class="text-muted">Registro manual de pesajes: Lavado, Clasificacion y Compost</small>
+            </div>
+        </div>
+        <span class="badge bg-dark px-3 py-2 rounded-pill"><i class="fas fa-clipboard-check me-1"></i> Modo Auditoria</span>
+    </div>
+
+    <div class="row g-3">
+
+        <div class="col-md-4">
+            <div class="card border-0 shadow-sm h-100" style="border-radius: 15px; background-color: #eef7f4;">
+                <div class="card-header bg-transparent border-0 pt-3 pb-0">
+                    <h5 class="fw-bold text-success m-0 d-flex align-items-center">
+                        <span class="badge bg-success me-2">1</span> Recepcion y Lavado
+                    </h5>
+                    <hr class="text-success my-2" />
+                </div>
+                <div class="card-body">
+                    <p class="small text-muted mb-3">Seleccione el cargamento de compras, lave fisicamente el lote y registre el peso resultante sin tierra.</p>
+
+                    <div class="card border-0 shadow-sm p-3 bg-white" style="border-radius: 10px;">
+                        <div class="mb-3">
+                            <label class="form-label small fw-bold text-dark mb-1">Cargamento / Lote en Bruto</label>
+                            <select id="cmbLotePlanta" class="form-select form-select-sm">
+                                <option value="">Seleccione cargamento...</option>
+                                @foreach (var l in lotes)
+                                {
+                                    <option value="@l.IdLote" data-producto="@l.IdProducto" data-peso-bruto="@l.PesoRealLocal" data-peso-unit="@l.PesoUnitEstimado" data-prov="0">
+                                        Lote #@l.IdLote - @l.NomProducto (Guia #@l.IdRecepcion)
+                                    </option>
+                                }
+                            </select>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label small fw-bold text-dark mb-1">Cantidad Recibida (Bruta Kg)</label>
+                            <input type="number" id="txtCantEntrada" class="form-control form-control-sm text-center bg-light" readonly placeholder="Ej: 500" />
+                        </div>
+
+                        <div class="mb-3 p-2 border border-success rounded bg-light">
+                            <label class="form-label small fw-bold text-success mb-1">Cantidad Post-Lavado (Limpia Kg)</label>
+                            <input type="number" id="txtCantLimpia" class="form-control form-control-sm text-center fw-bold text-success" min="1" placeholder="Ej: 470" />
+                        </div>
+
+                        <button type="button" id="btnConfirmarLavado" class="btn btn-success btn-sm w-100 rounded-pill fw-bold">
+                            <i class="fas fa-balance-scale me-1"></i> Confirmar Pesaje
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-4">
+            <div class="card border-0 shadow-sm h-100" style="border-radius: 15px; background-color: #fcf8e3;">
+                <div class="card-header bg-transparent border-0 pt-3 pb-0">
+                    <h5 class="fw-bold text-warning m-0 d-flex align-items-center" style="color: #8a6d3b !important;">
+                        <span class="badge bg-warning text-dark me-2">2</span> Filtro de Calidad
+                    </h5>
+                    <hr class="text-warning my-2" />
+                </div>
+                <div class="card-body">
+                    <p class="small text-muted mb-3">Distribuya la cantidad limpia. El descarte se enviara automaticamente a la planta de compost.</p>
+
+                    <div id="boxClasificacion" class="card border-0 shadow-sm p-3 bg-white opacity-50" style="border-radius: 10px; pointer-events: none;">
+
+                        <div class="d-flex justify-content-between mb-3 border-bottom pb-2">
+                            <span class="small fw-bold text-dark">Disponible Limpio:</span>
+                            <span id="lblDisponibleLimpio" class="small fw-bold text-success">0</span>
+                        </div>
+
+                        <div class="mb-2">
+                            <label class="form-label small text-muted mb-0">1° Calidad (Venta Comercial)</label>
+                            <input type="number" id="txtPrimCalidad" class="form-control form-control-sm text-center border-success fw-bold text-success" value="0" min="0" />
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label small text-muted mb-0">2° Calidad (Emprendedores)</label>
+                            <input type="number" id="txtSegCalidad" class="form-control form-control-sm text-center border-warning fw-bold text-warning" value="0" min="0" />
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-4">
+            <div class="card border-0 shadow-sm h-100" style="border-radius: 15px; background-color: #f4f7f6; border: 2px solid #34495e;">
+                <div class="card-header bg-dark text-white border-0 pt-3 pb-2" style="border-radius: 13px 13px 0 0;">
+                    <h5 class="fw-bold m-0 d-flex align-items-center small text-uppercase" style="letter-spacing: 1px;">
+                        <span class="badge bg-success me-2">3</span> Destino de Mermas y Cierre
+                    </h5>
+                </div>
+                <div class="card-body d-flex flex-column justify-content-between p-3">
+
+                    <div class="card border-0 shadow-sm p-3 bg-white mb-3" style="border-radius: 10px;">
+                        <div class="text-center mb-3">
+                            <span class="text-uppercase text-muted fw-bold d-block mb-1" style="font-size: 11px;">Materia Organica de Descarte</span>
+                            <div class="d-flex align-items-center justify-content-center gap-1">
+                                <span class="display-5 fw-bold text-danger" id="lblKilosResiduos">0.00</span>
+                                <span class="fs-4 fw-bold text-danger">Kg</span>
+                            </div>
+                            <small class="text-secondary d-block mt-1" style="font-size: 11px;">Suma total de residuos que van a la maquina trituradora</small>
+                        </div>
+
+                        <div style="border-top: 1px dashed #ddd; margin: 12px 0;"></div>
+
+                        <div class="bg-light p-2 rounded mb-3" style="font-size: 12px;">
+                            <div class="d-flex justify-content-between mb-1 text-dark">
+                                <span>1. Perdida por tierra (Lavado):</span>
+                                <span class="fw-bold"><span id="lblMermaLavado">0</span> Kg</span>
+                            </div>
+                            <div class="d-flex justify-content-between text-dark">
+                                <span>2. Descarte por mala calidad:</span>
+                                <span class="fw-bold"><span id="lblMermaClasif">0</span> Kg</span>
+                            </div>
+                        </div>
+
+                        <div style="border-top: 1px dashed #ddd; margin: 12px 0;"></div>
+
+                        <div class="p-2 rounded border border-warning" style="background-color: #fffdf5;">
+                            <span class="text-uppercase fw-bold d-block mb-2" style="font-size: 11px; color: #856404;"><i class="fas fa-recycle me-1"></i> Proyeccion de Abono Ecologico:</span>
+
+                            <div class="d-flex justify-content-between align-items-center mb-1">
+                                <span class="small text-muted" style="font-size: 12px;">Sacos armados (25 Kg c/u):</span>
+                                <span class="badge bg-danger fs-6 fw-bold" id="lblSacosEnteros" style="min-width: 45px;">0</span>
+                            </div>
+                            <div class="d-flex justify-content-between align-items-center">
+                                <span class="small text-muted" style="font-size: 12px;">Kilos para el proximo saco:</span>
+                                <span class="badge bg-secondary fs-7 fw-bold" id="lblKilosSobrantes" style="min-width: 45px;">0.00 Kg</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <button type="button" id="btnProcesarLoteFinal" class="btn btn-dark btn-lg w-100 rounded-pill fw-bold shadow-sm opacity-50" style="pointer-events: none; font-size: 16px;">
+                        <i class="fas fa-cloud-upload-alt me-2 text-success"></i> Enviar Datos a Oracle Cloud
+                    </button>
+                </div>
+            </div>
+        </div>
+
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
+            const cmbLote = document.getElementById("cmbLotePlanta");
+            const txtCantEntrada = document.getElementById("txtCantEntrada");
+            const txtCantLimpia = document.getElementById("txtCantLimpia");
+            const btnConfirmarLavado = document.getElementById("btnConfirmarLavado");
+
+            const boxClasificacion = document.getElementById("boxClasificacion");
+            const lblDisponibleLimpio = document.getElementById("lblDisponibleLimpio");
+            const txtPrimCalidad = document.getElementById("txtPrimCalidad");
+            const txtSegCalidad = document.getElementById("txtSegCalidad");
+
+            const lblKilosResiduos = document.getElementById("lblKilosResiduos");
+            const lblMermaLavado = document.getElementById("lblMermaLavado");
+            const lblMermaClasif = document.getElementById("lblMermaClasif");
+            const btnProcesarLoteFinal = document.getElementById("btnProcesarLoteFinal");
+
+            let pesoUnitario = 0;
+            let idProveedor = 0;
+            let idProducto = 0;
+
+            // EVENTO 0: Auto-completar el peso bruto cuando seleccionan un lote
+            cmbLote.addEventListener("change", function() {
+                if(this.value) {
+                    const selectedOption = this.options[this.selectedIndex];
+                    txtCantEntrada.value = selectedOption.getAttribute("data-peso-bruto");
+                } else {
+                    txtCantEntrada.value = "";
+                }
+            });
+
+            // EVENTO 1: Confirmar pesaje
+            btnConfirmarLavado.addEventListener("click", function () {
+                if (!cmbLote.value) {
+                    alert("⚠️ Seleccione un cargamento.");
+                    return;
+                }
+
+                const bruta = parseInt(txtCantEntrada.value) || 0;
+                const limpia = parseInt(txtCantLimpia.value) || 0;
+
+                if (bruta <= 0 || limpia < 0 || limpia > bruta) {
+                    alert("❌ Error de pesaje. La cantidad limpia no puede ser mayor a la cantidad bruta recibida.");
+                    return;
+                }
+
+                const selectedOption = cmbLote.options[cmbLote.selectedIndex];
+                pesoUnitario = parseFloat(selectedOption.getAttribute("data-peso-unit")) || 0;
+                idProveedor = parseInt(selectedOption.getAttribute("data-prov")) || 0;
+                idProducto = parseInt(selectedOption.getAttribute("data-producto")) || 0;
+
+                boxClasificacion.classList.remove("opacity-50");
+                boxClasificacion.style.pointerEvents = "auto";
+
+                btnProcesarLoteFinal.classList.remove("opacity-50");
+                btnProcesarLoteFinal.style.pointerEvents = "auto";
+
+                lblDisponibleLimpio.innerText = limpia;
+                txtPrimCalidad.value = limpia;
+                txtSegCalidad.value = 0;
+
+                calcularMermas();
+            });
+
+            function calcularMermas() {
+                const bruta = parseInt(txtCantEntrada.value) || 0;
+                const limpia = parseInt(txtCantLimpia.value) || 0;
+                const prim = parseInt(txtPrimCalidad.value) || 0;
+                const seg = parseInt(txtSegCalidad.value) || 0;
+
+                if ((prim + seg) > limpia) {
+                    txtPrimCalidad.style.borderColor = "red";
+                    return;
+                } else {
+                    txtPrimCalidad.style.borderColor = "";
+                }
+
+                // 1. Calcular mermas en unidades/kilos base
+                const mermaLavado = bruta - limpia;
+                const mermaClasif = limpia - (prim + seg);
+                const mermaTotal = mermaLavado + mermaClasif;
+
+                lblMermaLavado.innerText = mermaLavado;
+                lblMermaClasif.innerText = mermaClasif;
+
+                // 2. Convertir a Kilos de masa real segun el peso unitario estimado
+                const kilosMasaTotal = mermaTotal * pesoUnitario;
+                lblKilosResiduos.innerText = kilosMasaTotal.toFixed(2);
+
+                // 3. Proyeccion industrial automatica de Sacos de 25 Kg
+                if (kilosMasaTotal >= 25) {
+                    const sacosEnteros = Math.floor(kilosMasaTotal / 25);
+                    const kilosSobrantes = kilosMasaTotal % 25;
+
+                    document.getElementById("lblSacosEnteros").innerText = sacosEnteros;
+                    document.getElementById("lblKilosSobrantes").innerText = kilosSobrantes.toFixed(2) + " Kg";
+                } else {
+                    document.getElementById("lblSacosEnteros").innerText = "0";
+                    document.getElementById("lblKilosSobrantes").innerText = kilosMasaTotal.toFixed(2) + " Kg";
+                }
+            }
+
+            txtPrimCalidad.addEventListener("input", calcularMermas);
+            txtSegCalidad.addEventListener("input", calcularMermas);
+
+            // EVENTO 2: Disparar el Stored Procedure enviando el nuevo ID de LOTE
+            btnProcesarLoteFinal.addEventListener("click", function () {
+                const idLote = cmbLote.value;
+                const bruta = parseInt(txtCantEntrada.value) || 0;
+                const limpia = parseInt(txtCantLimpia.value) || 0;
+                const prim = parseInt(txtPrimCalidad.value) || 0;
+                const seg = parseInt(txtSegCalidad.value) || 0;
+
+                if ((prim + seg) > limpia) {
+                    alert("❌ La clasificacion excede el peso limpio disponible.");
+                    return;
+                }
+
+                btnProcesarLoteFinal.setAttribute("disabled", "disabled");
+                btnProcesarLoteFinal.innerHTML = `<i class="fas fa-spinner fa-spin me-2"></i> Procesando PL/SQL...`;
+
+                // Viaje AJAX enviando idLote e idProducto de forma directa
+                fetch(`/Produccion/ProcesarLote?idLote=${idLote}&cantEntrada=${bruta}&cantPrimCalidad=${prim}&cantSegCalidad=${seg}&idProducto=${idProducto}&idProveedor=${idProveedor}`, {
+                    method: 'POST'
+                })
+                .then(r => r.json())
+                .then(data => {
+                    if (data.exito) {
+                        alert("✅ Auditoria Registrada. Oracle actualizo el stock a 'Limpiado', ingreso los residuos al Compost y marco el lote como PROCESADO.\n\nMensaje: " + data.mensaje);
+                        window.location.reload();
+                    } else {
+                        alert("❌ Error en Base de Datos:\n" + data.mensaje);
+                        btnProcesarLoteFinal.removeAttribute("disabled");
+                        btnProcesarLoteFinal.innerHTML = `<i class="fas fa-cloud-upload-alt me-2"></i> Registrar en Oracle`;
+                    }
+                });
+            });
+        });
+    </script>
+}

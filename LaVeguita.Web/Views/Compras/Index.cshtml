@@ -1,0 +1,272 @@
+﻿@model List<LaVeguita.Entities.RecepcionGuia>
+@{
+    ViewData["Title"] = "Ingreso de Guias y Balanza";
+    var productos = ViewBag.Productos as List<LaVeguita.Entities.Producto> ?? new List<LaVeguita.Entities.Producto>();
+    var proveedores = ViewBag.Proveedores as List<LaVeguita.Entities.Proveedor> ?? new List<LaVeguita.Entities.Proveedor>(); // Ajusta el casteo si tu clase Proveedor usa otra Entidad
+}
+
+<div class="container mt-2">
+    <div class="d-flex align-items-center justify-content-between mb-4 border-bottom pb-3">
+        <div class="d-flex align-items-center">
+            <span class="fs-2 me-2">🚜</span>
+            <div>
+                <h3 class="text-success fw-bold m-0">Recepcion de Materia Prima y Camiones</h3>
+                <small class="text-muted">Modulo del Asistente de Compras - Control de Guia de Despacho y Romana</small>
+            </div>
+        </div>
+        <span class="badge bg-success px-3 py-2 rounded-pill"><i class="fas fa-truck-loading me-1"></i> Balanza de Entrada</span>
+    </div>
+
+    <div class="row g-3">
+        <div class="col-md-5">
+            <div class="card border-0 shadow-sm p-3 bg-white mb-3" style="border-radius: 12px; border-left: 5px solid #198754 !important;">
+                <h6 class="fw-bold text-success text-uppercase small mb-2"><i class="fas fa-file-invoice me-1"></i> 1. Datos Generales de la Guia</h6>
+                <div class="row g-2">
+                    <div class="col-6">
+                        <label class="form-label small fw-bold text-dark mb-1">Numero Guia Fisica</label>
+                        <input type="text" id="txtNumGuia" class="form-control form-control-sm text-center fw-bold text-dark border-success" placeholder="Ej: GD-8452" required />
+                    </div>
+                    <div class="col-6">
+                        <label class="form-label small fw-bold text-dark mb-1">Proveedor Agricola</label>
+                        <select id="cmbProveedor" class="form-select form-select-sm" required>
+                            <option value="">Seleccione...</option>
+                            @foreach (var prov in proveedores)
+                            {
+                                <option value="@prov.IdProveedor">@prov.NomProveedor</option>
+                            }
+                        </select>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card border-0 shadow-sm p-3 bg-light" style="border-radius: 12px; border: 1px solid #ddd;">
+                <h6 class="fw-bold text-dark text-uppercase small mb-2"><i class="fas fa-shopping-basket me-1"></i> 2. Cargar Insumo Comercial</h6>
+
+                <div class="mb-2">
+                    <label class="form-label small text-muted mb-1">Materia Prima / Tipo</label>
+                    <select id="cmbProducto" class="form-select form-select-sm">
+                        <option value="">Seleccione verdura u hortaliza...</option>
+                        @foreach (var prod in productos)
+                        {
+                            <option value="@prod.IdProducto">@prod.NomProducto</option>
+                        }
+                    </select>
+                </div>
+
+                <div class="row g-2 mb-2">
+                    <div class="col-6">
+                        <label class="form-label small text-muted mb-1">Peso Real Local (Kg)</label>
+                        <input type="number" id="txtPesoReal" class="form-control form-control-sm text-center fw-bold text-success" min="1" placeholder="Ej: 500" />
+                    </div>
+                    <div class="col-6">
+                        <label class="form-label small text-muted mb-1">Peso Declarado Guia</label>
+                        <input type="number" id="txtPesoGuia" class="form-control form-control-sm text-center text-secondary" min="0" placeholder="Ej: 510 (Opcional)" />
+                    </div>
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label small text-muted mb-1">Observaciones de Estado / Carga</label>
+                    <input type="text" id="txtDescLote" class="form-control form-control-sm" placeholder="Ej: Cajones estandar limpios, sin humedad" />
+                </div>
+
+                <button type="button" id="btnAgregarAlCarrito" class="btn btn-success btn-sm w-100 rounded-pill fw-bold">
+                    <i class="fas fa-plus me-1"></i> Adjuntar al Contenedor Temporal
+                </button>
+            </div>
+        </div>
+
+        <div class="col-md-7">
+            <div class="card border-0 shadow-sm p-3 bg-white mb-3 text-dark" style="border-radius: 12px; border: 2px dashed #198754;">
+                <h6 class="fw-bold text-success text-uppercase small mb-2 d-flex justify-content-between align-items-center">
+                    <span><i class="fas fa-stream me-1"></i> Cargamento Actual del Camion</span>
+                    <span class="badge bg-dark" id="lblTotalItems">0 Items</span>
+                </h6>
+                <div class="table-responsive" style="max-height: 180px;">
+                    <table class="table table-sm table-hover align-middle mb-0" style="font-size: 12px;">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Producto</th>
+                                <th class="text-center">Peso Real</th>
+                                <th class="text-center">Peso Guia</th>
+                                <th>Observaciones</th>
+                                <th class="text-center">Quitar</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tbodyCarrito">
+                            <tr>
+                                <td colspan="5" class="text-center text-muted py-3">El carrito esta vacio. Adjunte verduras a la izquierda.</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+                <hr class="my-2" />
+                <button type="button" id="btnSubirAOracle" class="btn btn-dark btn-sm w-100 rounded-pill fw-bold disabled">
+                    <i class="fas fa-cloud-upload-alt me-1 text-success"></i> Confirmar Recepcion Completa
+                </button>
+            </div>
+
+            <div class="card border-0 shadow-sm p-3 bg-white text-dark" style="border-radius: 12px;">
+                <h6 class="fw-bold text-secondary text-uppercase small mb-2"><i class="fas fa-history me-1"></i> Ultimas Guias Recibidas (Historial)</h6>
+                <div class="table-responsive" style="max-height: 180px;">
+                    <table class="table table-sm table-striped align-middle mb-0" style="font-size: 11px;">
+                        <thead class="table-dark">
+                            <tr>
+                                <th>ID Reg</th>
+                                <th>Guia Papel</th>
+                                <th>Proveedor</th>
+                                <th>Fecha Registro</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var g in Model)
+                            {
+                                <tr>
+                                    <td class="fw-bold text-secondary">#@g.IdRecepcion</td>
+                                    <td class="fw-bold text-dark">@g.NumGuiaFisica</td>
+                                    <td>@g.NomProveedor</td>
+                                    <td>@g.FechaIngreso.ToString("dd/MM/yyyy HH:mm")</td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
+            const txtNumGuia = document.getElementById("txtNumGuia");
+            const cmbProveedor = document.getElementById("cmbProveedor");
+
+            const cmbProducto = document.getElementById("cmbProducto");
+            const txtPesoReal = document.getElementById("txtPesoReal");
+            const txtPesoGuia = document.getElementById("txtPesoGuia");
+            const txtDescLote = document.getElementById("txtDescLote");
+
+            const btnAgregar = document.getElementById("btnAgregarAlCarrito");
+            const tbodyCarrito = document.getElementById("tbodyCarrito");
+            const lblTotalItems = document.getElementById("lblTotalItems");
+            const btnSubirAOracle = document.getElementById("btnSubirAOracle");
+
+            let carritoDeLotes = [];
+
+            // 1. ADJUNTAR ELEMENTOS AL CARRITO EN CALIENTE
+            btnAgregar.addEventListener("click", function () {
+                const idProd = parseInt(cmbProducto.value) || 0;
+                const nomProd = cmbProducto.options[cmbProducto.selectedIndex]?.text || '';
+                const pReal = parseFloat(txtPesoReal.value) || 0;
+                const pGuia = parseFloat(txtPesoGuia.value) || 0;
+                const desc = txtDescLote.value.trim();
+
+                if (idProd === 0 || pReal <= 0) {
+                    alert("⚠️ Debe seleccionar un producto e ingresar un Peso Real.");
+                    return;
+                }
+
+                const nuevoItem = {
+                    IdProducto: idProd,
+                    NomProducto: nomProd,
+                    PesoRealLocal: pReal,
+                    PesoDeclaradoGd: pGuia > 0 ? pGuia : pReal,
+                    DescripcionLote: desc !== "" ? desc : "Ingreso estandar"
+                };
+
+                carritoDeLotes.push(nuevoItem);
+                renderizarTablaCarrito();
+
+                cmbProducto.value = "";
+                txtPesoReal.value = "";
+                txtPesoGuia.value = "";
+                txtDescLote.value = "";
+            });
+
+            // 2. RENDERIZAR LA TABLA TEMPORAL
+            function renderizarTablaCarrito() {
+                if (carritoDeLotes.length === 0) {
+                    tbodyCarrito.innerHTML = `<tr><td colspan="5" class="text-center text-muted py-3">El carrito esta vacio. Adjunte verduras a la izquierda.</td></tr>`;
+                    btnSubirAOracle.classList.add("disabled");
+                    lblTotalItems.innerText = "0 Items";
+
+                    txtNumGuia.removeAttribute("readonly");
+                    cmbProveedor.removeAttribute("disabled");
+                    return;
+                }
+
+                txtNumGuia.setAttribute("readonly", "readonly");
+                cmbProveedor.setAttribute("disabled", "disabled");
+
+                lblTotalItems.innerText = `${carritoDeLotes.length} Items`;
+                btnSubirAOracle.classList.remove("disabled");
+
+                let html = "";
+                carritoDeLotes.forEach((item, index) => {
+                    html += `
+                        <tr>
+                            <td class="fw-bold text-dark">${item.NomProducto}</td>
+                            <td class="text-center fw-bold text-success">${item.PesoRealLocal} Kg</td>
+                            <td class="text-center text-muted">${item.PesoDeclaradoGd} Kg</td>
+                            <td class="text-secondary">${item.DescripcionLote}</td>
+                            <td class="text-center">
+                                <button type="button" class="btn btn-sm btn-outline-danger border-0 p-0 px-1" onclick="quitarItemDelCarrito(${index})">
+                                    <i class="fas fa-minus-circle"></i>
+                                </button>
+                            </td>
+                        </tr>
+                    `;
+                });
+                tbodyCarrito.innerHTML = html;
+            }
+
+            window.quitarItemDelCarrito = function(index) {
+                carritoDeLotes.splice(index, 1);
+                renderizarTablaCarrito();
+            };
+
+            // 3. VIAJE AJAX JSON HACIA EL CONTROLADOR
+            btnSubirAOracle.addEventListener("click", function () {
+                const nGuia = txtNumGuia.value.trim();
+                const idProv = parseInt(cmbProveedor.value) || 0;
+
+                if (nGuia === "" || idProv === 0 || carritoDeLotes.length === 0) {
+                    alert("❌ Faltan datos generales de la guia de despacho.");
+                    return;
+                }
+
+                btnSubirAOracle.setAttribute("disabled", "disabled");
+                btnSubirAOracle.innerHTML = `<i class="fas fa-spinner fa-spin me-1"></i> Registrando en Oracle...`;
+
+                const payLoad = {
+                    NumGuiaFisica: nGuia,
+                    IdProveedor: idProv,
+                    ItemsCargamento: carritoDeLotes
+                };
+
+                fetch('/Compras/GuardarGuiaCompleta', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(payLoad)
+                })
+                .then(res => res.json())
+                .then(data => {
+                    if (data.exito) {
+                        alert("✅ Éxito:\n" + data.mensaje);
+                        window.location.reload();
+                    } else {
+                        alert("❌ Error transaccional:\n" + data.mensaje);
+                        btnSubirAOracle.removeAttribute("disabled");
+                        btnSubirAOracle.innerHTML = `<i class="fas fa-cloud-upload-alt me-1 text-success"></i> Confirmar Recepcion Completa`;
+                    }
+                })
+                .catch(err => {
+                    alert("❌ Error en la peticion.");
+                    btnSubirAOracle.removeAttribute("disabled");
+                });
+            });
+        });
+    </script>
+}
