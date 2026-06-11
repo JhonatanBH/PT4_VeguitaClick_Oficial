@@ -3,22 +3,21 @@
     ViewData["Title"] = "Crear Cuenta - La Veguita";
     Layout = null;
 }
-
 <!DOCTYPE html>
 <html lang="es">
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Registro de Clientes - La VeguitaClick</title>
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@@5.3.0/dist/css/bootstrap.min.css" />
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/releases/v6.0.0/css/all.min.css" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" />
     <style>
             body {
                 display: flex;
                 align-items: center;
                 min-height: 100vh;
             }
-            /* Ocultar flechas nativas del input fono para que se vea limpio */
+
             input::-webkit-outer-spin-button, input::-webkit-inner-spin-button {
                 -webkit-appearance: none;
                 margin: 0;
@@ -34,6 +33,12 @@
     <div class="container py-4">
         <div class="row justify-content-center">
             <div class="col-12 col-md-6 col-lg-5">
+                <div class="mb-3 text-start">
+                    <a href="@Url.Action("Catalogo", "Tienda")" class="btn btn-sm btn-outline-secondary rounded-pill px-3">
+                        <i class="fas fa-arrow-left me-1"></i> Cancelar y Volver al Catálogo
+                    </a>
+                </div>
+
                 <div class="card border-0 shadow-lg p-3" style="border-radius: 20px;">
                     <div class="card-body">
 
@@ -114,10 +119,6 @@
                                 </div>
                             </div>
 
-
-
-
-
                             <button type="submit" id="btnEnviar" class="btn btn-success w-100 fw-bold py-2.5 rounded-pill shadow mt-3">
                                 <i class="fas fa-user-plus me-1"></i> Registrarme Ahora
                             </button>
@@ -149,6 +150,7 @@
                     }
 
                     if (txtClave.value !== txtConfirmar.value) {
+                        mensajeError.value = "";
                         mensajeError.classList.remove("d-none");
                         txtConfirmar.classList.add("is-invalid");
                         btnEnviar.setAttribute("disabled", "disabled");
@@ -170,6 +172,5 @@
                     }
                 });
             });
-    </script>
-</body>
+    </script></body>
 </html>

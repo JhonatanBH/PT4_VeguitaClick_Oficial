@@ -17,15 +17,18 @@ namespace LaVeguita.Web.Controllers
         public IActionResult Index()
         {
             int? rol = HttpContext.Session.GetInt32("RolUsuario");
-            if (rol == null || (rol != 1 && rol != 2 && rol != 4))
-            {
-                return RedirectToAction("Login", "Acceso");
-            }
+            if (rol == null || (rol != 1 && rol != 2 && rol != 4)) return RedirectToAction("Login", "Acceso");
 
-            // Cargamos el historial de guias ingresadas para mostrar en la tabla inferior
             var guias = _loteDal.ListarGuiasIngresadas();
 
-            // Rellenamos las bolsas de datos para los combobox del formulario
+            // Evaluamos qué guías tienen documentos adjuntos para la interfaz
+            var diccionarioDocumentos = new Dictionary<int, bool>();
+            foreach (var g in guias)
+            {
+                diccionarioDocumentos.Add(g.IdRecepcion, _loteDal.ExisteGuiaDocumento(g.IdRecepcion));
+            }
+            ViewBag.Documentos = diccionarioDocumentos;
+
             ViewBag.Productos = _productoDal.ListarProductos();
             ViewBag.Proveedores = _productoDal.ListarProveedores();
 
@@ -46,5 +49,63 @@ namespace LaVeguita.Web.Controllers
 
             return Json(new { exito = seGuardo, mensaje = mensajeDeOracle });
         }
+
+        [HttpPost]
+        public IActionResult SubirGuiaProveedorBlob(int idRecepcionGuia, IFormFile archivoPdf)
+        {
+            if (archivoPdf == null || archivoPdf.Length == 0)
+            {
+                TempData["Error"] = "Debe adjuntar un archivo PDF válido.";
+                return RedirectToAction("Index");
+            }
+
+            if (!archivoPdf.FileName.EndsWith(".pdf", StringComparison.OrdinalIgnoreCase))
+            {
+                TempData["Error"] = "Restricción de Seguridad: El documento debe ser estrictamente PDF.";
+                return RedirectToAction("Index");
+            }
+
+            try
+            {
+                byte[] binarioBlob;
+                using (var ms = new System.IO.MemoryStream())
+                {
+                    archivoPdf.CopyTo(ms);
+                    binarioBlob = ms.ToArray();
+                }
+
+                // Llamada a la DAL
+                bool exito = _loteDal.GuardarGuiaProveedorBlob(idRecepcionGuia, binarioBlob, archivoPdf.FileName, out string mensajeDeOracle);
+
+                if (exito) TempData["Mensaje"] = mensajeDeOracle;
+                else TempData["Error"] = mensajeDeOracle;
+            }
+            catch (Exception ex)
+            {
+                TempData["Error"] = "Falla al guardar el archivo en Oracle: " + ex.Message;
+            }
+
+            return RedirectToAction("Index");
+        }
+
+
+
+        [HttpGet]
+        public IActionResult DescargarGuia(int id)
+        {
+            string nombreArchivo;
+            byte[] archivoBinario = _loteDal.DescargarGuiaProveedorBlob(id, out nombreArchivo);
+
+            if (archivoBinario == null || archivoBinario.Length == 0)
+            {
+                TempData["Error"] = "El documento solicitado no se encuentra en la base de datos.";
+                return RedirectToAction("Index");
+            }
+
+            return File(archivoBinario, "application/pdf", nombreArchivo);
+        }
+
+
+
     }
 }

@@ -1,133 +1,123 @@
 ﻿@{
-    ViewData["Title"] = "Gestion de Packing Semanal";
+    ViewData["Title"] = "Área de Packing y Empaquetado";
 }
 
-<div class="container mt-1">
-    <!-- Encabezado de Seccion -->
+<div class="container-fluid py-3">
     <div class="d-flex align-items-center justify-content-between mb-4 border-bottom pb-3">
         <div class="d-flex align-items-center">
-            <span class="fs-2 me-2">📦</span>
+            <span class="fs-2 me-3">📦</span>
             <div>
-                <h3 class="text-dark fw-bold m-0">Lineas de Armado y Packing Semanal</h3>
-                <small class="text-muted">Formatos validados por el programa de alimentacion estandar de la nutricionista</small>
+                <h3 class="text-dark fw-bold m-0">Líneas de Armado y Packing</h3>
+                <small class="text-muted">Transformación de stock limpio hacia formatos comerciales y nutricionales</small>
             </div>
         </div>
-        <span class="badge bg-success px-3 py-2 rounded-pill"><i class="fas fa-apple-whole me-1"></i> Control de Calidad</span>
+        <span class="badge bg-success px-3 py-2 rounded-pill shadow-sm"><i class="fas fa-industry me-1"></i> Producción Operativa</span>
     </div>
 
-    <!-- TARJETAS DE FORMATOS ESTANDAR (NUTRICIONISTA) -->
-    <div class="row g-4 mb-4">
-
-        <!-- FORMATO SOLTERO -->
-        <div class="col-md-4">
-            <div class="card border-0 shadow-sm h-100" style="border-radius: 15px;">
-                <div class="card-body d-flex flex-column justify-content-between">
-                    <div>
-                        <div class="d-flex justify-content-between align-items-center mb-2">
-                            <h5 class="fw-bold text-success m-0">Packing Soltero</h5>
-                            <span class="badge bg-light text-success border border-success">1 Integrante</span>
-                        </div>
-                        <p class="small text-muted mb-3">Diseñado para cubrir las necesidades vitaminicas individuales de la semana de forma balanceada.</p>
-                        <h6 class="small fw-bold text-dark border-bottom pb-1 mb-2">Receta de la Nutricionista:</h6>
-                        <ul class="small text-muted ps-3 mb-0">
-                            <li>1.5 Kg de Manzanas Organicas</li>
-                            <li>1.0 Kg de Platanos locales</li>
-                            <li>2 Unidades de Lechugas seleccionadas</li>
-                            <li>1.5 Kg de Tomates de primera calidad</li>
-                        </ul>
-                    </div>
-                    <button class="btn btn-outline-success btn-sm w-100 rounded-pill fw-bold mt-4" onclick="seleccionarPack('Soltero', 6.0)">
-                        <i class="fas fa-box me-1"></i> Seleccionar para Armado
-                    </button>
-                </div>
+    <div class="card border-0 shadow-sm mb-4 bg-white" style="border-radius: 15px;">
+        <div class="card-body">
+            <h6 class="fw-bold text-dark text-uppercase mb-3"><i class="fas fa-balance-scale text-success me-2"></i>Monitor de Stock Limpio en Planta (Materia Prima)</h6>
+            <div class="row text-center g-3" id="panelStockMonitor">
             </div>
         </div>
-
-        <!-- FORMATO PAREJA -->
-        <div class="col-md-4">
-            <div class="card border-0 shadow-sm h-100" style="border-radius: 15px;">
-                <div class="card-body d-flex flex-column justify-content-between">
-                    <div>
-                        <div class="d-flex justify-content-between align-items-center mb-2">
-                            <h5 class="fw-bold text-primary m-0">Packing Pareja</h5>
-                            <span class="badge bg-light text-primary border border-primary">2 Integrantes</span>
-                        </div>
-                        <p class="small text-muted mb-3">Proporcion equilibrada de antioxidantes y fibras esenciales para dos personas adultas.</p>
-                        <h6 class="small fw-bold text-dark border-bottom pb-1 mb-2">Receta de la Nutricionista:</h6>
-                        <ul class="small text-muted ps-3 mb-0">
-                            <li>3.0 Kg de Manzanas Organicas</li>
-                            <li>2.0 Kg de Platanos locales</li>
-                            <li>4 Unidades de Lechugas seleccionadas</li>
-                            <li>3.0 Kg de Tomates de primera calidad</li>
-                        </ul>
-                    </div>
-                    <button class="btn btn-outline-primary btn-sm w-100 rounded-pill fw-bold mt-4" onclick="seleccionarPack('Pareja', 12.0)">
-                        <i class="fas fa-box me-1"></i> Seleccionar para Armado
-                    </button>
-                </div>
-            </div>
-        </div>
-
-        <!-- FORMATO FAMILIAR -->
-        <div class="col-md-4">
-            <div class="card border-0 shadow-sm h-100" style="border-radius: 15px;">
-                <div class="card-body d-flex flex-column justify-content-between">
-                    <div>
-                        <div class="d-flex justify-content-between align-items-center mb-2">
-                            <h5 class="fw-bold text-warning m-0" style="color: #b8860b !important;">Packing Familiar</h5>
-                            <span class="badge bg-light text-warning border border-warning" style="color: #b8860b !important;">3 o 4 Integrantes</span>
-                        </div>
-                        <p class="small text-muted mb-3">Formato maximizado para el nucleo del hogar. Aporte completo de verduras de hoja verde y frutas de estacion.</p>
-                        <h6 class="small fw-bold text-dark border-bottom pb-1 mb-2">Receta de la Nutricionista:</h6>
-                        <ul class="small text-muted ps-3 mb-0">
-                            <li>5.0 Kg de Manzanas Organicas</li>
-                            <li>4.0 Kg de Platanos locales</li>
-                            <li>6 Unidades de Lechugas seleccionadas</li>
-                            <li>5.0 Kg de Tomates de primera calidad</li>
-                        </ul>
-                    </div>
-                    <div class="d-flex gap-2 mt-4">
-                        <button class="btn btn-outline-warning btn-sm w-50 rounded-pill fw-bold" style="color: #b8860b; border-color: #b8860b;" onclick="seleccionarPack('Familiar (3 Int)', 20.0)">
-                            Versión 3 Int
-                        </button>
-                        <button class="btn btn-outline-warning btn-sm w-50 rounded-pill fw-bold" style="color: #b8860b; border-color: #b8860b;" onclick="seleccionarPack('Familiar (4 Int)', 25.0)">
-                            Versión 4 Int
-                        </button>
-                    </div>
-                </div>
-            </div>
-        </div>
-
     </div>
 
-    <!-- PANEL OPERATIVO DE EMBALAJE -->
-    <div class="row">
-        <div class="col-md-12">
-            <div class="card border-0 shadow-sm p-4" style="border-radius: 15px; background-color: #fafbfc;">
-                <h5 class="fw-bold text-dark mb-3"><i class="fas fa-cog text-secondary me-2"></i>Mesa de Trabajo: Ejecucion de Empaque</h5>
-
-                <div class="row align-items-center">
-                    <div class="col-md-4 mb-2">
-                        <label class="form-label small fw-bold text-muted mb-1">Formato de Formulario Activo</label>
-                        <input type="text" id="txtPackSeleccionado" class="form-control bg-light fw-bold" placeholder="Ningun pack seleccionado" readonly />
-                    </div>
-                    <div class="col-md-3 mb-2">
-                        <label class="form-label small fw-bold text-muted mb-1">Peso Neto Estimado (Kg)</label>
-                        <input type="text" id="txtPesoPack" class="form-control bg-light fw-bold text-center" placeholder="0.00" readonly />
-                    </div>
-                    <div class="col-md-2 mb-2">
-                        <label class="form-label small fw-bold text-muted mb-1">Cantidad a Armar</label>
-                        <input type="number" id="txtCantidadPacks" class="form-control text-center fw-bold" min="1" value="1" />
-                    </div>
-                    <div class="col-md-3 mb-2 pt-4">
-                        <button type="button" id="btnProcesarPacking" class="btn btn-dark w-100 rounded-pill fw-bold shadow-sm" onclick="procesarLotePacking()">
-                            <i class="fas fa-dolly me-1"></i> Confirmar Cierre de Caja
-                        </button>
-                    </div>
+    <div class="row g-4">
+        <div class="col-12 col-xl-6">
+            <div class="card border-0 shadow-sm h-100" style="border-radius: 15px;">
+                <div class="card-header bg-white border-bottom-0 pt-4 pb-0">
+                    <h5 class="fw-bold text-success"><i class="fas fa-shopping-basket me-2"></i>Empaque Venta Directa</h5>
+                    <p class="text-muted small">Armado de mallas y bolsas por unidades de masa exactas.</p>
                 </div>
+                <div class="card-body">
+                    <form id="formVentaDirecta" action="/Produccion/ProcesarVentaDirecta" method="post">
 
-                <div id="alertPacking" class="alert alert-success d-none mt-3 border-0 shadow-sm" style="border-radius: 10px;">
-                    <i class="fas fa-check-circle me-1"></i> <span id="alertPackingMsg">Lote de empaque cerrado con exito.</span>
+                        <div class="mb-3">
+                            <label class="form-label small fw-bold text-muted">Materia Prima a Empaquetar</label>
+                            <select id="ddlMateriaPrima" name="idMateriaPrima" class="form-select border-success" required>
+                                <option value="">Seleccione materia prima limpia...</option>
+                                <option value="papa">Papa Primera Selección</option>
+                                <option value="zanahoria">Zanahoria Orgánica</option>
+                                <option value="manzana">Manzana Roja</option>
+                            </select>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label small fw-bold text-muted">Formato de Salida (SKU)</label>
+                            <select id="ddlFormatoSalida" name="idFormatoSalida" class="form-select" required disabled>
+                                <option value="">Seleccione primero la materia prima...</option>
+                            </select>
+                        </div>
+
+                        <div class="row g-2 mb-3">
+                            <div class="col-md-6">
+                                <label class="form-label small fw-bold text-muted">Unidades a Fabricar</label>
+                                <div class="input-group">
+                                    <input type="number" id="txtUnidadesDirecta" name="unidadesFabricar" class="form-control fw-bold text-center" placeholder="0" min="1" disabled required />
+                                    <span class="input-group-text bg-light">Mallas</span>
+                                </div>
+                                <div id="errUnidadesDirecta" class="invalid-feedback">Ingrese cantidad válida mayor a 0.</div>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label small fw-bold text-muted">Kilos a Descontar</label>
+                                <div class="input-group">
+                                    <input type="text" id="txtKilosDescuentoDirecta" class="form-control bg-light text-danger fw-bold text-center" value="0" readonly />
+                                    <span class="input-group-text bg-light">Kg Totales</span>
+                                </div>
+                                <div id="errStockDirecta" class="text-danger small mt-1 d-none fw-bold"><i class="fas fa-ban me-1"></i> Stock Insuficiente.</div>
+                            </div>
+                        </div>
+
+                        <button type="submit" id="btnProcesarDirecta" class="btn btn-success w-100 fw-bold mt-2 py-2 shadow-sm" disabled>
+                            <i class="fas fa-check-circle me-2"></i>Registrar Empaquetado
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-12 col-xl-6">
+            <div class="card border-0 shadow-sm h-100" style="border-radius: 15px; background-color: #f8fbff;">
+                <div class="card-header border-bottom-0 pt-4 pb-0" style="background-color: transparent;">
+                    <h5 class="fw-bold text-primary"><i class="fas fa-heartbeat me-2"></i>Programas Nutricionales</h5>
+                    <p class="text-muted small">Ensamblaje de kits validados por la receta de la nutricionista.</p>
+                </div>
+                <div class="card-body">
+                    <form id="formKits" action="/Produccion/ProcesarKits" method="post">
+
+                        <div class="mb-3">
+                            <label class="form-label small fw-bold text-muted">Formato Nutricional</label>
+                            <select id="ddlFormatoKit" name="idFormatoKit" class="form-select border-primary" required>
+                                <option value="">Seleccione tipo de caja...</option>
+                                <option value="soltero">Packing Soltero (1 Integrante)</option>
+                                <option value="pareja">Packing Pareja (2 Integrantes)</option>
+                                <option value="familiar3">Packing Familiar (3 Integrantes)</option>
+                                <option value="familiar4">Packing Familiar (4 Integrantes)</option>
+                            </select>
+                        </div>
+
+                        <div class="row g-2 mb-3">
+                            <div class="col-md-6">
+                                <label class="form-label small fw-bold text-muted">Cantidad a Ensamblar</label>
+                                <div class="input-group">
+                                    <input type="number" id="txtUnidadesKits" name="cantidadCajas" class="form-control fw-bold text-center" placeholder="0" min="1" disabled required />
+                                    <span class="input-group-text bg-white">Cajas</span>
+                                </div>
+                                <div id="errUnidadesKits" class="invalid-feedback">Ingrese cantidad válida mayor a 0.</div>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label small fw-bold text-muted">Mermas por Receta</label>
+                                <ul class="list-group list-group-flush small shadow-sm border rounded" id="listaRecetaCalculada">
+                                    <li class="list-group-item bg-light text-muted fst-italic text-center py-3">Seleccione caja y digite cantidad</li>
+                                </ul>
+                                <div id="errStockKits" class="text-danger small mt-2 d-none fw-bold"><i class="fas fa-ban me-1"></i> Faltan ingredientes en planta.</div>
+                            </div>
+                        </div>
+
+                        <button type="submit" id="btnProcesarKits" class="btn btn-primary w-100 fw-bold mt-4 py-2 shadow-sm" disabled>
+                            <i class="fas fa-boxes me-2"></i>Confirmar Armado de Cajas
+                        </button>
+                    </form>
                 </div>
             </div>
         </div>
@@ -136,45 +126,192 @@
 
 @section Scripts {
     <script>
-        function seleccionarPack(nombre, peso) {
-            document.getElementById("txtPackSeleccionado").value = "Packing " + nombre;
-            document.getElementById("txtPesoPack").value = peso.toFixed(2) + " Kg";
-            document.getElementById("alertPacking").classList.add("d-none");
-        }
+        document.addEventListener("DOMContentLoaded", function () {
+            // ==========================================
+            // 🧠 BASE DE DATOS SIMULADA DE PLANTA
+            // ==========================================
 
-        function procesarLotePacking() {
-            const pack = document.getElementById("txtPackSeleccionado").value;
-            const cantidad = document.getElementById("txtCantidadPacks").value;
+                    // Leemos el diccionario de C# y lo convertimos a JSON para JavaScript
+        let stockDesdeOracle = @Html.Raw(Json.Serialize(ViewBag.StockLimpio ?? new Dictionary<string, decimal>()));
 
-            if (!pack) {
-                alert("⚠️ Debe seleccionar un formato de packing semanal de la nutricionista antes de embalar.");
-                return;
+        // Mapeamos los datos (asumiendo que en Oracle tienes nombres como 'papa', 'zanahoria', etc.)
+        let stockLimpio = {
+            papa: stockDesdeOracle['papa'] || 0,
+            zanahoria: stockDesdeOracle['zanahoria'] || 0,
+            manzana: stockDesdeOracle['manzana'] || 0
+        };
+
+            const formatosDirecta = {
+                papa: [
+                    { id: 'malla_1kg_papa', nombre: 'Malla de Papa 1 Kg', factor: 1 },
+                    { id: 'malla_3kg_papa', nombre: 'Malla de Papa 3 Kg', factor: 3 }
+                ],
+                zanahoria: [
+                    { id: 'bolsa_1kg_zan', nombre: 'Bolsa Zanahoria 1 Kg', factor: 1 }
+                ],
+                manzana: [
+                    { id: 'bandeja_1kg_man', nombre: 'Bandeja Manzana 1 Kg', factor: 1 }
+                ]
+            };
+
+            // Receta de la nutricionista (en Kilos)
+            const recetasKits = {
+                soltero: { papa: 1.5, zanahoria: 1.0, manzana: 1.5 },
+                pareja: { papa: 3.0, zanahoria: 2.0, manzana: 3.0 },
+                familiar3: { papa: 4.5, zanahoria: 3.0, manzana: 4.5 },
+                familiar4: { papa: 6.0, zanahoria: 4.0, manzana: 6.0 }
+            };
+
+            // ==========================================
+            // 📊 RENDERIZADO DEL MONITOR VISUAL
+            // ==========================================
+            function actualizarMonitor() {
+                const panel = document.getElementById("panelStockMonitor");
+                panel.innerHTML = `
+                    <div class="col-4"><div class="p-3 border rounded-3 bg-light shadow-sm"><span class="d-block text-muted small fw-bold">PAPAS</span><h3 class="m-0 text-success fw-bold">${stockLimpio.papa} <small class="fs-6 text-muted">kg</small></h3></div></div>
+                    <div class="col-4"><div class="p-3 border rounded-3 bg-light shadow-sm"><span class="d-block text-muted small fw-bold">ZANAHORIAS</span><h3 class="m-0 text-warning fw-bold">${stockLimpio.zanahoria} <small class="fs-6 text-muted">kg</small></h3></div></div>
+                    <div class="col-4"><div class="p-3 border rounded-3 bg-light shadow-sm"><span class="d-block text-muted small fw-bold">MANZANAS</span><h3 class="m-0 text-danger fw-bold">${stockLimpio.manzana} <small class="fs-6 text-muted">kg</small></h3></div></div>
+                `;
+            }
+            actualizarMonitor();
+
+            // ==========================================
+            // 🥔 VALIDACIÓN VENTA DIRECTA
+            // ==========================================
+            const ddlMP = document.getElementById('ddlMateriaPrima');
+            const ddlFS = document.getElementById('ddlFormatoSalida');
+            const txtUD = document.getElementById('txtUnidadesDirecta');
+            const txtKD = document.getElementById('txtKilosDescuentoDirecta');
+            const btnPD = document.getElementById('btnProcesarDirecta');
+            const errStockD = document.getElementById('errStockDirecta');
+            let factorActual = 0;
+
+            ddlMP.addEventListener('change', function () {
+                const mp = this.value;
+                ddlFS.innerHTML = '<option value="">Seleccione formato de salida...</option>';
+                txtUD.value = '';
+                txtKD.value = '0';
+                txtUD.setAttribute('disabled', 'disabled');
+
+                if (mp && formatosDirecta[mp]) {
+                    formatosDirecta[mp].forEach(f => {
+                        ddlFS.innerHTML += `<option value="${f.id}" data-factor="${f.factor}">${f.nombre}</option>`;
+                    });
+                    ddlFS.removeAttribute('disabled');
+                } else {
+                    ddlFS.setAttribute('disabled', 'disabled');
+                }
+                validarDirecta();
+            });
+
+            ddlFS.addEventListener('change', function () {
+                if (this.value !== "") {
+                    factorActual = parseFloat(this.options[this.selectedIndex].getAttribute('data-factor'));
+                    txtUD.removeAttribute('disabled');
+                } else {
+                    txtUD.setAttribute('disabled', 'disabled');
+                    txtUD.value = '';
+                    txtKD.value = '0';
+                }
+                validarDirecta();
+            });
+
+            txtUD.addEventListener('input', validarDirecta);
+
+            function validarDirecta() {
+                const unidades = parseInt(txtUD.value);
+                let todoOk = true;
+
+                if (isNaN(unidades) || unidades <= 0) {
+                    txtUD.classList.remove('is-valid');
+                    txtUD.classList.add('is-invalid');
+                    txtKD.value = '0';
+                    todoOk = false;
+                } else {
+                    txtUD.classList.remove('is-invalid');
+                    txtUD.classList.add('is-valid');
+
+                    const kilosGastados = unidades * factorActual;
+                    txtKD.value = kilosGastados;
+
+                    if (kilosGastados > stockLimpio[ddlMP.value]) {
+                        txtUD.classList.remove('is-valid');
+                        txtUD.classList.add('is-invalid');
+                        errStockD.classList.remove('d-none');
+                        todoOk = false;
+                    } else {
+                        errStockD.classList.add('d-none');
+                    }
+                }
+                btnPD.disabled = !todoOk;
             }
 
-            if (cantidad <= 0) {
-                alert("❌ Ingrese una cantidad valida de cajas a producir.");
-                return;
+            // ==========================================
+            // 🥗 VALIDACIÓN KITS NUTRICIONALES
+            // ==========================================
+            const ddlFK = document.getElementById('ddlFormatoKit');
+            const txtUK = document.getElementById('txtUnidadesKits');
+            const listaR = document.getElementById('listaRecetaCalculada');
+            const btnPK = document.getElementById('btnProcesarKits');
+            const errStockK = document.getElementById('errStockKits');
+            let recetaActual = null;
+
+            ddlFK.addEventListener('change', function () {
+                const kit = this.value;
+                txtUK.value = '';
+                listaR.innerHTML = '<li class="list-group-item bg-light text-muted fst-italic text-center py-3">Digite cajas para calcular...</li>';
+
+                if (kit && recetasKits[kit]) {
+                    recetaActual = recetasKits[kit];
+                    txtUK.removeAttribute('disabled');
+                } else {
+                    txtUK.setAttribute('disabled', 'disabled');
+                    recetaActual = null;
+                }
+                validarKits();
+            });
+
+            txtUK.addEventListener('input', validarKits);
+
+            function validarKits() {
+                const cajas = parseInt(txtUK.value);
+                let todoOk = true;
+                let stockInsuficiente = false;
+                listaR.innerHTML = '';
+
+                if (isNaN(cajas) || cajas <= 0 || !recetaActual) {
+                    txtUK.classList.remove('is-valid');
+                    txtUK.classList.add('is-invalid');
+                    listaR.innerHTML = '<li class="list-group-item bg-light text-muted fst-italic text-center py-3">Ingrese cantidad válida...</li>';
+                    todoOk = false;
+                } else {
+                    txtUK.classList.remove('is-invalid');
+                    txtUK.classList.add('is-valid');
+
+                    for (const [ingrediente, kilosPorCaja] of Object.entries(recetaActual)) {
+                        const totalKilos = kilosPorCaja * cajas;
+                        const faltaStock = totalKilos > stockLimpio[ingrediente];
+                        if (faltaStock) stockInsuficiente = true;
+
+                        listaR.innerHTML += `
+                            <li class="list-group-item d-flex justify-content-between align-items-center ${faltaStock ? 'list-group-item-danger' : ''}">
+                                <span class="fw-bold text-uppercase" style="font-size:0.85rem;">${ingrediente}</span>
+                                <span class="badge ${faltaStock ? 'bg-danger' : 'bg-secondary'} rounded-pill">- ${totalKilos.toFixed(1)} kg</span>
+                            </li>
+                        `;
+                    }
+
+                    if (stockInsuficiente) {
+                        txtUK.classList.remove('is-valid');
+                        txtUK.classList.add('is-invalid');
+                        errStockK.classList.remove('d-none');
+                        todoOk = false;
+                    } else {
+                        errStockK.classList.add('d-none');
+                    }
+                }
+                btnPK.disabled = !todoOk;
             }
-
-            // Animacion dinamica para simular el cierre de los packs ecologicos
-            const btn = document.getElementById("btnProcesarPacking");
-            btn.setAttribute("disabled", "disabled");
-            btn.innerHTML = `<i class="fas fa-spinner fa-spin me-1"></i> Sellando cajas en planta...`;
-
-            setTimeout(() => {
-                btn.removeAttribute("disabled");
-                btn.innerHTML = `<i class="fas fa-dolly me-1"></i> Confirmar Cierre de Caja`;
-
-                const msg = document.getElementById("alertPackingMsg");
-                msg.innerText = `Se han empaquetado exitosamente ${cantidad} unidades de "${pack}" siguiendo los protocolos de nutricion. Descontado de la materia prima limpia.`;
-
-                document.getElementById("alertPacking").classList.remove("d-none");
-
-                // Limpiar mesa de trabajo
-                document.getElementById("txtPackSeleccionado").value = "";
-                document.getElementById("txtPesoPack").value = "";
-                document.getElementById("txtCantidadPacks").value = 1;
-            }, 1500);
-        }
+        });
     </script>
 }

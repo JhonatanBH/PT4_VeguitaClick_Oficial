@@ -118,5 +118,107 @@ namespace LaVeguita.DAL
             catch (Exception) { }
             return lista;
         }
+
+
+        public bool GuardarGuiaProveedorBlob(int idRecepcion, byte[] archivoBytes, string nombreArchivo, out string mensaje)
+        {
+            bool exito = false;
+            mensaje = string.Empty;
+
+            string query = @"INSERT INTO ADMIN.DOCUMENTOS_RECEPCION (ID_RECEPCION, ARCHIVO_BLOB, NOMBRE_ARCHIVO) 
+                             VALUES (:idRecepcion, :archivoBlob, :nombreArchivo)";
+
+            try
+            {
+                using (OracleConnection cn = new Conexion().LeerConexion())
+                {
+                    using (OracleCommand cmd = new OracleCommand(query, cn))
+                    {
+                        cmd.Parameters.Add("idRecepcion", OracleDbType.Int32).Value = idRecepcion;
+                        cmd.Parameters.Add("archivoBlob", OracleDbType.Blob).Value = archivoBytes;
+                        cmd.Parameters.Add("nombreArchivo", OracleDbType.Varchar2).Value = nombreArchivo;
+
+                        cn.Open();
+                        int filasAfectadas = cmd.ExecuteNonQuery();
+
+                        if (filasAfectadas > 0)
+                        {
+                            exito = true;
+                            mensaje = "Archivo PDF almacenado con éxito en Oracle Cloud.";
+                        }
+                        else
+                        {
+                            mensaje = "No se pudo guardar el archivo asociado a la guía.";
+                        }
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                exito = false;
+                mensaje = "Error al subir el BLOB: " + ex.Message;
+            }
+
+            return exito;
+        }
+
+        public byte[] DescargarGuiaProveedorBlob(int idRecepcion, out string nombreArchivo)
+        {
+            byte[] archivo = null;
+            nombreArchivo = "Guia_Proveedor.pdf";
+
+            string query = "SELECT ARCHIVO_BLOB, NOMBRE_ARCHIVO FROM ADMIN.DOCUMENTOS_RECEPCION WHERE ID_RECEPCION = :id";
+
+            try
+            {
+                using (OracleConnection cn = new Conexion().LeerConexion())
+                {
+                    using (OracleCommand cmd = new OracleCommand(query, cn))
+                    {
+                        cmd.Parameters.Add("id", OracleDbType.Int32).Value = idRecepcion;
+                        cn.Open();
+
+                        using (OracleDataReader dr = cmd.ExecuteReader())
+                        {
+                            if (dr.Read())
+                            {
+                                archivo = (byte[])dr["ARCHIVO_BLOB"];
+                                nombreArchivo = dr["NOMBRE_ARCHIVO"].ToString();
+                            }
+                        }
+                    }
+                }
+            }
+            catch { /* Manejo de errores interno */ }
+
+            return archivo;
+        }
+
+        // Método vital para la vista: Verifica si el botón debe decir "Subir" o "Descargar"
+        public bool ExisteGuiaDocumento(int idRecepcion)
+        {
+            bool existe = false;
+            string query = "SELECT COUNT(*) FROM ADMIN.DOCUMENTOS_RECEPCION WHERE ID_RECEPCION = :id";
+
+            try
+            {
+                using (OracleConnection cn = new Conexion().LeerConexion())
+                {
+                    using (OracleCommand cmd = new OracleCommand(query, cn))
+                    {
+                        cmd.Parameters.Add("id", OracleDbType.Int32).Value = idRecepcion;
+                        cn.Open();
+                        int count = Convert.ToInt32(cmd.ExecuteScalar());
+                        existe = count > 0;
+                    }
+                }
+            }
+            catch { }
+
+            return existe;
+        }
+
+
+
     }
 }

@@ -1,0 +1,101 @@
+﻿@model System.Data.DataTable
+@{
+    ViewData["Title"] = "Seguimiento de Pedidos";
+}
+
+<div class="container py-4">
+    <div class="text-center mb-5">
+        <span style="font-size: 3.5rem;">📦</span>
+        <h2 class="fw-bold text-dark mt-2">Portal de <span class="text-success">Seguimiento</span></h2>
+        <p class="text-muted">Consulte el estado logístico de sus compras en tiempo real ingresando su RUT</p>
+    </div>
+
+    <div class="row justify-content-center mb-5">
+        <div class="col-12 col-md-6">
+            <form method="get" asp-action="Seguimiento" class="card p-4 shadow-sm border-0 rounded-4">
+                <div class="mb-3">
+                    <label class="form-label fw-bold text-muted small">Ingrese RUT del Comprador (Con guión)</label>
+                    <div class="input-group">
+                        <span class="input-group-text bg-light border-0"><i class="fas fa-id-card text-muted"></i></span>
+                        <input type="text" name="rut" value="@ViewBag.RutBuscado" class="form-control bg-light border-0" placeholder="Ej: 12345678-9" required style="padding:12px;" />
+                        <button type="submit" class="btn btn-success fw-bold px-4">Buscar Pedidos</button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    @if (ViewBag.RutBuscado != null)
+    {
+        <div class="row justify-content-center">
+            <div class="col-12 col-lg-10">
+                <h4 class="fw-bold text-dark mb-4"><i class="fas fa-list shadow-sm p-2 text-success bg-white rounded-3 me-2"></i> Órdenes encontradas para el RUT: @ViewBag.RutBuscado</h4>
+
+                @if (Model == null || Model.Rows.Count == 0)
+                {
+                    <div class="alert alert-warning text-center rounded-4 py-4 shadow-sm">
+                        <i class="fas fa-search mb-2 fs-3 text-muted d-block"></i> No se encontraron registros de ventas ni despachos asociados al RUT ingresado en el sistema Oracle Cloud.
+                    </div>
+                }
+                else
+                {
+                    @foreach (System.Data.DataRow row in Model.Rows)
+                    {
+                        var idVenta = row["ID_VENTA"].ToString();
+                        var estado = row["ESTADO_ENTREGA"].ToString().ToUpper();
+
+                        // Mapeo dinámico para encender los nodos de la barra de progreso
+                        int pasoActual = 1; // EN PREPARACION
+                        if (estado == "ARMADO" || estado == "PREPARADO") pasoActual = 2;
+                        else if (estado == "EN VIAJE" || estado == "DESPACHADO") pasoActual = 3;
+                        else if (estado == "FINALIZADO" || estado == "ENTREGADO") pasoActual = 4;
+
+                        <div class="card border-0 shadow-sm p-4 rounded-4 mb-5 bg-white">
+                            <div class="d-flex justify-content-between align-items-center border-bottom pb-3 mb-4 flex-wrap gap-2">
+                                <div>
+                                    <span class="text-muted small d-block">NÚMERO DE ORDEN</span>
+                                    <h5 class="fw-bold text-dark m-0">#000@idVenta</h5>
+                                </div>
+                                <div>
+                                    <span class="text-muted small d-block text-md-end">MODALIDAD</span>
+                                    <span class="badge bg-light text-success border fw-bold px-3 py-1.5 rounded-pill">⚡ @row["TIPO_ENVIO"]</span>
+                                </div>
+                                <div class="text-md-end">
+                                    <span class="text-muted small d-block">TOTAL PEDIDO</span>
+                                    <span class="h5 fw-bold text-success m-0">$@Convert.ToDecimal(row["TOTAL"]).ToString("N0")</span>
+                                </div>
+                            </div>
+
+                            <div class="row text-center position-relative mb-2 mt-2">
+                                <div class="col-3">
+                                    <div class="rounded-circle mx-auto d-flex align-items-center justify-content-center shadow-sm @(pasoActual >= 1 ? "bg-success text-white" : "bg-light text-muted")" style="width:50px; height:50px; font-size:1.3rem; z-index:2; position:relative;">
+                                        <i class="fas fa-box"></i>
+                                    </div>
+                                    <span class="d-block small fw-bold mt-2 @(pasoActual >= 1 ? "text-success" : "text-muted")">En Preparación</span>
+                                </div>
+                                <div class="col-3">
+                                    <div class="rounded-circle mx-auto d-flex align-items-center justify-content-center shadow-sm @(pasoActual >= 2 ? "bg-success text-white" : "bg-light text-muted")" style="width:50px; height:50px; font-size:1.3rem; z-index:2; position:relative;">
+                                        <i class="fas fa-boxes-packing"></i>
+                                    </div>
+                                    <span class="d-block small fw-bold mt-2 @(pasoActual >= 2 ? "text-success" : "text-muted")">Armado</span>
+                                </div>
+                                <div class="col-3">
+                                    <div class="rounded-circle mx-auto d-flex align-items-center justify-content-center shadow-sm @(pasoActual >= 3 ? "bg-success text-white" : "bg-light text-muted")" style="width:50px; height:50px; font-size:1.3rem; z-index:2; position:relative;">
+                                        <i class="fas fa-truck"></i>
+                                    </div>
+                                    <span class="d-block small fw-bold mt-2 @(pasoActual >= 3 ? "text-success" : "text-muted")">En Viaje</span>
+                                </div>
+                                <div class="col-3">
+                                    <div class="rounded-circle mx-auto d-flex align-items-center justify-content-center shadow-sm @(pasoActual >= 4 ? "bg-success text-white" : "bg-light text-muted")" style="width:50px; height:50px; font-size:1.3rem; z-index:2; position:relative;">
+                                        <i class="fas fa-check-double"></i>
+                                    </div>
+                                    <span class="d-block small fw-bold mt-2 @(pasoActual >= 4 ? "text-success" : "text-muted")">Finalizado</span>
+                                </div>
+                            </div>
+                        </div>
+                    }
+                }
+            </div>
+        </div>
+    }
+</div>

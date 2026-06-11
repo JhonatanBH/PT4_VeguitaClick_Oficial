@@ -5,33 +5,31 @@
 }
 
 <style>
-    /* Estética de tarjetas modernas */
+    /* Estética de tarjetas e-commerce modernas */
     .product-card {
         transition: all 0.3s cubic-bezier(.25,.8,.25,1);
-        border-radius: 20px !important;
+        border-radius: 16px !important;
         background: #fff;
+        overflow: hidden;
+        border: 1px solid #eef2f5 !important;
     }
 
         .product-card:hover {
-            transform: translateY(-10px);
-            box-shadow: 0 15px 35px rgba(0,0,0,0.1) !important;
+            transform: translateY(-8px);
+            box-shadow: 0 15px 30px rgba(0,0,0,0.08) !important;
         }
 
-    /* Contenedor de "Imagen" con Icono */
-    .img-placeholder {
-        height: 180px;
-        background: linear-gradient(135deg, #f9fbfd 0%, #f1f4f8 100%);
-        display: flex;
-        align-items: center;
-        justify-content: center;
+    /* Contenedor de Imagen Real */
+    .img-container {
+        height: 200px;
         position: relative;
-        border-bottom: 1px solid #f1f1f1;
+        background-color: #f8f9fa;
     }
 
-    .main-icon {
-        font-size: 4.5rem;
-        color: #2ecc71;
-        filter: drop-shadow(2px 4px 8px rgba(46, 204, 113, 0.2));
+    .product-img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover; /* Ajusta la imagen sin deformarla */
     }
 
     /* Distintivo de Orgánico */
@@ -41,52 +39,64 @@
         left: 15px;
         background: #27ae60;
         color: white;
-        padding: 4px 12px;
+        padding: 5px 12px;
         border-radius: 50px;
-        font-size: 0.65rem;
-        font-weight: 800;
+        font-size: 0.7rem;
+        font-weight: 700;
         text-transform: uppercase;
         box-shadow: 0 4px 10px rgba(39, 174, 96, 0.3);
+        z-index: 10;
+    }
+
+    /* Distintivo de Stock Alerta */
+    .badge-stock-alert {
+        position: absolute;
+        top: 15px;
+        right: 15px;
+        background: #e74c3c;
+        color: white;
+        padding: 5px 12px;
+        border-radius: 50px;
+        font-size: 0.7rem;
+        font-weight: 700;
+        z-index: 10;
     }
 
     .card-title {
         font-weight: 700;
         color: #2c3e50;
+        font-size: 1.15rem;
     }
 
-    /* Botón flotante de añadir */
-    .btn-add {
-        width: 45px;
-        height: 45px;
-        border-radius: 50%;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        transition: 0.3s;
-        border: none;
-        box-shadow: 0 4px 15px rgba(46, 204, 113, 0.3);
+    .unit-text {
+        font-size: 0.8rem;
+        color: #7f8c8d;
+        font-weight: 600;
     }
-
-        .btn-add:hover {
-            background-color: #27ae60 !important;
-            transform: scale(1.1);
-        }
 </style>
 
 <div class="container-fluid py-4">
-    <div class="d-flex justify-content-between align-items-center mb-5 px-3">
+    <div class="d-flex justify-content-between align-items-center mb-4 px-3">
         <div>
             <h1 class="fw-bold text-dark m-0">Mercado <span class="text-success">La Veguita</span></h1>
-            <p class="text-muted">Selección premium de frutas y verduras</p>
+            <p class="text-muted">Selección premium de frutas y verduras frescas</p>
         </div>
         <a asp-controller="Tienda" asp-action="Carrito" class="btn btn-success btn-lg rounded-pill shadow px-4 fw-bold">
             <i class="fas fa-shopping-basket me-2"></i> Mi Carrito
         </a>
     </div>
 
+    @if (ViewBag.BusquedaMsg != null)
+    {
+        <div class="d-flex justify-content-between align-items-center alert alert-info rounded-pill px-4 shadow-sm mb-4 ms-3 me-3">
+            <span><i class="fas fa-search me-2"></i> @ViewBag.BusquedaMsg</span>
+            <a asp-controller="Tienda" asp-action="Catalogo" class="btn btn-sm btn-secondary rounded-pill px-3">Limpiar Filtro</a>
+        </div>
+    }
+
     @if (TempData["Mensaje"] != null)
     {
-        <div class="alert alert-success alert-dismissible fade show rounded-pill px-4 shadow-sm" role="alert">
+        <div class="alert alert-success alert-dismissible fade show rounded-pill px-4 shadow-sm mb-4 ms-3 me-3" role="alert">
             <i class="fas fa-check-circle me-2"></i> @TempData["Mensaje"]
             <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
         </div>
@@ -97,57 +107,67 @@
         {
             <div class="col-12 col-sm-6 col-md-4 col-lg-3 mb-4">
                 <div class="card product-card h-100 border-0 shadow-sm">
-                    
-                    <div class="img-placeholder">
+
+                    <div class="img-container">
                         @if (item.EsOrganico == "S")
                         {
                             <span class="badge-organic"><i class="fas fa-leaf me-1"></i> Orgánico</span>
                         }
-                        
-                        @* Selección de icono dinámico según el nombre *@
-                        @{
-                            var iconClass = "fa-apple-whole"; // Default
-                            var nom = item.NomProducto.ToLower();
-                            if (nom.Contains("papa") || nom.Contains("zanahoria")) iconClass = "fa-carrot";
-                            else if (nom.Contains("lechuga") || nom.Contains("acelga")) iconClass = "fa-leaf";
-                            else if (nom.Contains("naranja") || nom.Contains("limon")) iconClass = "fa-lemon";
+
+                        @if (item.StockActual <= item.StockMin)
+                        {
+                            <span class="badge-stock-alert"><i class="fas fa-exclamation-triangle me-1"></i> ¡Últimos cupos!</span>
                         }
-                        <i class="fas @iconClass main-icon"></i>
+
+                        <img src="https://loremflickr.com/400/300/vegetables,fruits/all?lock=@item.IdProducto" class="product-img" alt="@item.NomProducto" />
                     </div>
-                    
+
                     <div class="card-body d-flex flex-column p-4">
-                        <small class="text-success fw-bold text-uppercase" style="font-size: 0.7rem; letter-spacing: 1px;">@item.NomTipo</small>
-                        <h5 class="card-title mt-1" title="@item.NomProducto">@item.NomProducto</h5>
-                        <p class="text-muted small flex-grow-1">@item.Descripcion</p>
-                        
-                        <div class="d-flex justify-content-between align-items-center mt-3">
-                            <div>
-                                <span class="d-block text-muted small" style="margin-bottom: -5px;">Precio</span>
-                                <span class="h4 fw-bold text-dark m-0">$@item.PrecioUnd.ToString("N0")</span>
+                        <div class="d-flex justify-content-between align-items-center mb-1">
+                            <small class="text-success fw-bold text-uppercase" style="font-size: 0.75rem; letter-spacing: 0.5px;">@item.NomTipo</small>
+                            <span class="unit-text text-uppercase"><i class="fas fa-tag me-1"></i> Por @item.UnidadMedida</span>
+                        </div>
+
+                        <h5 class="card-title" title="@item.NomProducto">@item.NomProducto</h5>
+                        <p class="text-muted small flex-grow-1 mb-3">@item.Descripcion</p>
+
+                        <div class="pt-3 border-top mt-auto">
+                            <div class="d-flex justify-content-between align-items-center mb-3">
+                                <div>
+                                    <small class="text-muted d-block" style="font-size: 0.75rem;">Valor Neto</small>
+                                    <span class="h3 fw-bold text-dark m-0">$@item.PrecioUnd.ToString("N0")</span>
+                                </div>
+                                <div class="text-end">
+                                    <small class="text-muted d-block" style="font-size: 0.75rem;">Formato Despacho</small>
+                                    <span class="badge bg-light text-dark border fw-bold"><i class="fas fa-box me-1 text-muted"></i> @item.Packing</span>
+                                </div>
                             </div>
 
-                            <form asp-controller="Tienda" asp-action="AgregarAlCarrito" method="post" class="mt-3">
+                            <form asp-controller="Tienda" asp-action="AgregarAlCarrito" method="post">
                                 <input type="hidden" name="idProducto" value="@item.IdProducto" />
                                 <input type="hidden" name="nombre" value="@item.NomProducto" />
                                 <input type="hidden" name="precio" value="@item.PrecioUnd" />
                                 <input type="hidden" name="peso" value="@item.PesoUnitEstimado" />
-    
-                                <div class="input-group mb-2">
-                                    <span class="input-group-text bg-white">Cant.</span>
-                                    <input type="number" name="cantidad" value="1" min="1" max="@item.StockActual" class="form-control text-center">
+
+                                <div class="input-group mb-2 shadow-sm rounded-pill overflow-hidden" style="border: 1px solid #ced4da;">
+                                    <button type="button" class="btn btn-light border-0 fw-bold px-3 btn-bajar" data-id="@item.IdProducto">-</button>
+
+                                    <input type="number" name="cantidad" id="cant-@item.IdProducto" value="1" min="1" max="@item.StockActual" class="form-control border-0 text-center fw-bold bg-white" readonly>
+
+                                    <button type="button" class="btn btn-light border-0 fw-bold px-3 btn-subir" data-id="@item.IdProducto" data-max="@item.StockActual">+</button>
                                 </div>
 
-                                <button type="submit" class="btn btn-success w-100 rounded-pill fw-bold">
-                                    <i class="fas fa-cart-plus me-2"></i> Añadir
+                                <button type="submit" class="btn btn-success w-100 rounded-pill fw-bold py-2 shadow-sm">
+                                    <i class="fas fa-cart-plus me-2"></i> Añadir al Pedido
                                 </button>
                             </form>
                         </div>
                     </div>
-                    
-                    <div class="card-footer bg-white border-0 px-4 pb-4">
-                        <div class="d-flex justify-content-between pt-3 border-top text-muted small">
-                            <span><i class="fas fa-cubes me-1"></i> Stock: @item.StockActual</span>
-                            <span><i class="fas fa-weight-hanging me-1"></i> @item.PesoUnitEstimado kg</span>
+
+                    <div class="card-footer bg-white border-0 px-4 pb-4 pt-0">
+                        <div class="d-flex justify-content-between pt-3 border-top text-muted small fw-bold">
+                            <span><i class="fas fa-cubes text-success me-1"></i> Stock Disponible: @item.StockActual</span>
+                            <span><i class="fas fa-weight-hanging text-secondary me-1"></i> Peso Ref: @item.PesoUnitEstimado kg</span>
                         </div>
                     </div>
                 </div>
@@ -155,3 +175,40 @@
         }
     </div>
 </div>
+
+@section Scripts {
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
+
+            // Acción para Incrementar (+)
+            document.querySelectorAll(".btn-subir").forEach(boton => {
+                boton.addEventListener("click", function () {
+                    const id = this.getAttribute("data-id");
+                    const maxStock = parseInt(this.getAttribute("data-max"));
+                    const input = document.getElementById("cant-" + id);
+
+                    let valorActual = parseInt(input.value);
+                    if (valorActual < maxStock) {
+                        input.value = valorActual + 1;
+                    } else {
+                        alert("Control de Stock: No es posible añadir más unidades. La cantidad máxima actual en bodega es de " + maxStock + " unidades.");
+                    }
+                });
+            });
+
+            // Acción para Decrementar (-)
+            document.querySelectorAll(".btn-bajar").forEach(boton => {
+                boton.addEventListener("click", function () {
+                    const id = this.getAttribute("data-id");
+                    const input = document.getElementById("cant-" + id);
+
+                    let valorActual = parseInt(input.value);
+                    if (valorActual > 1) {
+                        input.value = valorActual - 1;
+                    }
+                });
+            });
+
+        });
+    </script>
+}

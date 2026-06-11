@@ -13,31 +13,67 @@ namespace LaVeguita.Web.Controllers
     public class TiendaController : Controller
     {
         private readonly ProductoDAL _productoDal = new ProductoDAL();
-        // SOLUCIÓN AL ROJO: Declaramos e instanciamos la variable global de VentaDAL
         private readonly VentaDAL _ventaDAL = new VentaDAL();
 
-        // 1. Catálogo de Productos
-        public IActionResult Catalogo()
+        // 1. Catálogo de Productos (Soporta Búsqueda en Vivo por GET)
+        public IActionResult Catalogo(string buscar)
         {
-            // Blindaje de Rol: Solo Clientes (8)
             int? rol = HttpContext.Session.GetInt32("RolUsuario");
-            if (rol == null || rol != 8) return RedirectToAction("Login", "Acceso");
+            if (rol == null)
+            {
+                HttpContext.Session.SetInt32("RolUsuario", 9);
+                HttpContext.Session.SetString("UsuarioNombre", "Invitado");
+                HttpContext.Session.SetInt32("IdUsuario", 0);
+                rol = 9;
+            }
 
+            if (rol != 8 && rol != 9) return RedirectToAction("Login", "Acceso");
+
+            // Traemos todos los productos desde Oracle Cloud
             var productos = _productoDal.ListarProductos();
+
+            // 🚀 BÚSQUEDA INTEGRADA EN TIEMPO REAL
+            if (!string.IsNullOrEmpty(buscar))
+            {
+                buscar = buscar.ToLower().Trim();
+                // Filtramos por coincidencia en el nombre del producto o categoría
+                productos = productos.Where(p =>
+                    (p.NomProducto != null && p.NomProducto.ToLower().Contains(buscar)) ||
+                    (p.Descripcion != null && p.Descripcion.ToLower().Contains(buscar)) ||
+                    (p.NomTipo != null && p.NomTipo.ToLower().Contains(buscar))
+                ).ToList();
+
+                ViewBag.BusquedaMsg = $"Resultados para la búsqueda: '{buscar}'";
+            }
+
             return View(productos);
+        }
+
+        // 🚀 NUEVA PANTALLA: ¿Quiénes Somos? (Con datos del Contexto del Caso)
+        public IActionResult QuienesSomos()
+        {
+            return View();
+        }
+
+        // 🚀 NUEVA PANTALLA: Productos Estrella (Filtrado Premium)
+        public IActionResult ProductosEstrella()
+        {
+            // Traemos los productos destacados de la base de datos (Calidad 2 = Premium)
+            var destacados = _productoDal.ListarProductos().Where(p => p.IdCalidad == 2).ToList();
+            return View(destacados);
         }
 
         // 2. Vista del Carrito de Compras
         public IActionResult Carrito()
         {
             int? rol = HttpContext.Session.GetInt32("RolUsuario");
-            if (rol == null || rol != 8) return RedirectToAction("Login", "Acceso");
+            if (rol == null || (rol != 8 && rol != 9)) return RedirectToAction("Login", "Acceso");
 
             var carrito = ObtenerCarritoDeSesion();
             return View(carrito);
         }
 
-        // 3. Agregar productos (Maneja el Peso para el Caso 4)
+        // 3. Agregar productos
         [HttpPost]
         public IActionResult AgregarAlCarrito(int idProducto, string nombre, decimal precio, decimal peso, int cantidad)
         {
@@ -51,7 +87,7 @@ namespace LaVeguita.Web.Controllers
                     IdProducto = idProducto,
                     Nombre = nombre ?? "Producto sin nombre",
                     Precio = precio,
-                    PesoUnitario = peso, // Vital para decidir Bicicleta o Triciclo
+                    PesoUnitario = peso,
                     Cantidad = cantidad
                 });
             }
@@ -65,7 +101,7 @@ namespace LaVeguita.Web.Controllers
             return RedirectToAction("Catalogo");
         }
 
-        // 4. Ajustar cantidad (+ o -)
+        // 4. Ajustar cantidad
         public IActionResult AjustarCantidad(int id, int cambio)
         {
             var carrito = ObtenerCarritoDeSesion();
@@ -81,9 +117,9 @@ namespace LaVeguita.Web.Controllers
             return RedirectToAction("Carrito");
         }
 
-        // 5. Procesar compra en Oracle (Blindado contra ORA-02291)
+        // 5. Procesar compra en Oracle
         [HttpPost]
-        public IActionResult FinalizarCompra(string tipoEnvio, string horaFijo)
+        public IActionResult FinalizarCompra(string tipoEnvio, string horaFijo, string calleInvitado, int? numeroInvitado, int? comunaInvitado, string rutInvitado, string correoInvitado, string nombreInvitado, string telefonoInvitado)
         {
             var carrito = ObtenerCarritoDeSesion();
             if (carrito == null || !carrito.Any())
@@ -92,49 +128,38 @@ namespace LaVeguita.Web.Controllers
                 return RedirectToAction("Catalogo");
             }
 
+            // Rescatamos los datos de sesión activos
             int? idUsuario = HttpContext.Session.GetInt32("IdUsuario");
 
-            if (idUsuario == null || idUsuario == 0)
+            // 🚀 BLINDAJE MODIFICADO: Solo bloqueamos si la sesión expiró por completo (null). 
+            // Si idUsuario es 0, significa que es un Invitado legítimo y lo dejamos pasar.
+            if (idUsuario == null)
             {
-                TempData["Error"] = "Sesion invalida. Por favor, inicia sesion nuevamente.";
+                TempData["Error"] = "Sesión inválida o expirada. Por favor, intente nuevamente.";
                 return RedirectToAction("Login", "Acceso");
             }
 
-            // Al asignarle directamente el idUsuario.Value, garantizamos que calce 
-            // al 100% con la llave foránea FK_OV_USUARIO que creamos en Oracle.
+            // Si es un cliente registrado, hereda su ID. Si es Invitado (0), viaja el 0 para que la DAL cree su cuenta express.
             int idClienteFinal = idUsuario.Value;
+            int idUsuarioFinal = idUsuario.Value;
             decimal total = carrito.Sum(x => x.Subtotal);
 
-            // --- MOTOR DE REGLAS DE TIEMPO DEL CASO 4 ---
-            DateTime ahora = DateTime.Now; // Hora real del servidor Cloud
+            DateTime ahora = DateTime.Now;
             DateTime fechaEstimadaEntrega = ahora;
             string mensajeBloqueo = "";
 
-            // Forzamos el tipo de envio a mayusculas para evitar problemas
             tipoEnvio = tipoEnvio?.ToUpper() ?? "NORMAL";
 
             switch (tipoEnvio)
             {
                 case "ECONOMICO":
-                    if (ahora.Hour >= 17)
-                    {
-                        fechaEstimadaEntrega = ahora.AddDays(2).Date.AddHours(9);
-                    }
-                    else
-                    {
-                        fechaEstimadaEntrega = ahora.AddDays(1).Date.AddHours(9);
-                    }
+                    if (ahora.Hour >= 17) fechaEstimadaEntrega = ahora.AddDays(2).Date.AddHours(9);
+                    else fechaEstimadaEntrega = ahora.AddDays(1).Date.AddHours(9);
                     break;
 
                 case "NORMAL":
-                    if (ahora.Hour >= 12)
-                    {
-                        fechaEstimadaEntrega = ahora.AddDays(1).Date.AddHours(9);
-                    }
-                    else
-                    {
-                        fechaEstimadaEntrega = ahora.AddHours(6);
-                    }
+                    if (ahora.Hour >= 12) fechaEstimadaEntrega = ahora.AddDays(1).Date.AddHours(9);
+                    else fechaEstimadaEntrega = TrackedTimeHelper(ahora); // Mantiene tu lógica de 6 horas
                     break;
 
                 case "FIJO":
@@ -173,23 +198,43 @@ namespace LaVeguita.Web.Controllers
 
             try
             {
-                // JUGADA MAESTRA: Modificamos para llamar a GenerarOrdenCompletaConEnvio.
-                // Como este método en tu VentaDAL ya gestiona la cabecera, detalles y despacho,
-                // vamos a capturar el ID de la venta consultando el último ingresado o pasando un parámetro si lo necesitas.
-                // Para mantener tu estructura actual intacta sin romper firmas, ejecutamos la compra:
-                bool exito = _ventaDAL.GenerarOrdenCompletaConEnvio(idClienteFinal, idUsuario.Value, total, carrito, tipoEnvio, fechaEstimadaEntrega);
+                // 🚀 PASO DE PARÁMETROS: Enviamos todos los canales capturados del formulario express a la VentaDAL
+                bool exito = _ventaDAL.GenerarOrdenCompletaConEnvio(
+                    idClienteFinal,
+                    idUsuarioFinal,
+                    total,
+                    carrito,
+                    tipoEnvio,
+                    fechaEstimadaEntrega,
+                    calleInvitado,
+                    numeroInvitado,
+                    comunaInvitado,
+                    rutInvitado,
+                    correoInvitado,
+                    nombreInvitado,
+                    telefonoInvitado
+                );
 
                 if (exito)
                 {
-                    // Buscamos el ID de la última orden de este usuario para pasárselo a la boleta sin alterar la firma del método
                     int idUltimaVenta = 0;
                     using (Oracle.ManagedDataAccess.Client.OracleConnection cn = new Conexion().LeerConexion())
                     {
                         cn.Open();
-                        string query = "SELECT MAX(ID_VENTA) FROM ORDEN_VENTA WHERE ID_USUARIO = :idUser";
+
+                        // JUGADA MAESTRA: Si era un invitado express (idUsuario == 0), buscamos la última venta global ingresada al sistema.
+                        // Si es un cliente registrado, buscamos por su ID específico. Esto evita que el buscador devuelva un ID 0.
+                        string query = idUsuarioFinal == 0
+                            ? "SELECT MAX(ID_VENTA) FROM ORDEN_VENTA"
+                            : "SELECT MAX(ID_VENTA) FROM ORDEN_VENTA WHERE ID_USUARIO = :idUser";
+
                         using (Oracle.ManagedDataAccess.Client.OracleCommand cmd = new Oracle.ManagedDataAccess.Client.OracleCommand(query, cn))
                         {
-                            cmd.Parameters.Add("idUser", Oracle.ManagedDataAccess.Client.OracleDbType.Int32).Value = idUsuario.Value;
+                            if (idUsuarioFinal != 0)
+                            {
+                                cmd.Parameters.Add("idUser", Oracle.ManagedDataAccess.Client.OracleDbType.Int32).Value = idUsuarioFinal;
+                            }
+
                             var res = cmd.ExecuteScalar();
                             if (res != null && res != DBNull.Value)
                             {
@@ -198,9 +243,10 @@ namespace LaVeguita.Web.Controllers
                         }
                     }
 
+                    // Limpiamos la sesión del carrito de compras tras el éxito de la venta
                     HttpContext.Session.Remove("CarritoVeguita");
 
-                    // Pasamos el ID real de la venta a la pantalla de confirmación
+                    // Redireccionamos directamente a la boleta dinámica
                     return RedirectToAction("Confirmacion", new { idVenta = idUltimaVenta });
                 }
             }
@@ -212,10 +258,12 @@ namespace LaVeguita.Web.Controllers
             return RedirectToAction("Carrito");
         }
 
+        // Método de apoyo para el cálculo de horas
+        private DateTime TrackedTimeHelper(DateTime ahora) { return ahora.AddHours(6); }
+
         [HttpGet]
         public IActionResult Historial()
         {
-            // 1. Validamos seguridad: Rescatamos el ID del usuario desde la sesión
             int? idUsuario = HttpContext.Session.GetInt32("IdUsuario");
             int? rol = HttpContext.Session.GetInt32("RolUsuario");
 
@@ -227,11 +275,8 @@ namespace LaVeguita.Web.Controllers
 
             try
             {
-                // 2. Instanciamos tu VentaDAL para traer el DataTable con los registros históricos
                 LaVeguita.DAL.VentaDAL ventaDal = new LaVeguita.DAL.VentaDAL();
                 System.Data.DataTable dtHistorial = ventaDal.ObtenerHistorialCliente(idUsuario.Value);
-
-                // 3. Enviamos el DataTable directo a la vista
                 return View(dtHistorial);
             }
             catch (Exception ex)
@@ -241,23 +286,14 @@ namespace LaVeguita.Web.Controllers
             }
         }
 
-
-
-
-
-
-
-
-        // 6. Confirmación de pedido (Boleta Dinámica)
+        // 6. Confirmación de pedido
         public IActionResult Confirmacion(int idVenta)
         {
-            // Busca los datos reales usando tu método de la DAL
             DataTable dt = _ventaDAL.ObtenerDetalleBoleta(idVenta);
             return View(dt);
         }
 
         // --- MÉTODOS DE APOYO (Private) ---
-
         private List<CarritoItem> ObtenerCarritoDeSesion()
         {
             try
@@ -278,5 +314,48 @@ namespace LaVeguita.Web.Controllers
             var settings = new JsonSerializerSettings { ReferenceLoopHandling = ReferenceLoopHandling.Ignore };
             HttpContext.Session.SetString("CarritoVeguita", JsonConvert.SerializeObject(carrito, settings));
         }
+
+
+
+        [HttpGet]
+        public IActionResult Seguimiento(string rut)
+        {
+            DataTable dtPedidos = new DataTable();
+
+            if (!string.IsNullOrEmpty(rut))
+            {
+                ViewBag.RutBuscado = rut.Trim();
+
+                // Query limpio para buscar todas las órdenes del RUT ingresado uniendo con DESPACHO para ver los estados reales de Oracle
+                string query = @"SELECT o.ID_VENTA, o.FECHA_VENTA, o.TOTAL, o.TIPO_ENVIO, 
+                                        NVL(d.ESTADO_ENTREGA, 'EN PREPARACION') AS ESTADO_ENTREGA
+                                 FROM ADMIN.ORDEN_VENTA o
+                                 JOIN ADMIN.CLIENTE c ON o.ID_CLIENTE = c.ID_CLIENTE
+                                 LEFT JOIN ADMIN.DESPACHO d ON o.ID_VENTA = d.ID_VENTA
+                                 WHERE c.RUT_CLI = :rut
+                                 ORDER BY o.FECHA_VENTA DESC";
+
+                using (Oracle.ManagedDataAccess.Client.OracleConnection cn = new Conexion().LeerConexion())
+                {
+                    using (Oracle.ManagedDataAccess.Client.OracleCommand cmd = new Oracle.ManagedDataAccess.Client.OracleCommand(query, cn))
+                    {
+                        cmd.Parameters.Add("rut", Oracle.ManagedDataAccess.Client.OracleDbType.Varchar2).Value = rut.Trim();
+                        using (Oracle.ManagedDataAccess.Client.OracleDataAdapter da = new Oracle.ManagedDataAccess.Client.OracleDataAdapter(cmd))
+                        {
+                            da.Fill(dtPedidos);
+                        }
+                    }
+                }
+            }
+
+            return View(dtPedidos);
+        }
+
+
+
+
+
+
+
     }
 }

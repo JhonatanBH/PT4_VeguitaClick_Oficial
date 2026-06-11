@@ -84,7 +84,7 @@ namespace LaVeguita.DAL
             }
         }
 
-        public bool GenerarOrdenCompletaConEnvio(int idCliente, int idUsuario, decimal total, List<CarritoItem> detalles, string tipoEnvio, DateTime fechaEntrega)
+        public bool GenerarOrdenCompletaConEnvio(int idCliente, int idUsuario, decimal total, List<CarritoItem> detalles, string tipoEnvio, DateTime fechaEntrega, string calleInvitado = null, int? numeroInvitado = null, int? comunaInvitado = null, string rutInvitado = null, string correoInvitado = null, string nombreInvitado = null, string telefonoInvitado = null)
         {
             using (OracleConnection cn = _conexion.LeerConexion())
             {
@@ -93,13 +93,79 @@ namespace LaVeguita.DAL
                 {
                     try
                     {
-                        // 1. REGISTRAR CABECERA DE VENTA
+                        int idUsuarioFinal = idUsuario;
+                        int idClienteFinal = idCliente;
+
+                        // ====================================================================
+                        // 🌿 PROCESO EXPRESS EN CALIENTE PARA EL INVITADO (Rol 9)
+                        // ====================================================================
+                        if (idUsuario == 0 && !string.IsNullOrEmpty(calleInvitado))
+                        {
+                            int idDireccionGenerada = 0;
+
+                            // Paso A: Insertar Dirección usando el IDENTITY nativo de Oracle
+                            string queryDir = "INSERT INTO ADMIN.DIRECCION (NOMBRE_DIR, NUMERO_DIR, ID_COMUNA) VALUES (:nom, :num, :com) RETURNING ID_DIRECCION INTO :idOut";
+                            using (OracleCommand cmdDir = new OracleCommand(queryDir, cn))
+                            {
+                                cmdDir.Parameters.Add("nom", OracleDbType.Varchar2).Value = calleInvitado;
+                                cmdDir.Parameters.Add("num", OracleDbType.Int32).Value = numeroInvitado;
+                                cmdDir.Parameters.Add("com", OracleDbType.Int32).Value = comunaInvitado;
+
+                                OracleParameter pOutDir = new OracleParameter("idOut", OracleDbType.Int32, ParameterDirection.Output);
+                                cmdDir.Parameters.Add(pOutDir);
+
+                                cmdDir.ExecuteNonQuery();
+                                idDireccionGenerada = int.Parse(pOutDir.Value.ToString());
+                            }
+
+                            // Paso B: Solicitar el correlativo del usuario a tu secuencia actual
+                            int idNuevoUsuario = 0;
+                            string querySeq = "SELECT ADMIN.SEQ_USUARIO.NEXTVAL FROM DUAL";
+                            using (OracleCommand cmdSeq = new OracleCommand(querySeq, cn))
+                            {
+                                idNuevoUsuario = Convert.ToInt32(cmdSeq.ExecuteScalar());
+                            }
+
+                            // Paso C: Crear la cuenta express de Invitado guardando sus canales reales
+                            string queryUser = "INSERT INTO ADMIN.USUARIOS (ID_USUARIO, NOMBRE_USER, CONTRASENA, FONO, CORREO_USU, ID_ROL_USUARIO, ID_DIRECCION) " +
+                                               "VALUES (:id, :username, 'invitado123', :fono, :correo, 9, :idDir)";
+                            using (OracleCommand cmdUser = new OracleCommand(queryUser, cn))
+                            {
+                                cmdUser.Parameters.Add("id", OracleDbType.Int32).Value = idNuevoUsuario;
+                                cmdUser.Parameters.Add("username", OracleDbType.Varchar2).Value = !string.IsNullOrEmpty(nombreInvitado) ? nombreInvitado.Trim() : "invitado_" + idNuevoUsuario;
+                                cmdUser.Parameters.Add("fono", OracleDbType.Int32).Value = !string.IsNullOrEmpty(telefonoInvitado) ? int.Parse(telefonoInvitado) : 99999999;
+                                cmdUser.Parameters.Add("correo", OracleDbType.Varchar2).Value = !string.IsNullOrEmpty(correoInvitado) ? correoInvitado.Trim() : "anonimo@veguita.cl";
+                                cmdUser.Parameters.Add("idDir", OracleDbType.Int32).Value = idDireccionGenerada;
+
+                                cmdUser.ExecuteNonQuery();
+                            }
+
+                            // Paso D: Registrar el RUT en la tabla CLIENTE para las búsquedas de seguimiento de despacho
+                            string queryCliente = "INSERT INTO ADMIN.CLIENTE (ID_CLIENTE, RUT_CLI, ID_USUARIO, ID_DIRECCION) " +
+                                                  "VALUES (:idCli, :rut, :idUsu, :idDir)";
+                            using (OracleCommand cmdCli = new OracleCommand(queryCliente, cn))
+                            {
+                                cmdCli.Parameters.Add("idCli", OracleDbType.Int32).Value = idNuevoUsuario;
+                                cmdCli.Parameters.Add("rut", OracleDbType.Varchar2).Value = !string.IsNullOrEmpty(rutInvitado) ? rutInvitado.Trim() : "11111111-1";
+                                cmdCli.Parameters.Add("idUsu", OracleDbType.Int32).Value = idNuevoUsuario;
+                                cmdCli.Parameters.Add("idDir", OracleDbType.Int32).Value = idDireccionGenerada;
+
+                                cmdCli.ExecuteNonQuery();
+                            }
+
+                            idUsuarioFinal = idNuevoUsuario;
+                            idClienteFinal = idNuevoUsuario;
+                        }
+
+                        // ====================================================================
+                        // 1. REGISTRAR CABECERA DE VENTA (Usa tu firma original de Package)
+                        // ====================================================================
                         int idVentaGenerada;
                         using (OracleCommand cmdOrden = new OracleCommand("PKG_VENTAS.SP_REGISTRAR_ORDEN", cn))
                         {
                             cmdOrden.CommandType = CommandType.StoredProcedure;
-                            cmdOrden.Parameters.Add("p_id_cliente", OracleDbType.Int32).Value = idCliente;
-                            cmdOrden.Parameters.Add("p_id_usuario", OracleDbType.Int32).Value = idUsuario;
+                            cmdOrden.Parameters.Add("p_id_cliente", OracleDbType.Int32).Value = idClienteFinal;
+                            cmdOrden.Parameters.Add("p_id_usuario", OracleDbType.Int32).Value = idUsuarioFinal;
                             cmdOrden.Parameters.Add("p_total", OracleDbType.Decimal).Value = total;
 
                             OracleParameter pOutId = new OracleParameter("p_id_venta", OracleDbType.Int32);
@@ -110,7 +176,9 @@ namespace LaVeguita.DAL
                             idVentaGenerada = int.Parse(pOutId.Value.ToString());
                         }
 
+                        // ====================================================================
                         // 2. REGISTRAR CADA DETALLE DEL CARRITO
+                        // ====================================================================
                         foreach (var item in detalles)
                         {
                             using (OracleCommand cmdDet = new OracleCommand("PKG_VENTAS.SP_REGISTRAR_DETALLE", cn))
@@ -125,7 +193,9 @@ namespace LaVeguita.DAL
                             }
                         }
 
-                        // 3. ASIGNAR DESPACHO CON SUS 2 PARAMETROS ORIGINALES (EVITA EL ERROR PLS-00306)
+                        // ====================================================================
+                        // 3. ASIGNAR DESPACHO CON SUS 2 PARAMETROS ORIGINALES 
+                        // ====================================================================
                         using (OracleCommand cmdDespacho = new OracleCommand("PKG_VENTAS.SP_ASIGNAR_DESPACHO", cn))
                         {
                             cmdDespacho.CommandType = CommandType.StoredProcedure;
@@ -137,8 +207,9 @@ namespace LaVeguita.DAL
                             cmdDespacho.ExecuteNonQuery();
                         }
 
-                        // 4. JUGADA MAESTRA: GUARDAR EL TIPO DE ENVIO Y LA FECHA ESTIMADA CON UN UPDATE DIRECTO
-                        // Nota: Si tu tabla de cabecera se llama VENTAS en vez de ORDEN_VENTA, cambia el nombre aqui.
+                        // ====================================================================
+                        // 4. GUARDAR EL TIPO DE ENVIO Y LA FECHA ESTIMADA CON EL UPDATE DIRECTO
+                        // ====================================================================
                         string sqlUpdate = "UPDATE ORDEN_VENTA SET TIPO_ENVIO = :tipo, FECHA_ESTIMADA = :fecha WHERE ID_VENTA = :id";
                         using (OracleCommand cmdUpd = new OracleCommand(sqlUpdate, cn))
                         {

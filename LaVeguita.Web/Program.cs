@@ -41,7 +41,7 @@ namespace LaVeguita.Web
 
             app.MapControllerRoute(
                 name: "default",
-                pattern: "{controller=Acceso}/{action=Login}/{id?}"); // Cambié Home por Acceso para que parta en el Login
+                pattern: "{controller=Tienda}/{action=Catalogo}/{id?}"); // Cambié Home por Acceso para que parta en el Login
 
             app.Run();
         }

@@ -4,6 +4,7 @@ using LaVeguita.Entities;
 using Microsoft.AspNetCore.Mvc;
 using System;
 using System.Collections.Generic;
+using Microsoft.AspNetCore.Http;
 
 namespace LaVeguita.Web.Controllers
 {
@@ -14,16 +15,10 @@ namespace LaVeguita.Web.Controllers
 
         public IActionResult Index()
         {
-            // Capturamos el rol de la sesión
             int? rol = HttpContext.Session.GetInt32("RolUsuario");
-
-            // 1. Si no hay sesión, al Login
             if (rol == null) return RedirectToAction("Login", "Acceso");
-
-            // 2. Si es Cliente (8), lo mandamos a SU vista (Catálogo)
             if (rol == 8) return RedirectToAction("Catalogo", "Tienda");
 
-            // 3. Si llega aquí, es Admin/Gerente/Asistente y puede ver la tabla
             var lista = _productoBll.ListarProductos();
             return View(lista);
         }
@@ -36,9 +31,6 @@ namespace LaVeguita.Web.Controllers
         public IActionResult Crear()
         {
             int? rol = HttpContext.Session.GetInt32("RolUsuario");
-
-            // Solo permitimos roles administrativos (Gerente=1, Jefe=2, Asistente=4, etc.)
-            // Si es Cliente (8) o Transportista (7), no deberían estar aquí
             if (rol == 8 || rol == 7 || rol == null)
             {
                 return RedirectToAction("Index", "Home");
@@ -51,12 +43,8 @@ namespace LaVeguita.Web.Controllers
         }
 
         [HttpPost]
-        // Recibimos un parametro extra 'unidadPeso' que viene del select de la vista
         public IActionResult Crear(Producto p, string unidadPeso)
         {
-            // LOGICA MATEMATICA DE PESO:
-            // Si el usuario escribio "500" y selecciono gramos ("g")
-            // Lo convertimos a 0.5 Kg para que la base de datos y la logistica no se rompan
             if (unidadPeso == "g")
             {
                 p.PesoUnitEstimado = p.PesoUnitEstimado / 1000m;
@@ -64,7 +52,7 @@ namespace LaVeguita.Web.Controllers
 
             try
             {
-                _productoBll.InsertarProducto(p); // (Asegurate que tu DAL y BLL envien p.UnidadMedida a p_uom)
+                _productoBll.InsertarProducto(p);
                 return RedirectToAction("Index");
             }
             catch (Exception ex)
@@ -87,7 +75,6 @@ namespace LaVeguita.Web.Controllers
             var producto = _productoDAL.ObtenerPorId(id);
             if (producto == null) return NotFound();
 
-            // Poblamos los selectores para la edición
             ViewBag.Proveedores = _productoDAL.ListarProveedores();
             ViewBag.Tipos = _productoDAL.ListarTipos();
             ViewBag.Calidades = _productoDAL.ListarCalidades();
@@ -98,12 +85,8 @@ namespace LaVeguita.Web.Controllers
         [HttpPost]
         public IActionResult Editar(Producto p, string unidadPeso)
         {
-            // Limpiamos validaciones de objetos complejos o dinamicos para que no traben el flujo
             ModelState.ClearValidationState(nameof(Producto));
 
-            // --- MOTOR DE REGLA MATEMATICA DE PESO (CASO 4) ---
-            // Si el usuario edito el producto colocandolo en gramos (g)
-            // dividimos por 1000 para forzar el almacenamiento en Kg puros en la base de datos
             if (unidadPeso == "g")
             {
                 p.PesoUnitEstimado = p.PesoUnitEstimado / 1000m;
@@ -111,25 +94,16 @@ namespace LaVeguita.Web.Controllers
 
             try
             {
-                // Invocamos el metodo que ahora si mapea el parametro p_uom hacia el Package
                 bool exito = _productoDAL.EditarProducto(p);
 
-                if (exito)
-                {
-                    return RedirectToAction("Index");
-                }
-                else
-                {
-                    ViewData["Error"] = "No se pudo actualizar el registro. Verifique si el ID existe en el inventario.";
-                }
+                if (exito) return RedirectToAction("Index");
+                else ViewData["Error"] = "No se pudo actualizar el registro. Verifique si el ID existe.";
             }
             catch (Exception ex)
             {
                 ViewData["Error"] = "Error de base de datos: " + ex.Message;
             }
 
-            // Si llegamos aqui, significa que ocurrio un error transaccional. 
-            // Repoblamos de forma obligatoria las bolsas de datos para los selectores de la vista.
             ViewBag.Proveedores = _productoDAL.ListarProveedores();
             ViewBag.Tipos = _productoDAL.ListarTipos();
             ViewBag.Calidades = _productoDAL.ListarCalidades();

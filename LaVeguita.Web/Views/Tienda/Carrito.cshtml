@@ -1,4 +1,9 @@
 ﻿@model List<LaVeguita.Entities.CarritoItem>
+@using Microsoft.AspNetCore.Http
+@inject IHttpContextAccessor HttpContextAccessor
+@{
+    int? rolUsuario = HttpContextAccessor.HttpContext.Session.GetInt32("RolUsuario");
+}
 
 @if (TempData["Error"] != null)
 {
@@ -14,7 +19,7 @@
     @if (Model == null || !Model.Any())
     {
         <div class="alert alert-info">Tu carrito esta vacio. ¡Ve al catalogo y elige algo rico!</div>
-        <a asp-action="Catalogo" class="btn btn-success">Volver al Catalogo</a>
+        <a asp-controller="Tienda" asp-action="Catalogo" class="btn btn-success">Volver al Catalogo</a>
     }
     else
     {
@@ -82,20 +87,21 @@
                             @(Model.Sum(x => x.PesoSubtotal) < 5 ? "Pedido liviano. Se asignara Bicicleta." : "Pedido pesado. Se asignara Triciclo.")
                         </div>
 
-                        <form asp-action="FinalizarCompra" method="post" id="formCheckout">
+                        <form asp-action="FinalizarCompra" asp-controller="Tienda" method="post" id="formCheckout">
 
                             <div class="mb-3 p-3 rounded-3" style="background-color: #f8f9fa; border: 1px solid #e9ecef;">
                                 <label class="form-label fw-bold text-muted"><i class="fas fa-shipping-fast text-success me-1"></i> Seleccione Modalidad de Envio</label>
                                 <select name="tipoEnvio" id="ddlTipoEnvio" class="form-select" required style="padding: 10px;">
-                                    <option value="NORMAL">NORMAL (Entrega dentro de las proximas 6 horas)</option>
+                                    <option value="NORMAL">NORMAL (Entrega dentro de las proximas 6 hours)</option>
                                     <option value="ECONOMICO">ECONOMICO (Dia habil siguiente 9:00 a 18:00 hrs)</option>
-                                    <option value="URGENTE">URGENTE (Despacho inmediato, maximo 2 horas)</option>
+                                    <option value="URGENTE">URGENTE (Despacho inmediato, maximo 2 hours)</option>
                                     <option value="FIJO">FIJO (Usted agenda la hora exacta de entrega)</option>
                                 </select>
                             </div>
+
                             <div class="mb-3 p-3 rounded-3 border">
                                 <label class="form-label fw-bold text-muted"><i class="fas fa-map text-primary me-1"></i> Confirmar Zona de Despacho</label>
-                                <select id="ddlZonaDespacho" class="form-select border-primary" style="padding: 10px;">
+                                <select id="ddlZonaDespacho" name="comunaInvitado" class="form-select border-primary" style="padding: 10px;" required>
                                     <option value="0">Seleccione comuna de destino...</option>
                                     <option value="2">Peñalolén (Matriz - 2 km)</option>
                                     <option value="4">Macul (Aprox. 4 km)</option>
@@ -111,14 +117,57 @@
                                 </div>
                             </div>
 
+                            @if (rolUsuario == 9 || rolUsuario == null)
+                            {
+                                <div class="card p-4 mb-3 border-0 shadow-sm" style="border-radius: 16px; background-color: #f8f9fa;" id="panelInvitado">
+                                    <h5 class="fw-bold text-success mb-3"><i class="fas fa-id-card-alt text-success me-2"></i>Datos de Despacho y Facturación Express</h5>
 
+                                    <div class="row g-2 mb-2">
+                                        <div class="col-6">
+                                            <label class="form-label small fw-bold text-muted m-0 mb-1">Nombre Completo</label>
+                                            <input type="text" name="nombreInvitado" id="txtNombreInvitado" class="form-control bg-white" placeholder="Ej: Juan Pérez" required />
+                                        </div>
+                                        <div class="col-6">
+                                            <label class="form-label small fw-bold text-muted m-0 mb-1">Teléfono Móvil</label>
+                                            <input type="number" name="telefonoInvitado" id="txtTelefonoInvitado" class="form-control bg-white" placeholder="912345678" required />
+                                        </div>
+                                    </div>
 
+                                    <div class="row g-2 mb-3">
+                                        <div class="col-6">
+                                            <label class="form-label small fw-bold text-muted m-0 mb-1">RUT (Sin puntos con guión)</label>
+                                            <input type="text" name="rutInvitado" id="txtRutInvitado" class="form-control bg-white" placeholder="12345678-9" required />
+                                            <div id="rutErrorText" class="text-danger small d-none">RUT incorrecto matemáticamente.</div>
+                                        </div>
+                                        <div class="col-6">
+                                            <label class="form-label small fw-bold text-muted m-0 mb-1">Correo Electrónico</label>
+                                            <input type="email" name="correoInvitado" id="txtCorreoInvitado" class="form-control bg-white" placeholder="juan@@correo.com" required />
+                                        </div>
+                                    </div>
+
+                                    <div class="row g-2">
+                                        <div class="col-8 position-relative">
+                                            <label class="form-label small fw-bold text-muted m-0 mb-1">Buscar Dirección (API Mapas en vivo)</label>
+                                            <div class="input-group">
+                                                <span class="input-group-text bg-white border-end-0 text-muted small"><i class="fas fa-search-location"></i></span>
+                                                <input type="text" name="calleInvitado" id="txtCalleInvitado" class="form-control bg-white border-start-0" placeholder="Escriba calle y comuna..." autocomplete="off" required />
+                                            </div>
+                                            <div id="resultadosMapas" class="list-group position-absolute w-100 shadow-lg d-none" style="z-index: 2000; max-height: 200px; overflow-y: auto;"></div>
+                                            <div id="calleErrorText" class="text-danger small d-none">No use tildes en la calle.</div>
+                                        </div>
+                                        <div class="col-4">
+                                            <label class="form-label small fw-bold text-muted m-0 mb-1">Número / Block</label>
+                                            <input type="number" name="numeroInvitado" id="txtNumeroInvitado" class="form-control bg-white" placeholder="N°" required />
+                                        </div>
+                                    </div>
+                                </div>
+                            }
 
                             <div id="contenedorHoraFijo" class="mb-3 p-3 rounded-3 d-none" style="background-color: #fff3cd; border: 1px solid #ffeeba;">
                                 <label class="form-label fw-bold text-warning-emphasis"><i class="far fa-clock me-1"></i> Indique Hora de Retiro/Entrega</label>
                                 <input type="time" name="horaFijo" id="txtHoraFijo" class="form-control" style="padding: 10px;" />
                                 <div id="feedbackHora" class="text-danger small mt-1 d-none">
-                                    Regra: Debe agendar con un minimo de 2 horas de anticipacion.
+                                    Regra: Debe agendar con un minimo de 2 hours de anticipacion.
                                 </div>
                             </div>
 
@@ -136,104 +185,278 @@
 @section Scripts {
     <script>
         document.addEventListener("DOMContentLoaded", function () {
+            // Referencias de Elementos del Formulario
+            const formCheckout = document.getElementById('formCheckout');
             const ddlTipoEnvio = document.getElementById('ddlTipoEnvio');
-            const contenedorHoraFijo = document.getElementById('contenedorHoraFijo');
             const txtHoraFijo = document.getElementById('txtHoraFijo');
             const feedbackHora = document.getElementById('feedbackHora');
-            const btnPagar = document.getElementById('btnPagar');
-            const formCheckout = document.getElementById('formCheckout');
-
             const ddlZonaDespacho = document.getElementById('ddlZonaDespacho');
             const alertaDistancia = document.getElementById('alertaDistancia');
+            const btnPagar = document.getElementById('btnPagar');
 
+            // Referencias del Panel Express de Invitado
+            const txtNombre = document.getElementById("txtNombreInvitado");
+            const txtTelefono = document.getElementById("txtTelefonoInvitado");
+            const txtRut = document.getElementById("txtRutInvitado");
+            const txtCorreo = document.getElementById("txtCorreoInvitado");
+            const txtCalle = document.getElementById("txtCalleInvitado");
+            const txtNumero = document.getElementById("txtNumeroInvitado");
+            const divResultados = document.getElementById("resultadosMapas");
 
+            let timerBusqueda;
 
+            // Deshabilitar botón inicialmente hasta que todo esté OK
+            btnPagar.setAttribute('disabled', 'disabled');
 
-            // 1. CONTROL DE VISIBILIDAD EN TIEMPO REAL
-            ddlTipoEnvio.addEventListener('change', function () {
-                if (this.value === 'FIJO') {
-                    contenedorHoraFijo.classList.remove('d-none');
-                    txtHoraFijo.setAttribute('required', 'required');
-                    validarHoraFijo();
-                } else {
-                    contenedorHoraFijo.classList.add('d-none');
-                    txtHoraFijo.removeAttribute('required');
-                    txtHoraFijo.classList.remove('is-invalid');
-                    feedbackHora.classList.add('d-none');
-                    btnPagar.removeAttribute('disabled');
-                }
-            });
+            // ====================================================================
+            // 🔍 AUDITORÍA DE VALIDACIÓN EN TIEMPO REAL (LETRA POR LETRA)
+            // ====================================================================
 
-            // 2. MOTOR DE REGLA HORARIA EN TIEMPO REAL (MÍNIMO 2 HORAS)
-            function validarHoraFijo() {
+            // 1. Validar Nombre (No puede estar vacío y mínimo 3 caracteres)
+            if (txtNombre) {
+                txtNombre.addEventListener("input", function () {
+                    if (txtNombre.value.trim().length >= 3) {
+                        marcarValido(txtNombre);
+                    } else {
+                        marcarInvalido(txtNombre);
+                    }
+                    validarTodo();
+                });
+            }
+
+            // 2. Validar Teléfono (Estrictamente 9 dígitos numéricos chilenos)
+            if (txtTelefono) {
+                txtTelefono.addEventListener("input", function () {
+                    // Limitar a 9 dígitos si el usuario se pasa escribiendo
+                    if (txtTelefono.value.length > 9) {
+                        txtTelefono.value = txtTelefono.value.slice(0, 9);
+                    }
+
+                    const regexFono = /^9[0-9]{8}$/; // Empieza con 9 y siguen 8 números
+                    if (regexFono.test(txtTelefono.value)) {
+                        marcarValido(txtTelefono);
+                    } else {
+                        marcarInvalido(txtTelefono);
+                    }
+                    validarTodo();
+                });
+            }
+
+            // 3. Validar RUT (Algoritmo matemático con guión y sin puntos)
+            if (txtRut) {
+                txtRut.addEventListener("input", function () {
+                    txtRut.value = txtRut.value.replace(/\./g, '').trim();
+                    const errText = document.getElementById("rutErrorText");
+
+                    if (validarRutChileno(txtRut.value)) {
+                        marcarValido(txtRut);
+                        if (errText) errText.classList.add("d-none");
+                    } else {
+                        marcarInvalido(txtRut);
+                        if (errText) errText.classList.remove("d-none");
+                    }
+                    validarTodo();
+                });
+            }
+
+            // 4. Validar Correo Electrónico (Estructura estándar de Email)
+            if (txtCorreo) {
+                txtCorreo.addEventListener("input", function () {
+                    // 🚀 SOLUCIÓN AL ROJO: Doble arroba para escapar el motor de Razor
+                    const regexEmail = /^[a-zA-Z0-9._%+-]+@@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+                    if (regexEmail.test(txtCorreo.value.trim())) {
+                        marcarValido(txtCorreo);
+                    } else {
+                        marcarInvalido(txtCorreo);
+                    }
+                    validarTodo();
+                });
+            }
+
+            // 5. Validar Dirección / API de Mapas (Sin tildes y control de texto)
+            if (txtCalle) {
+                txtCalle.addEventListener("input", function () {
+                    clearTimeout(timerBusqueda);
+                    const texto = txtCalle.value.trim();
+                    const errCalle = document.getElementById("calleErrorText");
+
+                    // Bloqueo inmediato en vivo si mete tildes
+                    if (/[áéíóúÁÉÍÓÚ]/.test(txtCalle.value)) {
+                        marcarInvalido(txtCalle);
+                        if (errCalle) errCalle.classList.remove("d-none");
+                        validarTodo();
+                        return;
+                    } else {
+                        txtCalle.classList.remove("is-invalid");
+                        if (errCalle) errCalle.classList.add("d-none");
+                    }
+
+                    if (texto.length < 4) {
+                        divResultados.classList.add("d-none");
+                        marcarInvalido(txtCalle);
+                        validarTodo();
+                        return;
+                    }
+
+                    // Llamada dinámica a la API de mapas
+                    timerBusqueda = setTimeout(function () {
+                        const urlAPI = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(texto)}+Santiago+Chile&addressdetails=1&limit=5`;
+
+                        fetch(urlAPI)
+                            .then(res => res.json())
+                            .then(data => {
+                                divResultados.innerHTML = "";
+                                if (data.length > 0) {
+                                    divResultados.classList.remove("d-none");
+                                    data.forEach(item => {
+                                        const nombreLimpio = item.display_name.split(", Región Metropolitana")[0];
+                                        const comuna = item.address.suburb || item.address.city_district || item.address.town || "";
+
+                                        const boton = document.createElement("button");
+                                        boton.type = "button";
+                                        boton.className = "list-group-item list-group-item-action small py-2 text-start";
+                                        boton.innerHTML = `<i class="fas fa-road text-muted me-2"></i><strong>${item.address.road || ''}</strong> <span class="text-muted">(${comuna})</span>`;
+
+                                        boton.addEventListener("click", function () {
+                                            txtCalle.value = nombreLimpio.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+                                            divResultados.classList.add("d-none");
+                                            marcarValido(txtCalle);
+
+                                            // Auto-selección de comuna en el DDL
+                                            const comNorm = comuna.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+                                            if (comNorm.includes("penalolen")) ddlZonaDespacho.value = "2";
+                                            else if (comNorm.includes("macul")) ddlZonaDespacho.value = "4";
+                                            else if (comNorm.includes("nunoa")) ddlZonaDespacho.value = "5";
+                                            else if (comNorm.includes("la reina")) ddlZonaDespacho.value = "6";
+                                            else if (comNorm.includes("providencia")) ddlZonaDespacho.value = "9";
+                                            else if (comNorm.includes("santiago")) ddlZonaDespacho.value = "12";
+                                            else if (comNorm.includes("maipu")) ddlZonaDespacho.value = "22";
+                                            else if (comNorm.includes("quilicura")) ddlZonaDespacho.value = "25";
+                                            else ddlZonaDespacho.value = "0";
+
+                                            ddlZonaDespacho.dispatchEvent(new Event('change'));
+                                        });
+                                        divResultados.appendChild(boton);
+                                    });
+                                } else {
+                                    divResultados.classList.add("d-none");
+                                    marcarInvalido(txtCalle);
+                                }
+                                validarTodo();
+                            });
+                    }, 300);
+                });
+            }
+
+            // 6. Validar Número de casa (Mayor a 0)
+            if (txtNumero) {
+                txtNumero.addEventListener("input", function () {
+                    if (parseInt(txtNumero.value) > 0) {
+                        marcarValido(txtNumero);
+                    } else {
+                        marcarInvalido(txtNumero);
+                    }
+                    validarTodo();
+                });
+            }
+
+            // ====================================================================
+            // ⚙️ FUNCIONES AUXILIARES DE CONTROL VISUAL Y LÓGICO
+            // ====================================================================
+
+            function marcarValido(elemento) {
+                elemento.classList.remove("is-invalid");
+                elemento.classList.add("is-valid");
+            }
+
+            function marcarInvalido(elemento) {
+                elemento.classList.remove("is-valid");
+                elemento.classList.add("is-invalid");
+            }
+
+            function validarRutChileno(rutCompleto) {
+                if (!rutCompleto || !/^[0-9]+-[0-9kK]{1}$/.test(rutCompleto)) return false;
+                let tmp = rutCompleto.split('-');
+                let digv = tmp[1].toLowerCase();
+                let rut = tmp[0];
+                let M = 0, S = 1;
+                for (; rut; rut = Math.floor(rut / 10)) S = (S + rut % 10 * (9 - M++ % 6)) % 11;
+                return (S ? (S - 1).toString() : 'k') === digv;
+            }
+
+            function verificarReglaHoraria() {
                 if (ddlTipoEnvio.value !== 'FIJO' || txtHoraFijo.value === '') return true;
-
                 const ahora = new Date();
-                const [horasSeleccionadas, minutosSeleccionados] = txtHoraFijo.value.split(':');
-
-                // Creamos un objeto de fecha con la hora elegida por el cliente para hoy
+                const [horas, minutos] = txtHoraFijo.value.split(':');
                 const horaAgendada = new Date();
-                horaAgendada.setHours(parseInt(horasSeleccionadas), parseInt(minutosSeleccionados), 0, 0);
-
-                // Calculamos el limite minimo (Hora actual + 2 horas de preparacion)
+                horaAgendada.setHours(parseInt(horas), parseInt(minutos), 0, 0);
                 const horaLimiteMinima = new Date(ahora.getTime() + (2 * 60 * 60 * 1000));
 
                 if (horaAgendada < horaLimiteMinima) {
                     txtHoraFijo.classList.add('is-invalid');
-                    txtHoraFijo.classList.remove('is-valid');
                     feedbackHora.classList.remove('d-none');
-                    btnPagar.setAttribute('disabled', 'disabled');
                     return false;
                 } else {
                     txtHoraFijo.classList.remove('is-invalid');
                     txtHoraFijo.classList.add('is-valid');
                     feedbackHora.classList.add('d-none');
-                    btnPagar.removeAttribute('disabled');
                     return true;
                 }
             }
 
-            txtHoraFijo.addEventListener('input', validarHoraFijo);
-            txtHoraFijo.addEventListener('blur', validarHoraFijo);
+            // 🚀 MOTOR CENTRAL: Evalúa el estado de todos los inputs en vivo para prender/apagar el botón Final
+            function validarTodo() {
+                const kilometros = parseInt(ddlZonaDespacho.value);
+                const horaValida = verificarReglaHoraria();
 
-            // 3. VALIDACIÓN PERIMETRAL AL ENVIAR
-            formCheckout.addEventListener('submit', function (e) {
-                if (ddlTipoEnvio.value === 'FIJO' && !validarHoraFijo()) {
-                    e.preventDefault();
-                    alert("⚠️ No cumple regra horaria: Modifique la hora del envio Fijo para proceder.");
+                // Si el panel de invitado existe, le exigimos que todo tenga la clase "is-valid"
+                let expressValido = true;
+                if (txtNombre) {
+                    const nombreOK = txtNombre.classList.contains("is-valid");
+                    const fonoOK = txtTelefono.classList.contains("is-valid");
+                    const rutOK = txtRut.classList.contains("is-valid");
+                    const correoOK = txtCorreo.classList.contains("is-valid");
+                    const calleOK = txtCalle.classList.contains("is-valid");
+                    const numOK = txtNumero.classList.contains("is-valid");
+
+                    expressValido = (nombreOK && fonoOK && rutOK && correoOK && calleOK && numOK);
                 }
+
+                if (kilometros === 0 || kilometros > 15 || !horaValida || !expressValido) {
+                    btnPagar.setAttribute('disabled', 'disabled');
+                } else {
+                    btnPagar.removeAttribute('disabled');
+                }
+            }
+
+            // Listeners operacionales de envíos y zonas
+            ddlTipoEnvio.addEventListener('change', function () {
+                if (this.value === 'FIJO') {
+                    contenedorHoraFijo.classList.remove('d-none');
+                    txtHoraFijo.setAttribute('required', 'required');
+                } else {
+                    contenedorHoraFijo.classList.add('d-none');
+                    txtHoraFijo.removeAttribute('required');
+                    txtHoraFijo.classList.remove('is-invalid');
+                    feedbackHora.classList.add('d-none');
+                }
+                validarTodo();
             });
 
+            txtHoraFijo.addEventListener('input', validarTodo);
 
             ddlZonaDespacho.addEventListener('change', function () {
-                // Obtenemos el kilometraje desde el value del option
                 const kilometros = parseInt(this.value);
-
-                if (kilometros === 0) {
-                    btnPagar.setAttribute('disabled', 'disabled');
-                    alertaDistancia.classList.add('d-none');
-                } else if (kilometros > 15) {
-                    // Bloqueo estricto del Caso 4
-                    btnPagar.setAttribute('disabled', 'disabled');
-                    alertaDistancia.classList.remove('d-none');
-                } else {
-                    // Dentro del rango de 15 km
-                    alertaDistancia.classList.add('d-none');
-                    // Validamos también que la regla de "Fijo" se esté cumpliendo antes de habilitar
-                    if (document.getElementById('ddlTipoEnvio').value !== 'FIJO' || txtHoraFijo.classList.contains('is-valid')) {
-                        btnPagar.removeAttribute('disabled');
-                    }
-                }
+                if (kilometros > 15) alertaDistancia.classList.remove('d-none');
+                else alertaDistancia.classList.add('d-none');
+                validarTodo();
             });
 
-            // Deshabilitar el botón Pagar al cargar la página hasta que seleccione zona
-            btnPagar.setAttribute('disabled', 'disabled');
-
-
-
-
-
-
+            document.addEventListener("click", function (e) {
+                if (divResultados && e.target !== txtCalle && e.target !== divResultados) {
+                    divResultados.classList.add("d-none");
+                }
+            });
         });
     </script>
 }

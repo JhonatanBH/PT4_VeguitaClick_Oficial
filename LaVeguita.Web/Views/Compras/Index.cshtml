@@ -2,7 +2,10 @@
 @{
     ViewData["Title"] = "Ingreso de Guias y Balanza";
     var productos = ViewBag.Productos as List<LaVeguita.Entities.Producto> ?? new List<LaVeguita.Entities.Producto>();
-    var proveedores = ViewBag.Proveedores as List<LaVeguita.Entities.Proveedor> ?? new List<LaVeguita.Entities.Proveedor>(); // Ajusta el casteo si tu clase Proveedor usa otra Entidad
+    var proveedores = ViewBag.Proveedores as List<LaVeguita.Entities.Proveedor> ?? new List<LaVeguita.Entities.Proveedor>();
+
+    // Casteo seguro del diccionario de documentos para evitar errores en tiempo de ejecución
+    var docs = ViewBag.Documentos as Dictionary<int, bool> ?? new Dictionary<int, bool>();
 }
 
 <div class="container mt-2">
@@ -16,6 +19,15 @@
         </div>
         <span class="badge bg-success px-3 py-2 rounded-pill"><i class="fas fa-truck-loading me-1"></i> Balanza de Entrada</span>
     </div>
+
+    @if (TempData["Mensaje"] != null)
+    {
+        <div class="alert alert-success shadow-sm mb-3 rounded-pill"><i class="fas fa-check-circle me-2"></i>@TempData["Mensaje"]</div>
+    }
+    @if (TempData["Error"] != null)
+    {
+        <div class="alert alert-danger shadow-sm mb-3 rounded-pill"><i class="fas fa-exclamation-triangle me-2"></i>@TempData["Error"]</div>
+    }
 
     <div class="row g-3">
         <div class="col-md-5">
@@ -115,6 +127,7 @@
                                 <th>Guia Papel</th>
                                 <th>Proveedor</th>
                                 <th>Fecha Registro</th>
+                                <th class="text-center">Documento Respaldo</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -125,6 +138,25 @@
                                     <td class="fw-bold text-dark">@g.NumGuiaFisica</td>
                                     <td>@g.NomProveedor</td>
                                     <td>@g.FechaIngreso.ToString("dd/MM/yyyy HH:mm")</td>
+                                    <td class="text-center">
+                                        @{
+                                            // Evaluamos si el diccionario indica que hay un documento asociado
+                                            bool tieneDoc = docs.ContainsKey(g.IdRecepcion) && docs[g.IdRecepcion];
+                                        }
+
+                                        @if (tieneDoc)
+                                        {
+                                            <a asp-action="DescargarGuia" asp-controller="Compras" asp-route-id="@g.IdRecepcion" class="btn btn-sm btn-outline-danger fw-bold shadow-sm" target="_blank">
+                                                <i class="fas fa-file-pdf me-1"></i> Ver Guía
+                                            </a>
+                                        }
+                                        else
+                                        {
+                                            <button type="button" class="btn btn-sm btn-primary fw-bold shadow-sm" onclick="abrirModalUpload(@g.IdRecepcion)">
+                                                <i class="fas fa-cloud-upload-alt me-1"></i> Adjuntar PDF
+                                            </button>
+                                        }
+                                    </td>
                                 </tr>
                             }
                         </tbody>
@@ -135,8 +167,46 @@
     </div>
 </div>
 
+<div class="modal fade" id="modalUploadPdf" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content" style="border-radius: 15px;">
+            <div class="modal-header bg-primary text-white" style="border-radius: 15px 15px 0 0;">
+                <h5 class="modal-title fw-bold"><i class="fas fa-file-upload me-2"></i>Adjuntar Guía Digitalizada</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+
+            <form id="formUpload" asp-action="SubirGuiaProveedorBlob" asp-controller="Compras" method="post" enctype="multipart/form-data">
+                <div class="modal-body p-4">
+                    <input type="hidden" id="hdnIdRecepcionModal" name="idRecepcionGuia" value="" />
+
+                    <p class="small text-muted mb-3">Seleccione el documento PDF correspondiente a la guía de despacho entregada por el proveedor.</p>
+
+                    <div class="mb-3">
+                        <input class="form-control" type="file" id="filePdfModal" name="archivoPdf" accept=".pdf" required>
+                    </div>
+                </div>
+                <div class="modal-footer bg-light" style="border-radius: 0 0 15px 15px;">
+                    <button type="button" class="btn btn-secondary fw-bold rounded-pill" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-primary fw-bold rounded-pill"><i class="fas fa-save me-1"></i> Guardar en Oracle</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
 @section Scripts {
     <script>
+        // ==========================================
+        // FUNCIÓN QUE ABRE EL MODAL Y LE PASA EL ID
+        // ==========================================
+        function abrirModalUpload(idRecepcion) {
+            document.getElementById('hdnIdRecepcionModal').value = idRecepcion;
+            document.getElementById('filePdfModal').value = ""; // Limpia si había un archivo anterior
+
+            var myModal = new bootstrap.Modal(document.getElementById('modalUploadPdf'));
+            myModal.show();
+        }
+
         document.addEventListener("DOMContentLoaded", function () {
             const txtNumGuia = document.getElementById("txtNumGuia");
             const cmbProveedor = document.getElementById("cmbProveedor");

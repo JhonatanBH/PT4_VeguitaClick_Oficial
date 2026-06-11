@@ -62,7 +62,13 @@ namespace LaVeguita.DAL
             List<Despacho> lista = new List<Despacho>();
             using (OracleConnection cn = _conexion.LeerConexion())
             {
-                string query = "SELECT * FROM DESPACHO WHERE ESTADO_PEDIDO != 'ENTREGADO' ORDER BY ID_DESPACHO DESC";
+                // 🚀 FILTRO CLAVE: Solo traemos los que tengan el transporte vacío o estado inicial
+                // Esto hará que desaparezcan de la bandeja del Asistente apenas se asignen
+                string query = @"SELECT * FROM DESPACHO 
+                         WHERE ESTADO_PEDIDO != 'ENTREGADO' 
+                         AND (ID_TRANSPORTE IS NULL OR ESTADO_ENTREGA = 'EN PREPARACION')
+                         ORDER BY ID_DESPACHO DESC";
+
                 OracleCommand cmd = new OracleCommand(query, cn);
                 try
                 {
