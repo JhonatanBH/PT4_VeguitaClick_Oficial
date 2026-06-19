@@ -9,10 +9,10 @@ namespace LaVeguita.Web
             // 1. Agregar servicios al contenedor.
             builder.Services.AddControllersWithViews();
 
-            // 2. CONFIGURACIÓN DE SESIONES (Obligatorio para el Login)
+            // 2. CONFIGURACIÓN DE SESIONES (Optimizado a 2 min por seguridad)
             builder.Services.AddSession(options =>
             {
-                options.IdleTimeout = TimeSpan.FromMinutes(30); // La sesión dura 30 minutos
+                options.IdleTimeout = TimeSpan.FromMinutes(2); // 🚀 Modificado para la defensa
                 options.Cookie.HttpOnly = true;
                 options.Cookie.IsEssential = true;
             });
@@ -34,14 +34,15 @@ namespace LaVeguita.Web
 
             app.UseRouting();
 
-            // 4. ACTIVAR EL USO DE SESIONES (Debe ir después de Routing y antes de Authorization)
+            // 4. ACTIVAR EL USO DE SESIONES
             app.UseSession();
 
             app.UseAuthorization();
 
+            // Mapeo de la ruta inicial
             app.MapControllerRoute(
                 name: "default",
-                pattern: "{controller=Tienda}/{action=Catalogo}/{id?}"); // Cambié Home por Acceso para que parta en el Login
+                pattern: "{controller=Tienda}/{action=Catalogo}/{id?}");
 
             app.Run();
         }

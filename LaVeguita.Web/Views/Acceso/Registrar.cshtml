@@ -168,7 +168,13 @@
                 form.addEventListener("submit", function (e) {
                     if (txtClave.value !== txtConfirmar.value) {
                         e.preventDefault();
-                        alert("⚠️ Las contrasenas no coinciden de forma simetrica.");
+                        // CAMBIO: Alerta profesional
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Error de validación',
+                            text: 'Las contraseñas no coinciden. Por favor verifíquelas.',
+                            confirmButtonColor: '#198754'
+                        });
                     }
                 });
             });

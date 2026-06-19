@@ -74,7 +74,7 @@
                                 <a asp-action="Editar" asp-route-id="@item.IdProducto" class="btn btn-warning btn-sm">
                                     ✏️ Editar
                                 </a>
-                                <a href="#" style="text-decoration: none; margin-left: 10px;" title="Eliminar">🗑️</a>
+                                <a href="javascript:void(0);" onclick="confirmarEliminar(@item.IdProducto, '@item.NomProducto')" style="text-decoration: none; margin-left: 10px;" title="Eliminar">🗑️</a>
                             }
                             else
                             {
@@ -97,3 +97,26 @@
         </tbody>
     </table>
 </div>
+
+
+@section Scripts {
+    <script>
+        function confirmarEliminar(idProducto, nombreProducto) {
+            Swal.fire({
+                title: '¿Eliminar Producto?',
+                text: '¿Está seguro de eliminar "' + nombreProducto + '"? Esta acción lo dará de baja del catálogo.',
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#e74c3c', // Rojo eliminar
+                cancelButtonColor: '#95a5a6',
+                confirmButtonText: 'Sí, eliminar',
+                cancelButtonText: 'Cancelar'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    // Redirige al método del controlador que elimina
+                    window.location.href = `/Productos/Eliminar/${idProducto}`;
+                }
+            });
+        }
+    </script>
+}

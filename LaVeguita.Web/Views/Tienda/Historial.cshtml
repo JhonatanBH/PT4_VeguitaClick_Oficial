@@ -12,10 +12,6 @@
 
     <p class="text-muted small">Revisa el estado en tiempo real de tus compras y solicitudes de despacho ecológico.</p>
 
-    @if (ViewBag.Error != null)
-    {
-        <div class="alert alert-danger small rounded-3">@ViewBag.Error</div>
-    }
 
     <div class="card border-0 shadow-sm mt-3" style="border-radius: 15px;">
         <div class="card-body p-0">
@@ -86,3 +82,18 @@
         </div>
     </div>
 </div>
+
+
+
+@section Scripts {
+    <script>
+        document.addEventListener("DOMContentLoaded", function() {
+            @if (ViewBag.Error != null)
+            {
+                <text>
+                Swal.fire({ icon: 'error', title: 'Acceso Denegado', text: '@ViewBag.Error', confirmButtonColor: '#d33' });
+                </text>
+            }
+        });
+    </script>
+}

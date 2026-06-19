@@ -97,9 +97,11 @@ namespace LaVeguita.DAL
                         int idClienteFinal = idCliente;
 
                         // ====================================================================
-                        // 🌿 PROCESO EXPRESS EN CALIENTE PARA EL INVITADO (Rol 9)
+                        // 🌿 PROCESO EN CALIENTE PARA EL COMPRADOR (Invitado o Tradicional Presencial)
+                        // JUGADA MAESTRA: Si viaja una calleInvitado, forzamos el registro del cliente
+                        // independientemente de si el ID que gatilla el flujo viene de un operador.
                         // ====================================================================
-                        if (idUsuario == 0 && !string.IsNullOrEmpty(calleInvitado))
+                        if (!string.IsNullOrEmpty(calleInvitado))
                         {
                             int idDireccionGenerada = 0;
 
@@ -108,8 +110,8 @@ namespace LaVeguita.DAL
                             using (OracleCommand cmdDir = new OracleCommand(queryDir, cn))
                             {
                                 cmdDir.Parameters.Add("nom", OracleDbType.Varchar2).Value = calleInvitado;
-                                cmdDir.Parameters.Add("num", OracleDbType.Int32).Value = numeroInvitado;
-                                cmdDir.Parameters.Add("com", OracleDbType.Int32).Value = comunaInvitado;
+                                cmdDir.Parameters.Add("num", OracleDbType.Int32).Value = numeroInvitado ?? 0;
+                                cmdDir.Parameters.Add("com", OracleDbType.Int32).Value = comunaInvitado ?? 1;
 
                                 OracleParameter pOutDir = new OracleParameter("idOut", OracleDbType.Int32, ParameterDirection.Output);
                                 cmdDir.Parameters.Add(pOutDir);
@@ -132,9 +134,9 @@ namespace LaVeguita.DAL
                             using (OracleCommand cmdUser = new OracleCommand(queryUser, cn))
                             {
                                 cmdUser.Parameters.Add("id", OracleDbType.Int32).Value = idNuevoUsuario;
-                                cmdUser.Parameters.Add("username", OracleDbType.Varchar2).Value = !string.IsNullOrEmpty(nombreInvitado) ? nombreInvitado.Trim() : "invitado_" + idNuevoUsuario;
+                                cmdUser.Parameters.Add("username", OracleDbType.Varchar2).Value = !string.IsNullOrEmpty(nombreInvitado) ? nombreInvitado.Trim() : "cliente_" + idNuevoUsuario;
                                 cmdUser.Parameters.Add("fono", OracleDbType.Int32).Value = !string.IsNullOrEmpty(telefonoInvitado) ? int.Parse(telefonoInvitado) : 99999999;
-                                cmdUser.Parameters.Add("correo", OracleDbType.Varchar2).Value = !string.IsNullOrEmpty(correoInvitado) ? correoInvitado.Trim() : "anonimo@veguita.cl";
+                                cmdUser.Parameters.Add("correo", OracleDbType.Varchar2).Value = !string.IsNullOrEmpty(correoInvitado) ? correoInvitado.Trim() : "presencial@veguita.cl";
                                 cmdUser.Parameters.Add("idDir", OracleDbType.Int32).Value = idDireccionGenerada;
 
                                 cmdUser.ExecuteNonQuery();
@@ -153,8 +155,14 @@ namespace LaVeguita.DAL
                                 cmdCli.ExecuteNonQuery();
                             }
 
-                            idUsuarioFinal = idNuevoUsuario;
                             idClienteFinal = idNuevoUsuario;
+                            // Mantenemos que la cabecera sea dueña de la cuenta generada, 
+                            // pero si idUsuario original correspondía a un operador interno, 
+                            // la orden quedará linkeada a este último para mantener la auditoría de ventas.
+                            if (idUsuario == 0)
+                            {
+                                idUsuarioFinal = idNuevoUsuario;
+                            }
                         }
 
                         // ====================================================================

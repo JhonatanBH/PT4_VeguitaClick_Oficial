@@ -39,18 +39,27 @@
                 </div>
             </div>
 
-            <!-- Sección 2: Datos del Comprador y Dirección de Despacho -->
+            <!-- Sección 2: Datos del Comprador y Dirección de Despacho (Corregida) -->
             <div class="card border-0 shadow-sm p-3" style="border-radius: 15px;">
                 <div class="card-body">
                     <h6 class="fw-bold text-success mb-3"><i class="fas fa-map-marker-alt me-1"></i> 2. Destino de Despacho</h6>
+
                     <div class="mb-2">
                         <label class="form-label small text-muted mb-1">Nombre Comprador</label>
                         <input type="text" id="txtNombreCliente" class="form-control" placeholder="Ej: Juan Pérez" />
                     </div>
+
+                    <!-- 🚀 NUEVO: RECUADRO DE RUT PARA EL ASISTENTE DE VENTAS -->
+                    <div class="mb-2">
+                        <label class="form-label small text-muted mb-1">RUT Cliente (Para Consulta y Seguimiento)</label>
+                        <input type="text" id="txtRutCliente" class="form-control" placeholder="Ej: 12345678-9" />
+                    </div>
+
                     <div class="mb-2">
                         <label class="form-label small text-muted mb-1">Calle / Pasaje</label>
                         <input type="text" id="txtCalle" class="form-control" placeholder="Ej: Av. Tobalaba" />
                     </div>
+
                     <div class="row mb-2">
                         <div class="col-md-6">
                             <label class="form-label small text-muted mb-1">Número</label>
@@ -70,6 +79,7 @@
                             </select>
                         </div>
                     </div>
+
                     <div class="mb-2">
                         <label class="form-label small text-muted mb-1">Modalidad de Envío (Requerimiento del Caso)</label>
                         <select id="cmbTipoEnvio" class="form-select">
@@ -114,7 +124,6 @@
                             <span class="fw-bold text-muted">Total Neto + IVA:</span>
                             <span class="fs-4 fw-bold text-success" id="lblTotalVenta">$0</span>
                         </div>
-                        <!-- BOTÓN ÚNICO Y CORREGIDO -->
                         <button type="button" class="btn btn-success w-100 fw-bold rounded-pill py-2 shadow-sm" id="btnFinalizarVenta" disabled>
                             <i class="fas fa-receipt me-1"></i> Confirmar Compra y Generar Boleta Real
                         </button>
@@ -137,7 +146,9 @@
             const lblTotalVenta = document.getElementById("lblTotalVenta");
             const btnFinalizarVenta = document.getElementById("btnFinalizarVenta");
 
+            // Elementos de la sección de despacho
             const txtNombreCliente = document.getElementById("txtNombreCliente");
+            const txtRutCliente = document.getElementById("txtRutCliente");
             const txtCalle = document.getElementById("txtCalle");
             const txtNumero = document.getElementById("txtNumero");
             const cmbComuna = document.getElementById("cmbComuna");
@@ -171,7 +182,6 @@
                 lblTotalVenta.innerText = `$${total.toLocaleString('es-CL')}`;
                 btnFinalizarVenta.removeAttribute("disabled");
 
-                // Re-amarrar el evento de quitar productos de la canasta
                 document.querySelectorAll(".btn-quitar").forEach(btn => {
                     btn.onclick = function() {
                         const id = this.getAttribute("data-id");
@@ -188,7 +198,12 @@
                 const cant = txtCantidad.value;
 
                 if (!idProd || !cant || cant <= 0) {
-                    alert("⚠️ Seleccione un producto ecológico y digite una cantidad válida.");
+                    Swal.fire({
+                        icon: 'warning',
+                        title: 'Datos Faltantes',
+                        text: 'Seleccione un producto ecológico y digite una cantidad válida.',
+                        confirmButtonColor: '#198754'
+                    });
                     return;
                 }
 
@@ -200,43 +215,80 @@
                         txtCantidad.value = 1;
                         cmbProducto.value = "";
                     } else {
-                        alert("❌ " + data.mensaje);
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Error de Stock',
+                            text: data.mensaje,
+                            confirmButtonColor: '#d33'
+                        });
                     }
-                }).catch(() => alert("Error de comunicación con Oracle Cloud."));
+                }).catch(() => {
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Error de Conexión',
+                        text: 'Error de comunicación con Oracle Cloud.',
+                        confirmButtonColor: '#d33'
+                    });
+                });
             });
 
-            // EVENTO 2: CONFIRMAR COMPRA Y GENERAR TRANSACCIÓN REAL (BOTÓN ACTIVADO)
+            // EVENTO 2: CONFIRMAR COMPRA Y GENERAR TRANSACCIÓN
             btnFinalizarVenta.addEventListener("click", function () {
                 const nom = txtNombreCliente.value.trim();
+                const rut = txtRutCliente ? txtRutCliente.value.trim() : "";
                 const clle = txtCalle.value.trim();
                 const num = txtNumero.value.trim();
                 const com = cmbComuna.value;
                 const envio = cmbTipoEnvio.value;
 
-                if (!nom || !clle || !num || !com) {
-                    alert("⚠️ Datos obligatorios faltantes: complete el nombre y la dirección física completa para procesar la venta externa.");
+                if (!nom || !rut || !clle || !num || !com) {
+                    Swal.fire({
+                        icon: 'warning',
+                        title: 'Campos Obligatorios',
+                        text: 'Por favor, complete el nombre, RUT de seguimiento y la dirección física completa.',
+                        confirmButtonColor: '#198754'
+                    });
                     return;
                 }
 
                 btnFinalizarVenta.setAttribute("disabled", "disabled");
                 btnFinalizarVenta.innerHTML = `<i class="fas fa-spinner fa-spin me-1"></i> Confirmando en Oracle Cloud...`;
 
-                fetch(`/Ventas/FinalizarVentaTradicional?nombreCliente=${encodeURIComponent(nom)}&calle=${encodeURIComponent(clle)}&numero=${encodeURIComponent(num)}&idComuna=${com}&tipoEnvio=${envio}`, {
+                fetch(`/Ventas/FinalizarVentaTradicional?nombreCliente=${encodeURIComponent(nom)}&rut=${encodeURIComponent(rut)}&calle=${encodeURIComponent(clle)}&numero=${encodeURIComponent(num)}&idComuna=${com}&tipoEnvio=${envio}`, {
                     method: 'POST'
                 })
                 .then(r => r.json())
                 .then(data => {
                     if (data.exito) {
-                        alert("🎉 ¡Venta Tradicional procesada con éxito! Redirigiendo a la boleta oficial.");
-                        window.location.href = data.redirectUrl;
+                        Swal.fire({
+                            icon: 'success',
+                            title: '¡Venta Procesada!',
+                            text: 'La orden fue registrada con éxito en el sistema. Redirigiendo a la boleta...',
+                            confirmButtonColor: '#198754',
+                            timer: 2500,
+                            showConfirmButton: false
+                        }).then(() => {
+                            window.location.href = data.redirectUrl;
+                        });
                     } else {
-                        alert("❌ Error: " + data.mensaje);
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Error Transaccional',
+                            text: data.mensaje,
+                            confirmButtonColor: '#d33'
+                        });
                         btnFinalizarVenta.removeAttribute("disabled");
                         btnFinalizarVenta.innerHTML = `<i class="fas fa-receipt me-1"></i> Confirmar Compra y Generar Boleta Real`;
                     }
                 }).catch(() => {
-                    alert("Error crítico en la transacción distribuida.");
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Error Crítico',
+                        text: 'Ocurrió un fallo en la transacción distribuida.',
+                        confirmButtonColor: '#d33'
+                    });
                     btnFinalizarVenta.removeAttribute("disabled");
+                    btnFinalizarVenta.innerHTML = `<i class="fas fa-receipt me-1"></i> Confirmar Compra y Generar Boleta Real`;
                 });
             });
         });

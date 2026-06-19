@@ -19,7 +19,7 @@ namespace LaVeguita.DAL
             {
                 using (OracleConnection cn = new Conexion().LeerConexion())
                 {
-                    using (OracleCommand cmd = new OracleCommand("SP_REGISTRAR_PRODUCCION", cn))
+                    using (OracleCommand cmd = new OracleCommand("ADMIN.PKG_PRODUCCION.SP_REGISTRAR_PRODUCCION", cn))
                     {
                         cmd.CommandType = CommandType.StoredProcedure;
 
@@ -44,10 +44,6 @@ namespace LaVeguita.DAL
                         mensajeResultado = pMensaje.Value.ToString();
 
                         if (resultado == 1) exitoTransaccion = true;
-
-                        // 💡 Recordatorio para Oracle: 
-                        // Asegúrate de que dentro de 'SP_REGISTRAR_PRODUCCION' exista un UPDATE/INSERT 
-                        // que sume el valor de 'p_cant_prim_calidad' a la tabla STOCK_LIMPIO.
                     }
                 }
             }
@@ -70,7 +66,6 @@ namespace LaVeguita.DAL
             {
                 using (OracleConnection cn = new Conexion().LeerConexion())
                 {
-                    // Consulta los kilos disponibles de la nueva tabla puente
                     string query = "SELECT LOWER(NOMBRE_MATERIA_PRIMA) AS MP, KILOS_DISPONIBLES FROM ADMIN.STOCK_LIMPIO";
                     using (OracleCommand cmd = new OracleCommand(query, cn))
                     {
@@ -79,46 +74,50 @@ namespace LaVeguita.DAL
                         {
                             while (reader.Read())
                             {
-                                stock.Add(reader["MP"].ToString(), Convert.ToDecimal(reader["KILOS_DISPONIBLES"]));
+                                string mp = reader["MP"].ToString().ToLower().Trim();
+                                decimal kilos = Convert.ToDecimal(reader["KILOS_DISPONIBLES"]);
+                                if (!stock.ContainsKey(mp))
+                                {
+                                    stock.Add(mp, kilos);
+                                }
                             }
                         }
                     }
                 }
             }
-            catch { /* Manejo interno, devolverá diccionario vacío si falla */ }
+            catch { /* Retorna diccionario vacío seguro */ }
             return stock;
         }
 
         // =========================================================
-        // 3. ARMADO DE VENTA DIRECTA (Transacción de Doble Impacto)
+        // 3. ARMADO DE VENTA DIRECTA (Corregido con columnas de tu BD)
         // =========================================================
-        public bool ProcesarEmpaqueDirecto(string idMateriaPrima, string skuFormato, int unidades, decimal kilosTotales)
+        public bool ProcesarEmpaqueDirecto(string idMateriaPrima, int idProductoFinal, int unidades, decimal kilosTotales)
         {
             try
             {
                 using (OracleConnection cn = new Conexion().LeerConexion())
                 {
                     cn.Open();
-                    // Bloqueo transaccional: Si una consulta falla, se revierte todo (Rollback)
                     using (OracleTransaction trx = cn.BeginTransaction())
                     {
                         try
                         {
-                            // A. Descontar kilos de la materia prima en planta
+                            // A. Descontar kilos de la materia prima en planta (STOCK_LIMPIO)
                             string qryResta = "UPDATE ADMIN.STOCK_LIMPIO SET KILOS_DISPONIBLES = KILOS_DISPONIBLES - :kilos WHERE LOWER(NOMBRE_MATERIA_PRIMA) = :mp";
                             using (OracleCommand cmdResta = new OracleCommand(qryResta, cn))
                             {
                                 cmdResta.Parameters.Add("kilos", OracleDbType.Decimal).Value = kilosTotales;
-                                cmdResta.Parameters.Add("mp", OracleDbType.Varchar2).Value = idMateriaPrima.ToLower();
+                                cmdResta.Parameters.Add("mp", OracleDbType.Varchar2).Value = idMateriaPrima.ToLower().Trim();
                                 cmdResta.ExecuteNonQuery();
                             }
 
-                            // B. Sumar unidades terminadas al catálogo global para la venta
-                            string qrySuma = "UPDATE ADMIN.PRODUCTOS SET STOCK = STOCK + :unidades WHERE CODIGO_SKU = :sku";
+                            // B. Sumar unidades terminadas al catálogo global para la venta (PRODUCTOS con STOCK_ACTUAL)
+                            string qrySuma = "UPDATE ADMIN.PRODUCTOS SET STOCK_ACTUAL = STOCK_ACTUAL + :unidades WHERE ID_PRODUCTO = :idProd";
                             using (OracleCommand cmdSuma = new OracleCommand(qrySuma, cn))
                             {
                                 cmdSuma.Parameters.Add("unidades", OracleDbType.Int32).Value = unidades;
-                                cmdSuma.Parameters.Add("sku", OracleDbType.Varchar2).Value = skuFormato;
+                                cmdSuma.Parameters.Add("idProd", OracleDbType.Int32).Value = idProductoFinal;
                                 cmdSuma.ExecuteNonQuery();
                             }
 
@@ -139,11 +138,10 @@ namespace LaVeguita.DAL
             }
         }
 
-
         // =========================================================
-        // 4. ARMADO DE KITS NUTRICIONALES (Receta Multi-Ingrediente)
+        // 4. ARMADO DE KITS NUTRICIONALES (Corregido con columnas de tu BD)
         // =========================================================
-        public bool ProcesarKitsNutricionales(string idFormatoKit, int cantidadCajas, Dictionary<string, decimal> receta)
+        public bool ProcesarKitsNutricionales(int idProductoKit, int cantidadCajas, Dictionary<string, decimal> receta)
         {
             try
             {
@@ -154,11 +152,11 @@ namespace LaVeguita.DAL
                     {
                         try
                         {
-                            // A. Iteramos la receta dictada por la nutricionista para descontar ingrediente por ingrediente
+                            // A. Descontar ingrediente por ingrediente del STOCK_LIMPIO
                             foreach (var item in receta)
                             {
-                                string ingrediente = item.Key.ToLower();
-                                decimal kilosPorCaja = item.Value;
+                                string ingrediente = item.Key.ToLower().Trim();
+                                decimal kilosPorCaja = item.Value; // 🚀 CORREGIDO: Espacio eliminado aquí
                                 decimal totalKilosDescontar = kilosPorCaja * cantidadCajas;
 
                                 string qryResta = "UPDATE ADMIN.STOCK_LIMPIO SET KILOS_DISPONIBLES = KILOS_DISPONIBLES - :kilos WHERE LOWER(NOMBRE_MATERIA_PRIMA) = :mp";
@@ -170,15 +168,12 @@ namespace LaVeguita.DAL
                                 }
                             }
 
-                            // B. Sumamos las unidades de cajas terminadas al catálogo global (PRODUCTOS)
-                            // El SKU comercial se puede armar de manera dinámica (Ej: 'KIT_SOLTERO', 'KIT_PAREJA')
-                            string skuKit = "KIT_" + idFormatoKit.ToUpper();
-
-                            string qrySuma = "UPDATE ADMIN.PRODUCTOS SET STOCK = STOCK + :unidades WHERE CODIGO_SKU = :sku";
+                            // B. Sumar las cajas armadas a la tabla PRODUCTOS
+                            string qrySuma = "UPDATE ADMIN.PRODUCTOS SET STOCK_ACTUAL = STOCK_ACTUAL + :unidades WHERE ID_PRODUCTO = :idProd";
                             using (OracleCommand cmdSuma = new OracleCommand(qrySuma, cn))
                             {
                                 cmdSuma.Parameters.Add("unidades", OracleDbType.Int32).Value = cantidadCajas;
-                                cmdSuma.Parameters.Add("sku", OracleDbType.Varchar2).Value = skuKit;
+                                cmdSuma.Parameters.Add("idProd", OracleDbType.Int32).Value = idProductoKit;
                                 cmdSuma.ExecuteNonQuery();
                             }
 
@@ -198,12 +193,5 @@ namespace LaVeguita.DAL
                 return false;
             }
         }
-
-
-
-
-
-
-
     }
 }

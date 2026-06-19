@@ -29,7 +29,13 @@ namespace LaVeguita.DAL
                             {
                                 IdEmpleado = Convert.ToInt32(dr["ID_EMPLEADO"]),
                                 PnombreEmp = dr["PNOMBRE_EMP"].ToString(),
+
+                                // 🚀 Agregamos los campos para que la lista no pierda datos
+                                SnombreEmp = dr["SNOMBRE_EMP"] != DBNull.Value ? dr["SNOMBRE_EMP"].ToString() : "",
                                 Appaterno = dr["APPATERNO"].ToString(),
+                                Apmaterno = dr["APMATERNO"] != DBNull.Value ? dr["APMATERNO"].ToString() : "",
+                                FecNacEmp = dr["FEC_NAC_EMP"] != DBNull.Value ? Convert.ToDateTime(dr["FEC_NAC_EMP"]) : DateTime.MinValue,
+
                                 CorreoEmp = dr["CORREO_EMP"] != DBNull.Value ? dr["CORREO_EMP"].ToString() : "",
                                 TelefonoEmp = dr["TELEFONO_EMP"] != DBNull.Value ? Convert.ToInt64(dr["TELEFONO_EMP"]) : 0,
                                 IdRolUsuario = Convert.ToInt32(dr["ID_ROL_USUARIO"])
@@ -96,7 +102,13 @@ namespace LaVeguita.DAL
                             {
                                 IdEmpleado = Convert.ToInt32(dr["ID_EMPLEADO"]),
                                 PnombreEmp = dr["PNOMBRE_EMP"].ToString(),
+
+                                // 🚀 AQUÍ ESTÁ LA MAGIA: Recuperamos los datos "olvidados"
+                                SnombreEmp = dr["SNOMBRE_EMP"] != DBNull.Value ? dr["SNOMBRE_EMP"].ToString() : "",
                                 Appaterno = dr["APPATERNO"].ToString(),
+                                Apmaterno = dr["APMATERNO"] != DBNull.Value ? dr["APMATERNO"].ToString() : "",
+                                FecNacEmp = dr["FEC_NAC_EMP"] != DBNull.Value ? Convert.ToDateTime(dr["FEC_NAC_EMP"]) : DateTime.MinValue,
+
                                 CorreoEmp = dr["CORREO_EMP"] != DBNull.Value ? dr["CORREO_EMP"].ToString() : "",
                                 TelefonoEmp = dr["TELEFONO_EMP"] != DBNull.Value ? Convert.ToInt64(dr["TELEFONO_EMP"]) : 0,
                                 IdRolUsuario = Convert.ToInt32(dr["ID_ROL_USUARIO"])

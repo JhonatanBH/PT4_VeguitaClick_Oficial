@@ -103,7 +103,6 @@
         const inputs = form.querySelectorAll("input[required], select[required], textarea[required]");
 
         const validar = (campo) => {
-            // Si el campo pertenece a un input-group, buscamos el ancestro correcto para pintar el error
             let contenedorElemento = campo.closest(".input-group") ? campo.closest(".input-group").parentElement : campo.parentElement;
 
             if (campo.value.trim() === "") {
@@ -128,7 +127,13 @@
 
             if (!esValido) {
                 e.preventDefault();
-                alert("⚠️ Error: Hay campos obligatorios vacios o mal configurados en el formulario.");
+                // 🚀 CAMBIO ACÁ: Alerta moderna sin link de Azure
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Formulario Incompleto',
+                    text: 'Hay campos obligatorios vacíos o mal configurados en el formulario.',
+                    confirmButtonColor: '#2ecc71' // Verde guardar
+                });
             }
         });
     });

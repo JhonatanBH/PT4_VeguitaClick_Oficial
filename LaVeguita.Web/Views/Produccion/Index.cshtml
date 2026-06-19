@@ -131,3 +131,17 @@
         </div>
     </div>
 </div>
+
+
+
+@section Scripts {
+    <script>
+        // Monitorea si el servidor envía algún estatus al cargar el Dashboard
+        @if (TempData["Mensaje"] != null)
+        {
+            <text>
+            Swal.fire({ icon: 'success', title: 'Notificación', text: '@TempData["Mensaje"]', confirmButtonColor: '#198754' });
+            </text>
+        }
+    </script>
+}

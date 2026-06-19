@@ -1,0 +1,153 @@
+﻿@{
+    ViewData["Title"] = "Bandeja Unificada de Comunicaciones";
+}
+
+<div class="row mb-4">
+    <div class="col-12">
+        <h3 class="fw-bold text-dark"><i class="fas fa-comments text-success me-2"></i>Centro de Comunicaciones La Veguita</h3>
+        <p class="text-muted small">Gestione los requerimientos de la plataforma web e interactúe con los otros roles operativos del galpón.</p>
+    </div>
+</div>
+
+<!-- Menú de Pestañas -->
+<ul class="nav nav-tabs mb-4" id="commsTabs" role="tablist">
+    <li class="nav-item" role="presentation">
+        <button class="nav-link active fw-bold text-success" id="internos-tab" data-bs-toggle="tab" data-bs-target="#internos" type="button" role="tab"><i class="fas fa-users-gear me-2"></i>Intercomunicador de Roles</button>
+    </li>
+    <li class="nav-item" role="presentation">
+        <button class="nav-link fw-bold text-danger" id="clientes-tab" data-bs-toggle="tab" data-bs-target="#clientes" type="button" role="tab"><i class="fas fa-headset me-2"></i>Soporte Clientes Catálogo</button>
+    </li>
+</ul>
+
+<div class="tab-content" id="commsTabsContent">
+    
+    <!-- 🏢 PESTAÑA A: CHAT INTERNO ENTRE ROLES -->
+    <div class="tab-pane fade show active" id="internos" role="tablist">
+        <div class="row g-4">
+            <!-- Formulario de envío -->
+            <div class="col-md-4">
+                <div class="card border-0 shadow-sm p-4 bg-light" style="border-radius:12px;">
+                    <h5 class="fw-bold text-secondary mb-3"><i class="fas fa-paper-plane me-2"></i>Transmitir Mensaje</h5>
+                    
+                    <div class="mb-3">
+                        <label class="form-label small fw-bold text-muted">Seleccionar Rol Destinatario</label>
+                        <select id="ddlRolDestino" class="form-select">
+                            <option value="1">GERENTE</option>
+                            <option value="2">ADMINISTRACIÓN</option>
+                            <option value="3">PRODUCCIÓN</option>
+                            <option value="4">COMPRAS</option>
+                            <option value="5">VENTAS</option>
+                            <option value="6">DESPACHO</option>
+                            <option value="7">TRANSPORTISTA</option>
+                        </select>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label small fw-bold text-muted">Mensaje Interno (Sin tildes)</label>
+                        <textarea id="txtMensajeInterno" class="form-control" rows="4" placeholder="Ej: Favor revisar stock critico de manzanas en pasillo 2..."></textarea>
+                    </div>
+                    
+                    <button type="button" onclick="enviarMensajeInterno()" class="btn btn-success w-100 fw-bold rounded-pill">
+                        Enviar Transmisión
+                    </button>
+                </div>
+            </div>
+            
+            <!-- Historial de mensajes recibidos -->
+            <div class="col-md-8">
+                <h6 class="fw-bold text-muted mb-3">Mensajes Recibidos para mi Departamento:</h6>
+                <div class="overflow-auto" style="max-height: 450px;">
+                    @if (ViewBag.ChatsInternos.Count == 0)
+                    {
+                        <div class="alert alert-light text-center border py-4 text-muted">No registras mensajes internos pendientes en este turno.</div>
+                    }
+                    else
+                    {
+                        foreach (var msg in ViewBag.ChatsInternos)
+                        {
+                            <div class="card border-0 shadow-sm mb-2 p-3" style="border-left: 5px solid #3498db; border-radius:8px;">
+                                <div class="d-flex justify-content-between align-items-center mb-1">
+                                    <span class="badge bg-primary">De: @msg.Emisor</span>
+                                    <small class="text-muted fw-bold">@msg.Fecha</small>
+                                </div>
+                                <p class="m-0 text-dark small">@msg.Mensaje</p>
+                            </div>
+                        }
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 🌿 PESTAÑA B: ALERTAS WEB DE CLIENTES -->
+    <div class="tab-pane fade" id="clientes" role="tabpanel">
+        <h6 class="fw-bold text-muted mb-3">Alertas Emitidas desde el Globo Flotante del Catálogo:</h6>
+        <div class="row g-3">
+            @if (ViewBag.AlertasClientes.Count == 0)
+            {
+                <div class="col-12">
+                    <div class="alert alert-light text-center border py-4 text-muted">Felicidades. No hay incidencias de clientes en cola de atención.</div>
+                </div>
+            }
+            else
+            {
+                foreach (var item in ViewBag.AlertasClientes)
+                {
+                    <div class="col-md-6" id="card-cliente-@item.Id">
+                        <div class="card border-0 shadow-sm h-100 p-3" style="border-top: 4px solid #e74c3c; border-radius:10px;">
+                            <div class="d-flex justify-content-between align-items-start mb-2">
+                                <h6 class="fw-bold text-danger m-0 small text-uppercase">@item.Asunto</h6>
+                                <span class="badge bg-light text-muted">@item.Fecha</span>
+                            </div>
+                            <p class="text-secondary small mb-3 flex-grow-1">"@item.Cuerpo"</p>
+                            <div class="d-flex justify-content-between align-items-center mt-auto pt-2 border-top">
+                                <a href="https://api.whatsapp.com/send?phone=56@item.Fono" target="_blank" class="btn btn-outline-success btn-sm rounded-pill px-3">
+                                    <i class="fab fa-whatsapp me-1"></i> Contactar: @item.Fono
+                                </a>
+                                <button onclick="resolverIncidencia(@item.Id)" class="btn btn-light btn-sm text-success fw-bold border">
+                                    ✓ Atendido
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                }
+            }
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        function enviarMensajeInterno() {
+            const dest = document.getElementById("ddlRolDestino").value;
+            const msg = document.getElementById("txtMensajeInterno").value.trim();
+
+            if (!msg) {
+                Swal.fire({ icon: 'warning', title: 'Mensaje Vacío', text: 'Escriba un texto descriptivo para el rol seleccionado.', confirmButtonColor: '#2ecc71' });
+                return;
+            }
+
+            fetch(`/Ventas/EnviarMensajeInterno?rolDestino=${dest}&mensaje=${encodeURIComponent(msg)}`, { method: 'POST' })
+            .then(r => r.json())
+            .then(data => {
+                if (data.exito) {
+                    Swal.fire({ icon: 'success', title: 'Mensaje Transmitido', text: 'El rol destino recibira la alerta en su barra de navegacion.', timer: 1500, showConfirmButton: false })
+                    .then(() => location.reload());
+                } else {
+                    Swal.fire({ icon: 'error', title: 'Error', text: data.mensaje });
+                }
+            });
+        }
+
+        function resolverIncidencia(id) {
+            fetch(`/Ventas/ResolverSoporteCliente?idLog=${id}`, { method: 'POST' })
+            .then(r => r.json())
+            .then(data => {
+                if (data.exito) {
+                    document.getElementById(`card-cliente-${id}`).remove();
+                    Swal.fire({ icon: 'success', title: 'Incidencia Archivada', timer: 1000, showConfirmButton: false });
+                }
+            });
+        }
+    </script>
+}

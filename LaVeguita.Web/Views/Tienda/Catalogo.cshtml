@@ -94,13 +94,6 @@
         </div>
     }
 
-    @if (TempData["Mensaje"] != null)
-    {
-        <div class="alert alert-success alert-dismissible fade show rounded-pill px-4 shadow-sm mb-4 ms-3 me-3" role="alert">
-            <i class="fas fa-check-circle me-2"></i> @TempData["Mensaje"]
-            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-        </div>
-    }
 
     <div class="row px-3">
         @foreach (var item in Model)
@@ -116,10 +109,13 @@
 
                         @if (item.StockActual <= item.StockMin)
                         {
-                            <span class="badge-stock-alert"><i class="fas fa-exclamation-triangle me-1"></i> ¡Últimos cupos!</span>
+                            <span class="badge-stock-alert"><i class="fas fa-exclamation-triangle me-1"></i> ¡Últimas Unidades!</span>
                         }
 
-                        <img src="https://loremflickr.com/400/300/vegetables,fruits/all?lock=@item.IdProducto" class="product-img" alt="@item.NomProducto" />
+                        <img src="https://loremflickr.com/400/300/vegetable,fruit?lock=@item.IdProducto"
+                             class="product-img"
+                             alt="@item.NomProducto"
+                             onerror="this.onerror=null; this.src='https://picsum.photos/400/300?random=@item.IdProducto';" />
                     </div>
 
                     <div class="card-body d-flex flex-column p-4">
@@ -176,39 +172,129 @@
     </div>
 </div>
 
+<button type="button" class="btn btn-success rounded-circle shadow-lg position-fixed" 
+        style="bottom: 25px; right: 25px; width: 60px; height: 60px; z-index: 2000; font-size: 1.5rem;"
+        data-bs-toggle="modal" data-bs-target="#modalAyudaExpress">
+    💬
+</button>
+
+<div class="modal fade" id="modalAyudaExpress" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content" style="border-radius: 15px;">
+            <div class="modal-header bg-success text-white" style="border-radius: 15px 15px 0 0;">
+                <h5 class="modal-title fw-bold"><i class="fas fa-headset me-2"></i>¿Necesitas Ayuda con tu Pedido?</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body p-4">
+                <p class="small text-muted mb-3">Ingrese sus datos y un Asistente de Ventas lo contactará de inmediato para gestionar su compra.</p>
+                
+                <div class="mb-2">
+                    <label class="form-label small fw-bold text-muted mb-1">Nombre Completo</label>
+                    <input type="text" id="txtAyudaNombre" class="form-control" placeholder="Ej: Pedro Pascal" required />
+                </div>
+                <div class="row g-2 mb-2">
+                    <div class="col-6">
+                        <label class="form-label small fw-bold text-muted mb-1">RUT (Con guión)</label>
+                        <input type="text" id="txtAyudaRut" class="form-control" placeholder="12345678-9" required />
+                    </div>
+                    <div class="col-6">
+                        <label class="form-label small fw-bold text-muted mb-1">Teléfono Móvil</label>
+                        <input type="number" id="txtAyudaFono" class="form-control" placeholder="912345678" required />
+                    </div>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label small fw-bold text-muted mb-1">¿Cuál es su consulta?</label>
+                    <textarea id="txtAyudaMensaje" class="form-control" rows="3" placeholder="Ej: No me lee el stock de papas..." required></textarea>
+                </div>
+                
+                <button type="button" id="btnEnviarAyuda" class="btn btn-success w-100 rounded-pill fw-bold py-2 shadow-sm">
+                    <i class="fas fa-paper-plane me-1"></i> Enviar Solicitud de Soporte
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+
 @section Scripts {
     <script>
         document.addEventListener("DOMContentLoaded", function () {
+            
+            @if (TempData["Mensaje"] != null)
+            {
+                <text>
+                Swal.fire({ icon: 'success', title: 'Producto Añadido', text: '@TempData["Mensaje"]', confirmButtonColor: '#198754', timer: 2000 });
+                </text>
+            }
 
-            // Acción para Incrementar (+)
             document.querySelectorAll(".btn-subir").forEach(boton => {
                 boton.addEventListener("click", function () {
                     const id = this.getAttribute("data-id");
                     const maxStock = parseInt(this.getAttribute("data-max"));
                     const input = document.getElementById("cant-" + id);
-
                     let valorActual = parseInt(input.value);
+
                     if (valorActual < maxStock) {
                         input.value = valorActual + 1;
                     } else {
-                        alert("Control de Stock: No es posible añadir más unidades. La cantidad máxima actual en bodega es de " + maxStock + " unidades.");
+                        Swal.fire({ icon: 'info', title: 'Límite de Stock', text: 'La cantidad máxima actual en bodega es de ' + maxStock + ' unidades.', confirmButtonColor: '#2ecc71' });
                     }
                 });
             });
 
-            // Acción para Decrementar (-)
             document.querySelectorAll(".btn-bajar").forEach(boton => {
                 boton.addEventListener("click", function () {
                     const id = this.getAttribute("data-id");
                     const input = document.getElementById("cant-" + id);
-
                     let valorActual = parseInt(input.value);
-                    if (valorActual > 1) {
-                        input.value = valorActual - 1;
-                    }
+                    if (valorActual > 1) input.value = valorActual - 1;
                 });
             });
-
         });
+
+        // Evento para procesar la Ayuda Flotante
+const btnEnviarAyuda = document.getElementById("btnEnviarAyuda");
+if (btnEnviarAyuda) {
+    btnEnviarAyuda.addEventListener("click", function() {
+        const nom = document.getElementById("txtAyudaNombre").value.trim();
+        const rut = document.getElementById("txtAyudaRut").value.trim();
+        const fono = document.getElementById("txtAyudaFono").value.trim();
+        const msg = document.getElementById("txtAyudaMensaje").value.trim();
+
+        if (!nom || !rut || !fono || !msg) {
+            Swal.fire({ icon: 'warning', title: 'Campos Vacíos', text: 'Por favor, complete todos los campos para que el asistente pueda contactarlo.', confirmButtonColor: '#198754' });
+            return;
+        }
+
+        // Deshabilitar temporalmente
+        btnEnviarAyuda.setAttribute("disabled", "disabled");
+
+        fetch(`/Tienda/RegistrarSolicitudAyuda?nombre=${encodeURIComponent(nom)}&rut=${encodeURIComponent(rut)}&telefono=${encodeURIComponent(fono)}&mensaje=${encodeURIComponent(msg)}`, {
+            method: 'POST'
+        })
+        .then(r => r.json())
+        .then(data => {
+            if (data.exito) {
+                Swal.fire({ icon: 'success', title: '¡Solicitud Enviada!', text: 'Un asistente de ventas revisará su requerimiento en el panel central.', confirmButtonColor: '#198754' })
+                .then(() => {
+                    // Cerrar modal y limpiar
+                    const modal = bootstrap.Modal.getInstance(document.getElementById('modalAyudaExpress'));
+                    modal.hide();
+                    document.getElementById("txtAyudaNombre").value = "";
+                    document.getElementById("txtAyudaRut").value = "";
+                    document.getElementById("txtAyudaFono").value = "";
+                    document.getElementById("txtAyudaMensaje").value = "";
+                });
+            } else {
+                Swal.fire({ icon: 'error', title: 'Error', text: data.mensaje, confirmButtonColor: '#d33' });
+            }
+            btnEnviarAyuda.removeAttribute("disabled");
+        });
+    });
+}
+
+
+
     </script>
 }

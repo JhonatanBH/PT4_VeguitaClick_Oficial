@@ -181,7 +181,12 @@
             const accion = document.getElementById('hdnAccion').value;
 
             if(user.trim() === "" || pass.trim() === "") {
-                alert("Por favor, ingrese el usuario y contraseña del Gerente.");
+                Swal.fire({
+                    icon: 'warning',
+                    title: 'Campos requeridos',
+                    text: 'Debe ingresar el usuario y contraseña del Gerente para proceder.',
+                    confirmButtonColor: '#212529'
+                });
                 return;
             }
 
@@ -199,9 +204,19 @@
                         // Redirige a la pantalla de edición pasándole el ID
                         window.location.href = `/Empleados/Editar/${idEmp}`;
                     } else if (accion === 'Eliminar') {
-                        if (confirm("¿Está completamente seguro de eliminar esta ficha de empleado? Esta acción es irreversible.")) {
-                            window.location.href = `/Empleados/Eliminar/${idEmp}`;
-                        }
+                        Swal.fire({
+                            title: '¿Está seguro?',
+                            text: "Esta acción es irreversible y eliminará la ficha del empleado.",
+                            icon: 'warning',
+                            showCancelButton: true,
+                            confirmButtonColor: '#d33',
+                            cancelButtonColor: '#6c757d',
+                            confirmButtonText: 'Sí, eliminar'
+                        }).then((result) => {
+                            if (result.isConfirmed) {
+                                window.location.href = `/Empleados/Eliminar/${idEmp}`;
+                            }
+                        });
                     }
                 } else {
                     document.getElementById('alertErrorGerente').classList.remove('d-none');
@@ -209,7 +224,12 @@
             })
             .catch(error => {
                 console.error("Error en la validación:", error);
-                alert("Ocurrió un error al conectar con la base de datos de Oracle Cloud.");
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Error de servidor',
+                    text: 'Ocurrió un error al conectar con la base de datos de Oracle Cloud.',
+                    confirmButtonColor: '#d33'
+                });
             });
         }
     </script>

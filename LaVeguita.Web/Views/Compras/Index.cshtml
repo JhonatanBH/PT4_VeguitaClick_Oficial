@@ -138,7 +138,7 @@
                                     <td class="fw-bold text-dark">@g.NumGuiaFisica</td>
                                     <td>@g.NomProveedor</td>
                                     <td>@g.FechaIngreso.ToString("dd/MM/yyyy HH:mm")</td>
-                                    <td class="text-center">
+                                    <td class="text-center d-flex justify-content-center gap-2">
                                         @{
                                             // Evaluamos si el diccionario indica que hay un documento asociado
                                             bool tieneDoc = docs.ContainsKey(g.IdRecepcion) && docs[g.IdRecepcion];
@@ -156,6 +156,10 @@
                                                 <i class="fas fa-cloud-upload-alt me-1"></i> Adjuntar PDF
                                             </button>
                                         }
+
+                                        <button type="button" class="btn btn-sm btn-outline-warning fw-bold shadow-sm" onclick="confirmarAnulacion(@g.IdRecepcion)">
+                                            <i class="fas fa-ban me-1"></i> Anular
+                                        </button>
                                     </td>
                                 </tr>
                             }
@@ -175,8 +179,10 @@
                 <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
 
-            <form id="formUpload" asp-action="SubirGuiaProveedorBlob" asp-controller="Compras" method="post" enctype="multipart/form-data">
+            <!-- 🚀 FORMULARIO BLINDADO: Usamos action directo para que .NET no se confunda al armar el paquete -->
+            <form id="formUpload" action="/Compras/SubirGuiaProveedorBlob" method="post" enctype="multipart/form-data">
                 <div class="modal-body p-4">
+                    <!-- Fíjate que el name es idRecepcionGuia -->
                     <input type="hidden" id="hdnIdRecepcionModal" name="idRecepcionGuia" value="" />
 
                     <p class="small text-muted mb-3">Seleccione el documento PDF correspondiente a la guía de despacho entregada por el proveedor.</p>
@@ -201,8 +207,7 @@
         // ==========================================
         function abrirModalUpload(idRecepcion) {
             document.getElementById('hdnIdRecepcionModal').value = idRecepcion;
-            document.getElementById('filePdfModal').value = ""; // Limpia si había un archivo anterior
-
+            document.getElementById('filePdfModal').value = "";
             var myModal = new bootstrap.Modal(document.getElementById('modalUploadPdf'));
             myModal.show();
         }
@@ -210,12 +215,10 @@
         document.addEventListener("DOMContentLoaded", function () {
             const txtNumGuia = document.getElementById("txtNumGuia");
             const cmbProveedor = document.getElementById("cmbProveedor");
-
             const cmbProducto = document.getElementById("cmbProducto");
             const txtPesoReal = document.getElementById("txtPesoReal");
             const txtPesoGuia = document.getElementById("txtPesoGuia");
             const txtDescLote = document.getElementById("txtDescLote");
-
             const btnAgregar = document.getElementById("btnAgregarAlCarrito");
             const tbodyCarrito = document.getElementById("tbodyCarrito");
             const lblTotalItems = document.getElementById("lblTotalItems");
@@ -223,7 +226,6 @@
 
             let carritoDeLotes = [];
 
-            // 1. ADJUNTAR ELEMENTOS AL CARRITO EN CALIENTE
             btnAgregar.addEventListener("click", function () {
                 const idProd = parseInt(cmbProducto.value) || 0;
                 const nomProd = cmbProducto.options[cmbProducto.selectedIndex]?.text || '';
@@ -232,111 +234,76 @@
                 const desc = txtDescLote.value.trim();
 
                 if (idProd === 0 || pReal <= 0) {
-                    alert("⚠️ Debe seleccionar un producto e ingresar un Peso Real.");
+                    Swal.fire({ icon: 'warning', title: 'Datos incompletos', text: 'Debe seleccionar un producto e ingresar un Peso Real.', confirmButtonColor: '#198754' });
                     return;
                 }
 
-                const nuevoItem = {
-                    IdProducto: idProd,
-                    NomProducto: nomProd,
-                    PesoRealLocal: pReal,
-                    PesoDeclaradoGd: pGuia > 0 ? pGuia : pReal,
-                    DescripcionLote: desc !== "" ? desc : "Ingreso estandar"
-                };
-
-                carritoDeLotes.push(nuevoItem);
+                carritoDeLotes.push({ IdProducto: idProd, NomProducto: nomProd, PesoRealLocal: pReal, PesoDeclaradoGd: pGuia > 0 ? pGuia : pReal, DescripcionLote: desc !== "" ? desc : "Ingreso estandar" });
                 renderizarTablaCarrito();
 
-                cmbProducto.value = "";
-                txtPesoReal.value = "";
-                txtPesoGuia.value = "";
-                txtDescLote.value = "";
+                cmbProducto.value = ""; txtPesoReal.value = ""; txtPesoGuia.value = ""; txtDescLote.value = "";
             });
 
-            // 2. RENDERIZAR LA TABLA TEMPORAL
             function renderizarTablaCarrito() {
                 if (carritoDeLotes.length === 0) {
                     tbodyCarrito.innerHTML = `<tr><td colspan="5" class="text-center text-muted py-3">El carrito esta vacio. Adjunte verduras a la izquierda.</td></tr>`;
                     btnSubirAOracle.classList.add("disabled");
                     lblTotalItems.innerText = "0 Items";
-
                     txtNumGuia.removeAttribute("readonly");
                     cmbProveedor.removeAttribute("disabled");
                     return;
                 }
-
                 txtNumGuia.setAttribute("readonly", "readonly");
                 cmbProveedor.setAttribute("disabled", "disabled");
-
                 lblTotalItems.innerText = `${carritoDeLotes.length} Items`;
                 btnSubirAOracle.classList.remove("disabled");
 
                 let html = "";
                 carritoDeLotes.forEach((item, index) => {
-                    html += `
-                        <tr>
-                            <td class="fw-bold text-dark">${item.NomProducto}</td>
-                            <td class="text-center fw-bold text-success">${item.PesoRealLocal} Kg</td>
-                            <td class="text-center text-muted">${item.PesoDeclaradoGd} Kg</td>
-                            <td class="text-secondary">${item.DescripcionLote}</td>
-                            <td class="text-center">
-                                <button type="button" class="btn btn-sm btn-outline-danger border-0 p-0 px-1" onclick="quitarItemDelCarrito(${index})">
-                                    <i class="fas fa-minus-circle"></i>
-                                </button>
-                            </td>
-                        </tr>
-                    `;
+                    html += `<tr><td class="fw-bold text-dark">${item.NomProducto}</td><td class="text-center fw-bold text-success">${item.PesoRealLocal} Kg</td><td class="text-center text-muted">${item.PesoDeclaradoGd} Kg</td><td class="text-secondary">${item.DescripcionLote}</td><td class="text-center"><button type="button" class="btn btn-sm btn-outline-danger border-0 p-0 px-1" onclick="quitarItemDelCarrito(${index})"><i class="fas fa-minus-circle"></i></button></td></tr>`;
                 });
                 tbodyCarrito.innerHTML = html;
             }
 
-            window.quitarItemDelCarrito = function(index) {
-                carritoDeLotes.splice(index, 1);
-                renderizarTablaCarrito();
-            };
+            window.quitarItemDelCarrito = function(index) { carritoDeLotes.splice(index, 1); renderizarTablaCarrito(); };
 
-            // 3. VIAJE AJAX JSON HACIA EL CONTROLADOR
             btnSubirAOracle.addEventListener("click", function () {
                 const nGuia = txtNumGuia.value.trim();
                 const idProv = parseInt(cmbProveedor.value) || 0;
 
                 if (nGuia === "" || idProv === 0 || carritoDeLotes.length === 0) {
-                    alert("❌ Faltan datos generales de la guia de despacho.");
+                    Swal.fire({ icon: 'error', title: 'Error', text: 'Faltan datos generales de la guia.', confirmButtonColor: '#d33' });
                     return;
                 }
 
                 btnSubirAOracle.setAttribute("disabled", "disabled");
-                btnSubirAOracle.innerHTML = `<i class="fas fa-spinner fa-spin me-1"></i> Registrando en Oracle...`;
-
-                const payLoad = {
-                    NumGuiaFisica: nGuia,
-                    IdProveedor: idProv,
-                    ItemsCargamento: carritoDeLotes
-                };
+                btnSubirAOracle.innerHTML = `<i class="fas fa-spinner fa-spin me-1"></i> Registrando...`;
 
                 fetch('/Compras/GuardarGuiaCompleta', {
                     method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify(payLoad)
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ NumGuiaFisica: nGuia, IdProveedor: idProv, ItemsCargamento: carritoDeLotes })
                 })
                 .then(res => res.json())
                 .then(data => {
                     if (data.exito) {
-                        alert("✅ Éxito:\n" + data.mensaje);
-                        window.location.reload();
+                        Swal.fire({ icon: 'success', title: '¡Éxito!', text: data.mensaje, confirmButtonColor: '#198754' }).then(() => window.location.reload());
                     } else {
-                        alert("❌ Error transaccional:\n" + data.mensaje);
+                        Swal.fire({ icon: 'error', title: 'Error', text: data.mensaje, confirmButtonColor: '#d33' });
                         btnSubirAOracle.removeAttribute("disabled");
                         btnSubirAOracle.innerHTML = `<i class="fas fa-cloud-upload-alt me-1 text-success"></i> Confirmar Recepcion Completa`;
                     }
                 })
                 .catch(err => {
-                    alert("❌ Error en la peticion.");
+                    Swal.fire({ icon: 'error', title: 'Error crítico', text: 'Error en la petición al servidor.', confirmButtonColor: '#d33' });
                     btnSubirAOracle.removeAttribute("disabled");
                 });
             });
         });
     </script>
 }
+
+
+
+
+

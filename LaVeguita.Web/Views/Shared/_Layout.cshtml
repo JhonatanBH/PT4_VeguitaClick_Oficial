@@ -55,8 +55,9 @@
                     border-radius: 10px;
                 }
 
+                /* 🌿 LOGO PRINCIPAL: AJUSTADO A VERDE NATURAL */
                 .sidebar h2 {
-                    color: #2ecc71;
+                    color: #2ecc71 !important;
                     text-align: center;
                     font-size: 22px;
                     margin-bottom: 30px;
@@ -66,13 +67,14 @@
                     box-sizing: border-box;
                 }
 
+            /* 🌿 PANEL DE STATUS: BORDE VERDE AMBIENTAL */
             .admin-status {
                 background: #34495e;
                 padding: 15px;
                 border-radius: 12px;
                 margin-bottom: 25px;
                 text-align: center;
-                border-left: 5px solid #2ecc71;
+                border-left: 5px solid #2ecc71 !important;
             }
 
             .sidebar ul {
@@ -84,8 +86,9 @@
                     margin-bottom: 5px;
                 }
 
+                    /* 📝 ENLACES: BLANCO PURO ALALTA LEGIBILIDAD */
                     .sidebar ul li a {
-                        color: #bdc3c7;
+                        color: #ffffff !important;
                         text-decoration: none !important;
                         display: flex;
                         align-items: center;
@@ -93,6 +96,7 @@
                         border-radius: 8px;
                         transition: 0.3s;
                         font-size: 15px;
+                        font-weight: 500;
                     }
 
                         .sidebar ul li a i {
@@ -102,11 +106,27 @@
                             text-align: center;
                         }
 
+                        /* 🌿 HOVER DE ENLACES: CAMBIADO A VERDE AMBIENTAL */
                         .sidebar ul li a:hover {
                             background: #34495e;
-                            color: #2ecc71;
+                            color: #2ecc71 !important;
                             padding-left: 20px;
                         }
+
+            /* 🌿 SUBTÍTULOS DE CATEGORÍA LOGÍSTICA */
+            .sidebar .menu-header-eco {
+                color: #2ecc71 !important;
+                font-size: 11px;
+                letter-spacing: 1px;
+                font-weight: bold;
+                text-transform: uppercase;
+                margin-top: 25px;
+                margin-bottom: 10px;
+                padding-left: 12px;
+                display: block;
+                border-bottom: 1px dashed rgba(46, 204, 113, 0.2);
+                padding-bottom: 5px;
+            }
 
             .main-content {
                 margin-left: 260px;
@@ -140,15 +160,15 @@
                 transition: margin-top 0.3s ease;
             }
 
-            /* 📐 CLASES DINÁMICAS DE MARGEN PARA COMPENSAR ESPACIOS */
             .espacio-tienda {
                 margin-top: 35px;
             }
 
             .espacio-admin {
-                margin-top: 55px; /* Eleva el card alineándolo armónicamente con el botón toggle */
+                margin-top: 55px;
             }
 
+            /* 🌿 BOTÓN FLOTANTE MENÚ */
             .toggle-btn {
                 position: fixed;
                 top: 25px;
@@ -162,6 +182,7 @@
                 cursor: pointer;
                 box-shadow: 0 4px 10px rgba(46, 204, 113, 0.3);
                 transition: 0.3s;
+                font-weight: bold;
             }
 
                 .toggle-btn:hover {
@@ -181,7 +202,7 @@
 
             .veguita-footer {
                 background: #2c3e50;
-                color: white; /* Cambiado a blanco general */
+                color: white;
                 border-radius: 15px;
                 padding: 25px;
                 margin-top: 30px;
@@ -209,7 +230,7 @@
         <div class="admin-status">
             <span style="font-size: 10px; color: #bdc3c7; display: block; text-transform: uppercase;">Sesión Activa</span>
             <strong class="d-block text-white">@nombreUser</strong>
-            <span class="badge bg-success mt-2" style="font-size: 11px;">
+            <span class="badge bg-dark text-white mt-2" style="font-size: 11px; border: 1px solid #2ecc71;">
                 @switch (rol)
                 {
                     case 1:
@@ -252,11 +273,44 @@
         </div>
 
         <ul class="mb-5 pb-4">
-            <li><a asp-controller="Tienda" asp-action="Catalogo"><i class="fas fa-home"></i> Inicio</a></li>
+            <li>
+                @if (rol == 1 || rol == 2)
+                {
+                    <a asp-controller="Home" asp-action="Index"><i class="fas fa-home"></i> Inicio</a>
+                }
+                else if (rol == 3)
+                {
+                    <a asp-controller="Produccion" asp-action="Index"><i class="fas fa-home"></i> Inicio</a>
+                }
+                else if (rol == 5)
+                {
+                    <a asp-controller="Ventas" asp-action="AsistenteVentas"><i class="fas fa-home"></i> Inicio</a>
+                }
+                else if (rol == 6)
+                {
+                    <a asp-controller="Bodega" asp-action="Monitor"><i class="fas fa-home"></i> Inicio</a>
+                }
+                else if (rol == 7)
+                {
+                    <a asp-controller="Transporte" asp-action="MisDespachos"><i class="fas fa-home"></i> Inicio</a>
+                }
+                else
+                {
+                    <a asp-controller="Tienda" asp-action="Catalogo"><i class="fas fa-home"></i> Inicio</a>
+                }
+            </li>
 
             @if (rol >= 1 && rol <= 6)
             {
-                <li class="small text-muted mt-4 mb-2 px-3 fw-bold" style="letter-spacing: 1px;">GESTIÓN INTERNA</li>
+                <span class="menu-header-eco">Gestión Interna</span>
+
+                <li>
+                    <a asp-controller="Ventas" asp-action="BandejaSoporte" class="position-relative">
+                        <i class="fas fa-envelope"></i> Mensajería Interna
+                        <span id="badgeMensajes" class="badge rounded-pill bg-danger position-absolute end-0 me-5 d-none">0</span>
+                        <span id="badgeInterno" class="badge rounded-pill bg-warning text-dark position-absolute end-0 me-2 d-none">0</span>
+                    </a>
+                </li>
 
                 @if (rol == 1 || rol == 2)
                 {
@@ -276,7 +330,7 @@
 
                 @if (rol == 1 || rol == 2 || rol == 3)
                 {
-                    <li class="small text-success mt-3 mb-1 px-3 fw-bold" style="font-size: 11px; letter-spacing: 0.5px;">MÓDULO OPERACIONES</li>
+                    <span class="menu-header-eco">Módulo Operaciones</span>
                     <li><a asp-controller="Produccion" asp-action="Index"><i class="fas fa-chart-pie"></i> Control de Mando</a></li>
                     <li><a asp-controller="Produccion" asp-action="ProcesosPlanta"><i class="fas fa-industry"></i> Revisión de Planta</a></li>
                     <li><a asp-controller="Produccion" asp-action="Packing"><i class="fas fa-box-open"></i> Área de Packing</a></li>
@@ -292,16 +346,17 @@
                 {
                     <li><a asp-controller="Bodega" asp-action="Monitor"><i class="fas fa-box"></i> Preparación en Bodega</a></li>
                     <li><a asp-controller="Logistica" asp-action="GestionLogistica"><i class="fas fa-clipboard-list"></i> Asignación de Despachos</a></li>
+                    <li><a asp-controller="Vehiculos" asp-action="Index"><i class="fas fa-truck"></i> Control de Flota</a></li>
                 }
             }
             else if (rol == 7)
             {
-                <li class="small text-muted mt-4 mb-2 px-3 fw-bold">LOGÍSTICA</li>
+                <span class="menu-header-eco">Logística</span>
                 <li><a asp-controller="Transporte" asp-action="MisDespachos"><i class="fas fa-truck-loading"></i> Hoja de Ruta</a></li>
             }
             else if (esTiendaPublica)
             {
-                <li class="small text-muted mt-4 mb-2 px-3 fw-bold">MI TIENDA</li>
+                <span class="menu-header-eco">Mi Tienda</span>
                 <li><a asp-controller="Tienda" asp-action="Catalogo"><i class="fas fa-store"></i> Comprar</a></li>
                 <li><a asp-controller="Tienda" asp-action="Carrito"><i class="fas fa-shopping-cart"></i> Mi Carrito</a></li>
                 <li><a asp-controller="Tienda" asp-action="Seguimiento"><i class="fas fa-truck-ramp-box"></i> Estado de mi Envío</a></li>
@@ -315,13 +370,13 @@
             <li class="mt-4 pt-3" style="border-top: 1px solid #34495e;">
                 @if (rol == 9 || rol == null)
                 {
-                    <a asp-controller="Acceso" asp-action="Login" style="color: #2ecc71; text-decoration: none; display: flex; align-items: center; padding: 12px;">
+                    <a asp-controller="Acceso" asp-action="Login" style="color: #2ecc71 !important; text-decoration: none; display: flex; align-items: center; padding: 12px;">
                         <i class="fas fa-sign-in-alt" style="width: 25px; margin-right: 10px; font-size: 18px;"></i> Iniciar Sesión
                     </a>
                 }
                 else
                 {
-                    <a asp-controller="Acceso" asp-action="Logout" style="color: #e74c3c; text-decoration: none; display: flex; align-items: center; padding: 12px;">
+                    <a asp-controller="Acceso" asp-action="Logout" style="color: #e74c3c !important; text-decoration: none; display: flex; align-items: center; padding: 12px;">
                         <i class="fas fa-power-off" style="width: 25px; margin-right: 10px; font-size: 18px;"></i> Cerrar Sesión
                     </a>
                 }
@@ -331,7 +386,6 @@
 
     <main class="main-content" id="main-content">
 
-        @* 🚀 NAVBAR SUPERIOR PRIVADA: Solo renderiza para flujos e-commerce de tienda *@
         @if (esTiendaPublica)
         {
             <div class="top-navbar d-flex justify-content-between align-items-center ms-4">
@@ -352,12 +406,10 @@
             </div>
         }
 
-        @* 🚀 CARGA DE CONTENEDOR DINÁMICO: Ajusta el margin-top para que los mantenedores internos suban limpiamente *@
         <div class="container-card shadow-sm ms-4 @(esTiendaPublica ? "espacio-tienda" : "espacio-admin")">
             @RenderBody()
         </div>
 
-        @* 🚀 FOOTER PRIVADO: Solo renderiza para flujos e-commerce de tienda con texto blanco *@
         @if (esTiendaPublica)
         {
             <div class="veguita-footer ms-4 d-flex justify-content-between align-items-center">
@@ -375,15 +427,55 @@
     </main>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
     <script>
         function toggleSidebar() {
         const sidebar = document.getElementById('sidebar');
         const mainContent = document.getElementById('main-content');
         if(sidebar && mainContent) {
         sidebar.classList.toggle('collapsed');
-        mainContent.classList.toggle('expanded');
+        sidebar.classList.contains('collapsed') ? mainContent.style.marginLeft = "0" : mainContent.style.marginLeft = "260px";
         }
         }
+
+        document.addEventListener("DOMContentLoaded", function () {
+        const badge = document.getElementById("badgeMensajes");
+        const badgeInterno = document.getElementById("badgeInterno");
+
+        function verificarSoporte() {
+        if (badge) {
+        fetch('/Ventas/ContarMensajesSoporte')
+        .then(r => r.json())
+        .then(data => {
+        if (data.count > 0) {
+        badge.innerText = data.count;
+        badge.classList.remove("d-none");
+        } else {
+        badge.classList.add("d-none");
+        }
+        })
+        .catch(() => {});
+        }
+
+        if (badgeInterno) {
+        fetch('/Ventas/ContarMensajesInternos')
+        .then(r => r.json())
+        .then(data => {
+        if (data.count > 0) {
+        badgeInterno.innerText = data.count;
+        badgeInterno.classList.remove("d-none");
+        } else {
+        badgeInterno.classList.add("d-none");
+        }
+        })
+        .catch(() => {});
+        }
+        }
+
+        verificarSoporte();
+        setInterval(verificarSoporte, 15000);
+        });
     </script>
 
     @await RenderSectionAsync("Scripts", required: false)

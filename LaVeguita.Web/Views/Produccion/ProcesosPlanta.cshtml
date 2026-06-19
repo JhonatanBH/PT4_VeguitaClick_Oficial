@@ -174,7 +174,7 @@
             let idProveedor = 0;
             let idProducto = 0;
 
-            // EVENTO 0: Auto-completar el peso bruto cuando seleccionan un lote
+            // EVENTO 0: Auto-completar el peso bruto
             cmbLote.addEventListener("change", function() {
                 if(this.value) {
                     const selectedOption = this.options[this.selectedIndex];
@@ -187,7 +187,12 @@
             // EVENTO 1: Confirmar pesaje
             btnConfirmarLavado.addEventListener("click", function () {
                 if (!cmbLote.value) {
-                    alert("⚠️ Seleccione un cargamento.");
+                    Swal.fire({
+                        icon: 'warning',
+                        title: 'Atención',
+                        text: 'Por favor, seleccione un cargamento bruto.',
+                        confirmButtonColor: '#198754'
+                    });
                     return;
                 }
 
@@ -195,7 +200,12 @@
                 const limpia = parseInt(txtCantLimpia.value) || 0;
 
                 if (bruta <= 0 || limpia < 0 || limpia > bruta) {
-                    alert("❌ Error de pesaje. La cantidad limpia no puede ser mayor a la cantidad bruta recibida.");
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Error de Pesaje',
+                        text: 'La cantidad limpia no puede ser mayor a la cantidad bruta recibida.',
+                        confirmButtonColor: '#d33'
+                    });
                     return;
                 }
 
@@ -230,7 +240,6 @@
                     txtPrimCalidad.style.borderColor = "";
                 }
 
-                // 1. Calcular mermas en unidades/kilos base
                 const mermaLavado = bruta - limpia;
                 const mermaClasif = limpia - (prim + seg);
                 const mermaTotal = mermaLavado + mermaClasif;
@@ -238,11 +247,9 @@
                 lblMermaLavado.innerText = mermaLavado;
                 lblMermaClasif.innerText = mermaClasif;
 
-                // 2. Convertir a Kilos de masa real segun el peso unitario estimado
                 const kilosMasaTotal = mermaTotal * pesoUnitario;
                 lblKilosResiduos.innerText = kilosMasaTotal.toFixed(2);
 
-                // 3. Proyeccion industrial automatica de Sacos de 25 Kg
                 if (kilosMasaTotal >= 25) {
                     const sacosEnteros = Math.floor(kilosMasaTotal / 25);
                     const kilosSobrantes = kilosMasaTotal % 25;
@@ -258,7 +265,7 @@
             txtPrimCalidad.addEventListener("input", calcularMermas);
             txtSegCalidad.addEventListener("input", calcularMermas);
 
-            // EVENTO 2: Disparar el Stored Procedure enviando el nuevo ID de LOTE
+            // EVENTO 2: Enviar datos a Oracle Cloud
             btnProcesarLoteFinal.addEventListener("click", function () {
                 const idLote = cmbLote.value;
                 const bruta = parseInt(txtCantEntrada.value) || 0;
@@ -267,27 +274,49 @@
                 const seg = parseInt(txtSegCalidad.value) || 0;
 
                 if ((prim + seg) > limpia) {
-                    alert("❌ La clasificacion excede el peso limpio disponible.");
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Error de Distribución',
+                        text: 'La clasificación excede el peso limpio disponible.',
+                        confirmButtonColor: '#d33'
+                    });
                     return;
                 }
 
                 btnProcesarLoteFinal.setAttribute("disabled", "disabled");
-                btnProcesarLoteFinal.innerHTML = `<i class="fas fa-spinner fa-spin me-2"></i> Procesando PL/SQL...`;
+                btnProcesarLoteFinal.innerHTML = `<i class="fas fa-spinner fa-spin me-2"></i> Guardando en Oracle...`;
 
-                // Viaje AJAX enviando idLote e idProducto de forma directa
                 fetch(`/Produccion/ProcesarLote?idLote=${idLote}&cantEntrada=${bruta}&cantPrimCalidad=${prim}&cantSegCalidad=${seg}&idProducto=${idProducto}&idProveedor=${idProveedor}`, {
                     method: 'POST'
                 })
                 .then(r => r.json())
                 .then(data => {
                     if (data.exito) {
-                        alert("✅ Auditoria Registrada. Oracle actualizo el stock a 'Limpiado', ingreso los residuos al Compost y marco el lote como PROCESADO.\n\nMensaje: " + data.mensaje);
-                        window.location.reload();
+                        Swal.fire({
+                            icon: 'success',
+                            title: 'Auditoría Registrada',
+                            text: 'El stock fue actualizado, los residuos se enviaron a Compostaje y el lote quedó Cerrado.',
+                            confirmButtonColor: '#198754'
+                        }).then(() => window.location.reload());
                     } else {
-                        alert("❌ Error en Base de Datos:\n" + data.mensaje);
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Error Transaccional',
+                            text: data.mensaje,
+                            confirmButtonColor: '#d33'
+                        });
                         btnProcesarLoteFinal.removeAttribute("disabled");
                         btnProcesarLoteFinal.innerHTML = `<i class="fas fa-cloud-upload-alt me-2"></i> Registrar en Oracle`;
                     }
+                })
+                .catch(err => {
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Error de Red',
+                        text: 'No se pudo conectar con el servidor de Oracle Cloud.',
+                        confirmButtonColor: '#d33'
+                    });
+                    btnProcesarLoteFinal.removeAttribute("disabled");
                 });
             });
         });

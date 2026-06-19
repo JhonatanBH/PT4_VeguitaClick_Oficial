@@ -123,7 +123,13 @@
 
                     if (!formValido) {
                         e.preventDefault();
-                        alert("Por favor, complete los campos obligatorios.");
+                        // CAMBIO: Alerta profesional sin el link de Azure
+                        Swal.fire({
+                            icon: 'warning',
+                            title: 'Campos incompletos',
+                            text: 'Por favor, complete los campos de usuario y contraseña.',
+                            confirmButtonColor: '#198754'
+                        });
                     }
                 });
             });

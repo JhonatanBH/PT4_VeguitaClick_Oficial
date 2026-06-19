@@ -177,7 +177,13 @@
                 if (!formValido) {
                     e.preventDefault();
                     e.stopPropagation();
-                    alert("⚠️ Formulario Incompleto: Por favor, complete correctamente los datos requeridos e intente nuevamente.");
+                    
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Formulario Incompleto',
+                        text: 'Por favor, complete correctamente los datos requeridos antes de continuar.',
+                        confirmButtonColor: '#3498db' 
+                    });
                 }
             });
         });

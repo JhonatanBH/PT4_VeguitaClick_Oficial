@@ -124,6 +124,27 @@
 </div>
 
 <script>
+    document.addEventListener("DOMContentLoaded", function() {
+        const form = document.getElementById("formEditarProducto");
+        
+        form.addEventListener("submit", function(e) {
+            const nom = document.getElementById("NomProducto");
+            const prov = document.getElementById("IdProveedor");
+            const prec = document.getElementById("PrecioUnd");
+            const stock = document.getElementById("StockActual");
+
+            if (nom.value.trim() === "" || prov.value === "" || prec.value <= 0 || stock.value === "") {
+                e.preventDefault();
+                Swal.fire({
+                    icon: 'warning',
+                    title: 'Revisar Datos',
+                    text: 'Asegúrese de rellenar todos los campos obligatorios antes de actualizar.',
+                    confirmButtonColor: '#f39c12' // Naranja editar
+                });
+            }
+        });
+    });
+
     function validarSinTildes(e) {
         var key = e.keyCode || e.which;
         var tecla = String.fromCharCode(key).toLowerCase();

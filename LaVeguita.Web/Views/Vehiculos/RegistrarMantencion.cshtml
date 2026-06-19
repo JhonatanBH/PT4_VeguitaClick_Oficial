@@ -1,0 +1,56 @@
+﻿@{
+    ViewData["Title"] = "Registrar Orden de Taller";
+}
+
+<div class="row justify-content-center mt-3">
+    <div class="col-md-8">
+        <div class="card border-0 shadow-sm" style="border-radius:15px;">
+            <div class="card-header bg-dark text-white p-3" style="border-radius: 15px 15px 0 0;">
+                <h5 class="mb-0 fw-bold text-warning"><i class="fas fa-wrench me-2"></i>Orden de Retiro Técnico por Mantención</h5>
+            </div>
+            <div class="card-body p-4">
+                <form asp-action="RegistrarMantencion" method="post">
+                    <div class="text-danger small mb-3" asp-validation-summary="ModelOnly"></div>
+
+                    <div class="row g-3">
+                        <div class="col-md-4">
+                            <label class="form-label small fw-bold text-muted">Móvil en Andén Logístico</label>
+                            <select name="idTransporte" class="form-select" required>
+                                <option value="">-- Seleccione Vehículo --</option>
+                                @foreach (var v in ViewBag.Vehiculos)
+                                {
+                                    <option value="@v.IdTransporte">@v.TipoMovil - Serial: @v.Serial (@v.Estado)</option>
+                                }
+                            </select>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label small fw-bold text-muted">Costo Operación ($ CLP)</label>
+                            <div class="input-group">
+                                <span class="input-group-text bg-light">$</span>
+                                <input type="number" name="costoMantencion" class="form-control" placeholder="Ej: 25000" min="0" required />
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label small fw-bold text-muted">Días Estimados en Taller</label>
+                            <div class="input-group">
+                                <input type="number" name="diasEstimados" class="form-control" placeholder="Ej: 3" min="1" required />
+                                <span class="input-group-text bg-light">Días</span>
+                            </div>
+                        </div>
+                        <div class="col-md-12">
+                            <label class="form-label small fw-bold text-muted">Diagnóstico / Informe de Falla Técnico (Sin tildes)</label>
+                            <textarea name="detalleTecnico" class="form-control" rows="4" placeholder="Describa el motivo del mantenimiento (ej: Cambio de neumatico por pinchazo en ruta o ajuste de frenos delanteros)..." required></textarea>
+                        </div>
+                    </div>
+
+                    <div class="d-flex gap-2 justify-content-end border-top pt-3 mt-4">
+                        <a asp-action="Index" class="btn btn-light border px-4 fw-bold">Volver al Monitor</a>
+                        <button type="submit" class="btn btn-dark px-4 fw-bold text-warning shadow-sm">
+                            <i class="fas fa-lock me-1"></i> Confirmar Ingreso a Taller
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>

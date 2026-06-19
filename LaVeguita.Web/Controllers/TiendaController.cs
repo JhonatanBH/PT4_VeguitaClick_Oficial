@@ -3,6 +3,7 @@ using LaVeguita.Entities;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Newtonsoft.Json;
+using Oracle.ManagedDataAccess.Client;
 using System;
 using System.Collections.Generic;
 using System.Data;
@@ -314,6 +315,39 @@ namespace LaVeguita.Web.Controllers
             var settings = new JsonSerializerSettings { ReferenceLoopHandling = ReferenceLoopHandling.Ignore };
             HttpContext.Session.SetString("CarritoVeguita", JsonConvert.SerializeObject(carrito, settings));
         }
+
+
+        [HttpPost]
+        public IActionResult RegistrarSolicitudAyuda(string nombre, string rut, string telefono, string mensaje)
+        {
+            try
+            {
+                string asunto = $"SOPORTE_WEB - RUT: {rut} - Cliente: {nombre}";
+
+                using (OracleConnection cn = new Conexion().LeerConexion())
+                {
+                    cn.Open();
+                    string query = "INSERT INTO ADMIN.LOG_NOTIFICACIONES (DESTINATARIO, ASUNTO, CUERPO, TELEFONO_CONTACTO, ESTADO) VALUES (:dest, :asunto, :cuerpo, :fono, 'SOPORTE_PENDIENTE')";
+                    using (OracleCommand cmd = new OracleCommand(query, cn))
+                    {
+                        cmd.Parameters.Add("dest", OracleDbType.Varchar2).Value = "MÓDULO_COMERCIAL";
+                        cmd.Parameters.Add("asunto", OracleDbType.Varchar2).Value = asunto;
+                        cmd.Parameters.Add("cuerpo", OracleDbType.Clob).Value = mensaje;
+                        cmd.Parameters.Add("fono", OracleDbType.Varchar2).Value = telefono;
+
+                        cmd.ExecuteNonQuery();
+                    }
+                }
+                return Json(new { exito = true });
+            }
+            catch (Exception ex)
+            {
+                return Json(new { exito = false, mensaje = ex.Message });
+            }
+        }
+
+
+
 
 
 

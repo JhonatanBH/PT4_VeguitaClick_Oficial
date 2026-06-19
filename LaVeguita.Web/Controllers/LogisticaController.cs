@@ -1,6 +1,7 @@
-﻿using Microsoft.AspNetCore.Mvc;
-using LaVeguita.DAL;
+﻿using LaVeguita.DAL;
 using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Mvc;
+using Oracle.ManagedDataAccess.Client;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -49,7 +50,8 @@ namespace LaVeguita.Web.Controllers
 
                 if (exito)
                 {
-                    TempData["Exito"] = $"¡Pedido de Venta #{IdVenta} asignado con éxito al móvil #{IdTransporte}!";
+                    // Mensaje plano para cumplir la Regla 12 y evitar caracteres raros
+                    TempData["Exito"] = $"Pedido de Venta #{IdVenta} asignado con exito al movil #{IdTransporte}";
                 }
                 else
                 {
@@ -63,5 +65,52 @@ namespace LaVeguita.Web.Controllers
 
             return RedirectToAction("GestionLogistica");
         }
+
+        [HttpPost]
+        public IActionResult Despachar(int idVenta)
+        {
+            if (idVenta <= 0)
+            {
+                TempData["Error"] = "Código de venta inválido para procesar el despacho.";
+                return RedirectToAction("GestionLogistica");
+            }
+
+            try
+            {
+                using (OracleConnection cn = new Conexion().LeerConexion())
+                {
+                    // 🚀 CORREGIDO: Usamos el nombre real de tu tabla obtenido de VentasController
+                    string query = "UPDATE ADMIN.ORDEN_VENTA SET ESTADO = 'ENVIADO' WHERE ID_VENTA = :id";
+
+                    using (OracleCommand cmd = new OracleCommand(query, cn))
+                    {
+                        cmd.Parameters.Add("id", OracleDbType.Int32).Value = idVenta;
+
+                        cn.Open();
+                        int filasAfectadas = cmd.ExecuteNonQuery();
+
+                        if (filasAfectadas > 0)
+                        {
+                            TempData["Mensaje"] = $"El pedido #{idVenta} ha sido entregado al transportista y va en camino.";
+                        }
+                        else
+                        {
+                            TempData["Error"] = $"No se encontró la orden de venta #{idVenta} para actualizar.";
+                        }
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                TempData["Error"] = "Error de comunicación con Oracle Cloud: " + ex.Message;
+            }
+
+            // Te devuelve limpio a la vista del monitor de logística
+            return RedirectToAction("GestionLogistica");
+        }
+
+
+
+
     }
 }

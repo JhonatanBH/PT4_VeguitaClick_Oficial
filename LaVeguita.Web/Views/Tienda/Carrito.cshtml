@@ -5,14 +5,6 @@
     int? rolUsuario = HttpContextAccessor.HttpContext.Session.GetInt32("RolUsuario");
 }
 
-@if (TempData["Error"] != null)
-{
-    <div class="alert alert-danger alert-dismissible fade show" role="alert">
-        <strong>¡Alerta de Restriccion!</strong> @TempData["Error"]
-        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-    </div>
-}
-
 <div class="container mt-4">
     <h2 class="text-success mb-4">🛒 Tu Carrito de Compras</h2>
 
@@ -185,7 +177,11 @@
 @section Scripts {
     <script>
         document.addEventListener("DOMContentLoaded", function () {
-            // Referencias de Elementos del Formulario
+            @if (TempData["Error"] != null)
+            {
+                    <text>Swal.fire({ icon: 'error', title: '¡Alerta de Restricción!', text: '@TempData["Error"]', confirmButtonColor: '#d33' });</text>
+            }
+
             const formCheckout = document.getElementById('formCheckout');
             const ddlTipoEnvio = document.getElementById('ddlTipoEnvio');
             const txtHoraFijo = document.getElementById('txtHoraFijo');
@@ -193,61 +189,75 @@
             const ddlZonaDespacho = document.getElementById('ddlZonaDespacho');
             const alertaDistancia = document.getElementById('alertaDistancia');
             const btnPagar = document.getElementById('btnPagar');
+            const divResultados = document.getElementById("resultadosMapas");
 
-            // Referencias del Panel Express de Invitado
             const txtNombre = document.getElementById("txtNombreInvitado");
             const txtTelefono = document.getElementById("txtTelefonoInvitado");
             const txtRut = document.getElementById("txtRutInvitado");
             const txtCorreo = document.getElementById("txtCorreoInvitado");
             const txtCalle = document.getElementById("txtCalleInvitado");
             const txtNumero = document.getElementById("txtNumeroInvitado");
-            const divResultados = document.getElementById("resultadosMapas");
 
             let timerBusqueda;
-
-            // Deshabilitar botón inicialmente hasta que todo esté OK
             btnPagar.setAttribute('disabled', 'disabled');
 
-            // ====================================================================
-            // 🔍 AUDITORÍA DE VALIDACIÓN EN TIEMPO REAL (LETRA POR LETRA)
-            // ====================================================================
+            formCheckout.addEventListener('submit', function (e) {
+                e.preventDefault();
+                btnPagar.setAttribute('disabled', 'disabled');
+                btnPagar.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i> Conectando al Banco...';
 
-            // 1. Validar Nombre (No puede estar vacío y mínimo 3 caracteres)
+                Swal.fire({
+                    title: 'Conectando con Webpay Plus',
+                    html: `
+                        <div class="text-center my-2">
+                            <p class="text-muted small">Por favor, no cierre esta ventana ni presione "Atrás".</p>
+                            <div class="spinner-border text-danger" role="status"></div>
+                            <p class="mt-3 mb-0 fw-bold text-secondary" style="font-size:0.85rem;">
+                                <i class="fas fa-lock text-success me-1"></i> Transacción Segura (Transbank)
+                            </p>
+                        </div>
+                    `,
+                    allowOutsideClick: false,
+                    showConfirmButton: false,
+                    didOpen: () => {
+                        setTimeout(() => {
+                            Swal.fire({
+                                icon: 'success',
+                                title: '¡Pago Aprobado con Éxito!',
+                                text: 'Código de autorización recibido. Generando su orden...',
+                                showConfirmButton: false,
+                                timer: 1500,
+                                allowOutsideClick: false
+                            }).then(() => {
+                                formCheckout.submit();
+                            });
+                        }, 2500);
+                    }
+                });
+            });
+
             if (txtNombre) {
                 txtNombre.addEventListener("input", function () {
-                    if (txtNombre.value.trim().length >= 3) {
-                        marcarValido(txtNombre);
-                    } else {
-                        marcarInvalido(txtNombre);
-                    }
+                    if (txtNombre.value.trim().length >= 3) marcarValido(txtNombre);
+                    else marcarInvalido(txtNombre);
                     validarTodo();
                 });
             }
 
-            // 2. Validar Teléfono (Estrictamente 9 dígitos numéricos chilenos)
             if (txtTelefono) {
                 txtTelefono.addEventListener("input", function () {
-                    // Limitar a 9 dígitos si el usuario se pasa escribiendo
-                    if (txtTelefono.value.length > 9) {
-                        txtTelefono.value = txtTelefono.value.slice(0, 9);
-                    }
-
-                    const regexFono = /^9[0-9]{8}$/; // Empieza con 9 y siguen 8 números
-                    if (regexFono.test(txtTelefono.value)) {
-                        marcarValido(txtTelefono);
-                    } else {
-                        marcarInvalido(txtTelefono);
-                    }
+                    if (txtTelefono.value.length > 9) txtTelefono.value = txtTelefono.value.slice(0, 9);
+                    const regexFono = /^9[0-9]{8}$/;
+                    if (regexFono.test(txtTelefono.value)) marcarValido(txtTelefono);
+                    else marcarInvalido(txtTelefono);
                     validarTodo();
                 });
             }
 
-            // 3. Validar RUT (Algoritmo matemático con guión y sin puntos)
             if (txtRut) {
                 txtRut.addEventListener("input", function () {
                     txtRut.value = txtRut.value.replace(/\./g, '').trim();
                     const errText = document.getElementById("rutErrorText");
-
                     if (validarRutChileno(txtRut.value)) {
                         marcarValido(txtRut);
                         if (errText) errText.classList.add("d-none");
@@ -259,28 +269,21 @@
                 });
             }
 
-            // 4. Validar Correo Electrónico (Estructura estándar de Email)
             if (txtCorreo) {
                 txtCorreo.addEventListener("input", function () {
-                    // 🚀 SOLUCIÓN AL ROJO: Doble arroba para escapar el motor de Razor
                     const regexEmail = /^[a-zA-Z0-9._%+-]+@@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
-                    if (regexEmail.test(txtCorreo.value.trim())) {
-                        marcarValido(txtCorreo);
-                    } else {
-                        marcarInvalido(txtCorreo);
-                    }
+                    if (regexEmail.test(txtCorreo.value.trim())) marcarValido(txtCorreo);
+                    else marcarInvalido(txtCorreo);
                     validarTodo();
                 });
             }
 
-            // 5. Validar Dirección / API de Mapas (Sin tildes y control de texto)
             if (txtCalle) {
                 txtCalle.addEventListener("input", function () {
                     clearTimeout(timerBusqueda);
                     const texto = txtCalle.value.trim();
                     const errCalle = document.getElementById("calleErrorText");
 
-                    // Bloqueo inmediato en vivo si mete tildes
                     if (/[áéíóúÁÉÍÓÚ]/.test(txtCalle.value)) {
                         marcarInvalido(txtCalle);
                         if (errCalle) errCalle.classList.remove("d-none");
@@ -298,7 +301,6 @@
                         return;
                     }
 
-                    // Llamada dinámica a la API de mapas
                     timerBusqueda = setTimeout(function () {
                         const urlAPI = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(texto)}+Santiago+Chile&addressdetails=1&limit=5`;
 
@@ -310,19 +312,26 @@
                                     divResultados.classList.remove("d-none");
                                     data.forEach(item => {
                                         const nombreLimpio = item.display_name.split(", Región Metropolitana")[0];
-                                        const comuna = item.address.suburb || item.address.city_district || item.address.town || "";
+
+                                        // 🚀 ENTRADA CORREGIDA: Agregados campos adicionales 'city', 'county' y un string de respaldo
+                                        const comuna = item.address.suburb ||
+                                                       item.address.city_district ||
+                                                       item.address.town ||
+                                                       item.address.city ||
+                                                       item.address.county ||
+                                                       item.address.neighbourhood ||
+                                                       "Santiago";
 
                                         const boton = document.createElement("button");
                                         boton.type = "button";
                                         boton.className = "list-group-item list-group-item-action small py-2 text-start";
-                                        boton.innerHTML = `<i class="fas fa-road text-muted me-2"></i><strong>${item.address.road || ''}</strong> <span class="text-muted">(${comuna})</span>`;
+                                        boton.innerHTML = `<i class="fas fa-road text-muted me-2"></i><strong>${item.address.road || 'Calle Detectada'}</strong> <span class="text-muted">(${comuna})</span>`;
 
                                         boton.addEventListener("click", function () {
                                             txtCalle.value = nombreLimpio.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
                                             divResultados.classList.add("d-none");
                                             marcarValido(txtCalle);
 
-                                            // Auto-selección de comuna en el DDL
                                             const comNorm = comuna.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
                                             if (comNorm.includes("penalolen")) ddlZonaDespacho.value = "2";
                                             else if (comNorm.includes("macul")) ddlZonaDespacho.value = "4";
@@ -332,7 +341,7 @@
                                             else if (comNorm.includes("santiago")) ddlZonaDespacho.value = "12";
                                             else if (comNorm.includes("maipu")) ddlZonaDespacho.value = "22";
                                             else if (comNorm.includes("quilicura")) ddlZonaDespacho.value = "25";
-                                            else ddlZonaDespacho.value = "0";
+                                            else ddlZonaDespacho.value = "12"; // 🚀 Redirección de respaldo por defecto a Santiago Centro
 
                                             ddlZonaDespacho.dispatchEvent(new Event('change'));
                                         });
@@ -348,21 +357,13 @@
                 });
             }
 
-            // 6. Validar Número de casa (Mayor a 0)
             if (txtNumero) {
                 txtNumero.addEventListener("input", function () {
-                    if (parseInt(txtNumero.value) > 0) {
-                        marcarValido(txtNumero);
-                    } else {
-                        marcarInvalido(txtNumero);
-                    }
+                    if (parseInt(txtNumero.value) > 0) marcarValido(txtNumero);
+                    else marcarInvalido(txtNumero);
                     validarTodo();
                 });
             }
-
-            // ====================================================================
-            // ⚙️ FUNCIONES AUXILIARES DE CONTROL VISUAL Y LÓGICO
-            // ====================================================================
 
             function marcarValido(elemento) {
                 elemento.classList.remove("is-invalid");
@@ -404,12 +405,10 @@
                 }
             }
 
-            // 🚀 MOTOR CENTRAL: Evalúa el estado de todos los inputs en vivo para prender/apagar el botón Final
             function validarTodo() {
                 const kilometros = parseInt(ddlZonaDespacho.value);
                 const horaValida = verificarReglaHoraria();
 
-                // Si el panel de invitado existe, le exigimos que todo tenga la clase "is-valid"
                 let expressValido = true;
                 if (txtNombre) {
                     const nombreOK = txtNombre.classList.contains("is-valid");
@@ -429,13 +428,12 @@
                 }
             }
 
-            // Listeners operacionales de envíos y zonas
             ddlTipoEnvio.addEventListener('change', function () {
                 if (this.value === 'FIJO') {
-                    contenedorHoraFijo.classList.remove('d-none');
+                    document.getElementById('contenedorHoraFijo').classList.remove('d-none');
                     txtHoraFijo.setAttribute('required', 'required');
                 } else {
-                    contenedorHoraFijo.classList.add('d-none');
+                    document.getElementById('contenedorHoraFijo').classList.add('d-none');
                     txtHoraFijo.removeAttribute('required');
                     txtHoraFijo.classList.remove('is-invalid');
                     feedbackHora.classList.add('d-none');

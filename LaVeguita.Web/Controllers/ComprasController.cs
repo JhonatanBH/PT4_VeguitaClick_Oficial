@@ -51,7 +51,7 @@ namespace LaVeguita.Web.Controllers
         }
 
         [HttpPost]
-        public IActionResult SubirGuiaProveedorBlob(int idRecepcionGuia, IFormFile archivoPdf)
+        public async Task<IActionResult> SubirGuiaProveedorBlob([FromForm] int idRecepcionGuia, [FromForm] IFormFile archivoPdf)
         {
             if (archivoPdf == null || archivoPdf.Length == 0)
             {
@@ -70,11 +70,11 @@ namespace LaVeguita.Web.Controllers
                 byte[] binarioBlob;
                 using (var ms = new System.IO.MemoryStream())
                 {
-                    archivoPdf.CopyTo(ms);
+                    await archivoPdf.CopyToAsync(ms);
                     binarioBlob = ms.ToArray();
                 }
 
-                // Llamada a la DAL
+                // 🚀 Ahora sí activamos la llamada real a Oracle con los nombres perfectamente mapeados
                 bool exito = _loteDal.GuardarGuiaProveedorBlob(idRecepcionGuia, binarioBlob, archivoPdf.FileName, out string mensajeDeOracle);
 
                 if (exito) TempData["Mensaje"] = mensajeDeOracle;
@@ -105,7 +105,15 @@ namespace LaVeguita.Web.Controllers
             return File(archivoBinario, "application/pdf", nombreArchivo);
         }
 
+        [HttpPost]
+        public IActionResult Anular(int id)
+        {
+            bool exito = _loteDal.AnularGuiaRecepcion(id);
+            if (exito) TempData["Mensaje"] = "La guía de recepción ha sido anulada por error de digitación.";
+            else TempData["Error"] = "No se pudo anular la guía seleccionada.";
 
+            return RedirectToAction("Index");
+        }
 
     }
 }

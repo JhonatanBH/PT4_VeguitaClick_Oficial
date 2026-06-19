@@ -67,12 +67,11 @@
                                         <span class="badge bg-warning text-dark px-2 py-1">⚠️ En Preparación</span>
                                     </td>
                                     <td class="text-center">
-                                        <form asp-action="Despachar" method="post" class="m-0">
-                                            <input type="hidden" name="idVenta" value="@row["ID_VENTA"]" />
-                                            <button type="submit" class="btn btn-sm btn-success px-3 fw-bold shadow-sm">
-                                                📦 Despachar Móvil
-                                            </button>
-                                        </form>
+                                        <button type="button" 
+                                                class="btn btn-sm btn-success px-3 fw-bold shadow-sm" 
+                                                onclick="confirmarDespacho(@row["ID_VENTA"])">
+                                            📦 Despachar Móvil
+                                        </button>
                                     </td>
                                 </tr>
                             }
@@ -83,3 +82,37 @@
         </div>
     </div>
 </div>
+
+@section Scripts {
+    <script>
+        function confirmarDespacho(idVenta) {
+            Swal.fire({
+                title: '¿Confirmar Despacho?',
+                text: "El pedido #" + idVenta + " pasará a la flota de reparto.",
+                icon: 'question',
+                showCancelButton: true,
+                confirmButtonColor: '#198754',
+                cancelButtonColor: '#6c757d',
+                confirmButtonText: 'Sí, despachar',
+                cancelButtonText: 'Cancelar'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    // Creamos un formulario temporal para enviar el POST de forma elegante
+                    var form = document.createElement('form');
+                    form.method = 'POST';
+                    form.action = '@Url.Action("Despachar", "Logistica")'; // Ajusta el nombre del controlador si es necesario
+
+                    var input = document.createElement('input');
+                    input.type = 'hidden';
+                    input.name = 'idVenta';
+                    input.value = idVenta;
+                    
+                    form.appendChild(input);
+                    document.body.appendChild(form);
+                    form.submit();
+                }
+            });
+        }
+    </script>
+}
+

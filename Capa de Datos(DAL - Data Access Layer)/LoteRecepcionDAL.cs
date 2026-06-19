@@ -126,7 +126,7 @@ namespace LaVeguita.DAL
             mensaje = string.Empty;
 
             string query = @"INSERT INTO ADMIN.DOCUMENTOS_RECEPCION (ID_RECEPCION, ARCHIVO_BLOB, NOMBRE_ARCHIVO) 
-                             VALUES (:idRecepcion, :archivoBlob, :nombreArchivo)";
+                     VALUES (:idRecepcion, :archivoBlob, :nombreArchivo)";
 
             try
             {
@@ -134,8 +134,18 @@ namespace LaVeguita.DAL
                 {
                     using (OracleCommand cmd = new OracleCommand(query, cn))
                     {
+                        // Mantenemos la regla de los nombres
+                        cmd.BindByName = true;
+
+                        // 1. Parámetro ID normal
                         cmd.Parameters.Add("idRecepcion", OracleDbType.Int32).Value = idRecepcion;
-                        cmd.Parameters.Add("archivoBlob", OracleDbType.Blob).Value = archivoBytes;
+
+                        // 2. 🚀 EL PARCHE DEL CRASH: Le damos a Oracle el tamaño exacto en memoria (.Length)
+                        OracleParameter pBlob = new OracleParameter("archivoBlob", OracleDbType.Blob, archivoBytes.Length);
+                        pBlob.Value = archivoBytes;
+                        cmd.Parameters.Add(pBlob);
+
+                        // 3. Parámetro Nombre normal
                         cmd.Parameters.Add("nombreArchivo", OracleDbType.Varchar2).Value = nombreArchivo;
 
                         cn.Open();
@@ -217,6 +227,26 @@ namespace LaVeguita.DAL
 
             return existe;
         }
+
+        public bool AnularGuiaRecepcion(int idRecepcion)
+        {
+            string query = "UPDATE ADMIN.DETALLE_LOTES SET ESTADO = 'ANULADO' WHERE ID_RECEPCION = :id";
+            try
+            {
+                using (OracleConnection cn = new Conexion().LeerConexion())
+                {
+                    using (OracleCommand cmd = new OracleCommand(query, cn))
+                    {
+                        cmd.Parameters.Add("id", OracleDbType.Int32).Value = idRecepcion;
+                        cn.Open();
+                        return cmd.ExecuteNonQuery() > 0;
+                    }
+                }
+            }
+            catch { return false; }
+        }
+
+
 
 
 
