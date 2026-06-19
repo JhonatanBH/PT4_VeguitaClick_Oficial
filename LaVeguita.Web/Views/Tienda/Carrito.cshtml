@@ -117,7 +117,7 @@
                                     <div class="row g-2 mb-2">
                                         <div class="col-6">
                                             <label class="form-label small fw-bold text-muted m-0 mb-1">Nombre Completo</label>
-                                            <input type="text" name="nombreInvitado" id="txtNombreInvitado" class="form-control bg-white" placeholder="Ej: Juan Pérez" required />
+                                            <input type="text" name="nombreInvitado" id="txtNombreInvitado" class="form-control bg-white" placeholder="Ej: Juan Pérez" required oninput="cleanInput(this)" />
                                         </div>
                                         <div class="col-6">
                                             <label class="form-label small fw-bold text-muted m-0 mb-1">Teléfono Móvil</label>
@@ -139,13 +139,12 @@
 
                                     <div class="row g-2">
                                         <div class="col-8 position-relative">
-                                            <label class="form-label small fw-bold text-muted m-0 mb-1">Buscar Dirección (API Mapas en vivo)</label>
+                                            <label class="form-label small fw-bold text-muted m-0 mb-1">Buscar Dirección (Sin Tildes)</label>
                                             <div class="input-group">
                                                 <span class="input-group-text bg-white border-end-0 text-muted small"><i class="fas fa-search-location"></i></span>
-                                                <input type="text" name="calleInvitado" id="txtCalleInvitado" class="form-control bg-white border-start-0" placeholder="Escriba calle y comuna..." autocomplete="off" required />
+                                                <input type="text" name="calleInvitado" id="txtCalleInvitado" class="form-control bg-white border-start-0" placeholder="Escriba calle y comuna..." autocomplete="off" required oninput="cleanInput(this)" />
                                             </div>
                                             <div id="resultadosMapas" class="list-group position-absolute w-100 shadow-lg d-none" style="z-index: 2000; max-height: 200px; overflow-y: auto;"></div>
-                                            <div id="calleErrorText" class="text-danger small d-none">No use tildes en la calle.</div>
                                         </div>
                                         <div class="col-4">
                                             <label class="form-label small fw-bold text-muted m-0 mb-1">Número / Block</label>
@@ -159,7 +158,7 @@
                                 <label class="form-label fw-bold text-warning-emphasis"><i class="far fa-clock me-1"></i> Indique Hora de Retiro/Entrega</label>
                                 <input type="time" name="horaFijo" id="txtHoraFijo" class="form-control" style="padding: 10px;" />
                                 <div id="feedbackHora" class="text-danger small mt-1 d-none">
-                                    Regra: Debe agendar con un minimo de 2 hours de anticipacion.
+                                    Regla: Debe agendar con un minimo de 2 hours de anticipacion.
                                 </div>
                             </div>
 
@@ -176,10 +175,15 @@
 
 @section Scripts {
     <script>
+        // 🛡️ MOTOR DE SANITIZACIÓN: Elimina tildes en tiempo real
+        function cleanInput(e) {
+            e.value = e.value.normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-zA-Z0-9\s-]/g, "");
+        }
+
         document.addEventListener("DOMContentLoaded", function () {
             @if (TempData["Error"] != null)
             {
-                    <text>Swal.fire({ icon: 'error', title: '¡Alerta de Restricción!', text: '@TempData["Error"]', confirmButtonColor: '#d33' });</text>
+                        <text>Swal.fire({ icon: 'error', title: '¡Alerta de Restricción!', text: '@TempData["Error"]', confirmButtonColor: '#d33' });</text>
             }
 
             const formCheckout = document.getElementById('formCheckout');
@@ -282,23 +286,14 @@
                 txtCalle.addEventListener("input", function () {
                     clearTimeout(timerBusqueda);
                     const texto = txtCalle.value.trim();
-                    const errCalle = document.getElementById("calleErrorText");
-
-                    if (/[áéíóúÁÉÍÓÚ]/.test(txtCalle.value)) {
-                        marcarInvalido(txtCalle);
-                        if (errCalle) errCalle.classList.remove("d-none");
-                        validarTodo();
-                        return;
-                    } else {
-                        txtCalle.classList.remove("is-invalid");
-                        if (errCalle) errCalle.classList.add("d-none");
-                    }
 
                     if (texto.length < 4) {
                         divResultados.classList.add("d-none");
                         marcarInvalido(txtCalle);
                         validarTodo();
                         return;
+                    } else {
+                        marcarValido(txtCalle);
                     }
 
                     timerBusqueda = setTimeout(function () {
@@ -312,15 +307,7 @@
                                     divResultados.classList.remove("d-none");
                                     data.forEach(item => {
                                         const nombreLimpio = item.display_name.split(", Región Metropolitana")[0];
-
-                                        // 🚀 ENTRADA CORREGIDA: Agregados campos adicionales 'city', 'county' y un string de respaldo
-                                        const comuna = item.address.suburb ||
-                                                       item.address.city_district ||
-                                                       item.address.town ||
-                                                       item.address.city ||
-                                                       item.address.county ||
-                                                       item.address.neighbourhood ||
-                                                       "Santiago";
+                                        const comuna = item.address.suburb || item.address.city_district || item.address.town || item.address.city || item.address.county || item.address.neighbourhood || "Santiago";
 
                                         const boton = document.createElement("button");
                                         boton.type = "button";
@@ -341,7 +328,7 @@
                                             else if (comNorm.includes("santiago")) ddlZonaDespacho.value = "12";
                                             else if (comNorm.includes("maipu")) ddlZonaDespacho.value = "22";
                                             else if (comNorm.includes("quilicura")) ddlZonaDespacho.value = "25";
-                                            else ddlZonaDespacho.value = "12"; // 🚀 Redirección de respaldo por defecto a Santiago Centro
+                                            else ddlZonaDespacho.value = "12";
 
                                             ddlZonaDespacho.dispatchEvent(new Event('change'));
                                         });
@@ -349,7 +336,6 @@
                                     });
                                 } else {
                                     divResultados.classList.add("d-none");
-                                    marcarInvalido(txtCalle);
                                 }
                                 validarTodo();
                             });

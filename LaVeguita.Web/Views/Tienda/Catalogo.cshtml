@@ -32,20 +32,19 @@
         object-fit: cover; /* Ajusta la imagen sin deformarla */
     }
 
-    /* Distintivo de Orgánico */
-    .badge-organic {
-        position: absolute;
-        top: 15px;
-        left: 15px;
-        background: #27ae60;
-        color: white;
-        padding: 5px 12px;
-        border-radius: 50px;
+    /* 🚀 CORRECCIÓN: Etiqueta Orgánica debajo del título */
+    .badge-organic-bottom {
+        background: #e8f5e9; /* Fondo verde muy suave */
+        color: #27ae60; /* Texto verde oscuro */
+        padding: 4px 10px;
+        border-radius: 6px;
         font-size: 0.7rem;
         font-weight: 700;
         text-transform: uppercase;
-        box-shadow: 0 4px 10px rgba(39, 174, 96, 0.3);
-        z-index: 10;
+        display: inline-block;
+        margin-top: 4px;
+        margin-bottom: 8px;
+        border: 1px solid #c8e6c9; /* Borde sutil */
     }
 
     /* Distintivo de Stock Alerta */
@@ -66,6 +65,8 @@
         font-weight: 700;
         color: #2c3e50;
         font-size: 1.15rem;
+        display: block; /* Vuelve a bloque para ocupar todo el ancho */
+        margin-bottom: 0px;
     }
 
     .unit-text {
@@ -94,7 +95,6 @@
         </div>
     }
 
-
     <div class="row px-3">
         @foreach (var item in Model)
         {
@@ -102,11 +102,6 @@
                 <div class="card product-card h-100 border-0 shadow-sm">
 
                     <div class="img-container">
-                        @if (item.EsOrganico == "S")
-                        {
-                            <span class="badge-organic"><i class="fas fa-leaf me-1"></i> Orgánico</span>
-                        }
-
                         @if (item.StockActual <= item.StockMin)
                         {
                             <span class="badge-stock-alert"><i class="fas fa-exclamation-triangle me-1"></i> ¡Últimas Unidades!</span>
@@ -119,12 +114,26 @@
                     </div>
 
                     <div class="card-body d-flex flex-column p-4">
-                        <div class="d-flex justify-content-between align-items-center mb-1">
+                        <div class="d-flex justify-content-between align-items-center mb-2">
                             <small class="text-success fw-bold text-uppercase" style="font-size: 0.75rem; letter-spacing: 0.5px;">@item.NomTipo</small>
                             <span class="unit-text text-uppercase"><i class="fas fa-tag me-1"></i> Por @item.UnidadMedida</span>
                         </div>
 
+                        <!-- 🚀 CAMBIO: El título arriba y la etiqueta orgánica abajo en bloque separado -->
                         <h5 class="card-title" title="@item.NomProducto">@item.NomProducto</h5>
+
+                        <div>
+                            @if (item.EsOrganico == "S")
+                            {
+                                <span class="badge-organic-bottom"><i class="fas fa-leaf"></i> 100% Orgánico</span>
+                            }
+                            else
+                            {
+                                <!-- Espaciador invisible para que las tarjetas mantengan el mismo tamaño si no son orgánicas -->
+                                <span style="display:inline-block; height:28px;"></span>
+                            }
+                        </div>
+
                         <p class="text-muted small flex-grow-1 mb-3">@item.Descripcion</p>
 
                         <div class="pt-3 border-top mt-auto">
@@ -172,7 +181,7 @@
     </div>
 </div>
 
-<button type="button" class="btn btn-success rounded-circle shadow-lg position-fixed" 
+<button type="button" class="btn btn-success rounded-circle shadow-lg position-fixed"
         style="bottom: 25px; right: 25px; width: 60px; height: 60px; z-index: 2000; font-size: 1.5rem;"
         data-bs-toggle="modal" data-bs-target="#modalAyudaExpress">
     💬
@@ -187,7 +196,7 @@
             </div>
             <div class="modal-body p-4">
                 <p class="small text-muted mb-3">Ingrese sus datos y un Asistente de Ventas lo contactará de inmediato para gestionar su compra.</p>
-                
+
                 <div class="mb-2">
                     <label class="form-label small fw-bold text-muted mb-1">Nombre Completo</label>
                     <input type="text" id="txtAyudaNombre" class="form-control" placeholder="Ej: Pedro Pascal" required />
@@ -206,7 +215,7 @@
                     <label class="form-label small fw-bold text-muted mb-1">¿Cuál es su consulta?</label>
                     <textarea id="txtAyudaMensaje" class="form-control" rows="3" placeholder="Ej: No me lee el stock de papas..." required></textarea>
                 </div>
-                
+
                 <button type="button" id="btnEnviarAyuda" class="btn btn-success w-100 rounded-pill fw-bold py-2 shadow-sm">
                     <i class="fas fa-paper-plane me-1"></i> Enviar Solicitud de Soporte
                 </button>
@@ -215,17 +224,29 @@
     </div>
 </div>
 
-
-
 @section Scripts {
     <script>
+        // 🚀 Función para decodificar caracteres HTML como tildes y símbolos
+        function decodeHtml(html) {
+            var txt = document.createElement("textarea");
+            txt.innerHTML = html;
+            return txt.value;
+        }
+
         document.addEventListener("DOMContentLoaded", function () {
-            
+
+            // Renderizado limpio del SweetAlert
             @if (TempData["Mensaje"] != null)
             {
-                <text>
-                Swal.fire({ icon: 'success', title: 'Producto Añadido', text: '@TempData["Mensaje"]', confirmButtonColor: '#198754', timer: 2000 });
-                </text>
+                    <text>
+                        Swal.fire({
+                            icon: 'success',
+                            title: 'Producto Añadido',
+                            text: decodeHtml('@System.Web.HttpUtility.HtmlDecode(TempData["Mensaje"].ToString())'),
+                            confirmButtonColor: '#198754',
+                            timer: 2000
+                        });
+                    </text>
             }
 
             document.querySelectorAll(".btn-subir").forEach(boton => {
@@ -254,47 +275,42 @@
         });
 
         // Evento para procesar la Ayuda Flotante
-const btnEnviarAyuda = document.getElementById("btnEnviarAyuda");
-if (btnEnviarAyuda) {
-    btnEnviarAyuda.addEventListener("click", function() {
-        const nom = document.getElementById("txtAyudaNombre").value.trim();
-        const rut = document.getElementById("txtAyudaRut").value.trim();
-        const fono = document.getElementById("txtAyudaFono").value.trim();
-        const msg = document.getElementById("txtAyudaMensaje").value.trim();
+        const btnEnviarAyuda = document.getElementById("btnEnviarAyuda");
+        if (btnEnviarAyuda) {
+            btnEnviarAyuda.addEventListener("click", function() {
+                const nom = document.getElementById("txtAyudaNombre").value.trim();
+                const rut = document.getElementById("txtAyudaRut").value.trim();
+                const fono = document.getElementById("txtAyudaFono").value.trim();
+                const msg = document.getElementById("txtAyudaMensaje").value.trim();
 
-        if (!nom || !rut || !fono || !msg) {
-            Swal.fire({ icon: 'warning', title: 'Campos Vacíos', text: 'Por favor, complete todos los campos para que el asistente pueda contactarlo.', confirmButtonColor: '#198754' });
-            return;
-        }
+                if (!nom || !rut || !fono || !msg) {
+                    Swal.fire({ icon: 'warning', title: 'Campos Vacíos', text: 'Por favor, complete todos los campos para que el asistente pueda contactarlo.', confirmButtonColor: '#198754' });
+                    return;
+                }
 
-        // Deshabilitar temporalmente
-        btnEnviarAyuda.setAttribute("disabled", "disabled");
+                btnEnviarAyuda.setAttribute("disabled", "disabled");
 
-        fetch(`/Tienda/RegistrarSolicitudAyuda?nombre=${encodeURIComponent(nom)}&rut=${encodeURIComponent(rut)}&telefono=${encodeURIComponent(fono)}&mensaje=${encodeURIComponent(msg)}`, {
-            method: 'POST'
-        })
-        .then(r => r.json())
-        .then(data => {
-            if (data.exito) {
-                Swal.fire({ icon: 'success', title: '¡Solicitud Enviada!', text: 'Un asistente de ventas revisará su requerimiento en el panel central.', confirmButtonColor: '#198754' })
-                .then(() => {
-                    // Cerrar modal y limpiar
-                    const modal = bootstrap.Modal.getInstance(document.getElementById('modalAyudaExpress'));
-                    modal.hide();
-                    document.getElementById("txtAyudaNombre").value = "";
-                    document.getElementById("txtAyudaRut").value = "";
-                    document.getElementById("txtAyudaFono").value = "";
-                    document.getElementById("txtAyudaMensaje").value = "";
+                fetch(`/Tienda/RegistrarSolicitudAyuda?nombre=${encodeURIComponent(nom)}&rut=${encodeURIComponent(rut)}&telefono=${encodeURIComponent(fono)}&mensaje=${encodeURIComponent(msg)}`, {
+                    method: 'POST'
+                })
+                .then(r => r.json())
+                .then(data => {
+                    if (data.exito) {
+                        Swal.fire({ icon: 'success', title: '¡Solicitud Enviada!', text: 'Un asistente de ventas revisará su requerimiento en el panel central.', confirmButtonColor: '#198754' })
+                        .then(() => {
+                            const modal = bootstrap.Modal.getInstance(document.getElementById('modalAyudaExpress'));
+                            modal.hide();
+                            document.getElementById("txtAyudaNombre").value = "";
+                            document.getElementById("txtAyudaRut").value = "";
+                            document.getElementById("txtAyudaFono").value = "";
+                            document.getElementById("txtAyudaMensaje").value = "";
+                        });
+                    } else {
+                        Swal.fire({ icon: 'error', title: 'Error', text: data.mensaje, confirmButtonColor: '#d33' });
+                    }
+                    btnEnviarAyuda.removeAttribute("disabled");
                 });
-            } else {
-                Swal.fire({ icon: 'error', title: 'Error', text: data.mensaje, confirmButtonColor: '#d33' });
-            }
-            btnEnviarAyuda.removeAttribute("disabled");
-        });
-    });
-}
-
-
-
+            });
+        }
     </script>
 }

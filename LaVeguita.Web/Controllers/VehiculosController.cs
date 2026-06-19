@@ -26,7 +26,7 @@ namespace LaVeguita.Web.Controllers
         public IActionResult Index()
         {
             var flota = _vehiculoDal.ListarVehiculos();
-            return View(flota); // Envía la lista estructurada a la vista
+            return View(flota);
         }
 
         // ➕ INGRESAR NUEVO MÓVIL (GET)
@@ -40,22 +40,18 @@ namespace LaVeguita.Web.Controllers
         [HttpPost]
         public IActionResult Crear(Vehiculo nuevoVehiculo)
         {
-            // 1. Limpieza preventiva: Si no mandan estado o ID, los ignoramos
             ModelState.Remove("IdTransporte");
             ModelState.Remove("Estado");
             ModelState.Remove("KmTotal");
 
-            // Validamos que los campos esenciales vengan con datos
             if (string.IsNullOrEmpty(nuevoVehiculo.TipoMovil) || string.IsNullOrEmpty(nuevoVehiculo.Serial))
             {
                 ModelState.AddModelError("", "Por favor, complete todos los campos obligatorios (Serial y Tipo).");
                 return View(nuevoVehiculo);
             }
 
-            // Convertimos a mayúsculas para evitar problemas de case sensitive en las reglas
             string tipo = nuevoVehiculo.TipoMovil.ToUpper();
 
-            // 2. Validaciones lógicas del Cubicaje (Caso 4)
             if (tipo == "BICICLETA" && nuevoVehiculo.CapMaxKg >= 5)
             {
                 ModelState.AddModelError("", "Regla de Negocio: Las bicicletas no soportan cargas mayores o iguales a 5kg.");
@@ -69,7 +65,6 @@ namespace LaVeguita.Web.Controllers
 
             try
             {
-                // Forzamos el paso del tipo en mayúsculas a la DAL
                 nuevoVehiculo.TipoMovil = tipo;
 
                 bool exito = _vehiculoDal.InsertarVehiculo(nuevoVehiculo);
@@ -86,17 +81,26 @@ namespace LaVeguita.Web.Controllers
             }
             catch (System.Exception ex)
             {
-                // 🚀 ESTO ES CLAVE: Pintará el error exacto de Oracle en pantalla si se cae
                 ModelState.AddModelError("", "Falla Crítica Oracle: " + ex.Message);
                 return View(nuevoVehiculo);
             }
+        }
+
+        // =================================================================
+        // 🚀 SOLUCIÓN AL ERROR 405: LA PUERTA DE ENTRADA (GET) QUE FALTABA
+        // =================================================================
+        [HttpGet]
+        public IActionResult RegistrarMantencion()
+        {
+            // Carga los vehículos para que el `<select>` del HTML no se caiga
+            ViewBag.Vehiculos = _vehiculoDal.ListarVehiculos();
+            return View();
         }
 
         // 🔧 FORMULARIO DE MANTENCIÓN (POST - CORREGIDO A 4 PARÁMETROS)
         [HttpPost]
         public IActionResult RegistrarMantencion(int idTransporte, string detalleTecnico, int costoMantencion, int diasEstimados)
         {
-            // Validamos preventivamente que los días sean mayores a cero
             if (idTransporte <= 0 || diasEstimados <= 0 || string.IsNullOrEmpty(detalleTecnico))
             {
                 ModelState.AddModelError("", "Por favor, complete todos los campos obligatorios del informe técnico.");
@@ -108,7 +112,6 @@ namespace LaVeguita.Web.Controllers
             string detalleLimpio = detalleTecnico.Normalize(System.Text.NormalizationForm.FormD)
                                                 .Replace("á", "a").Replace("é", "e").Replace("í", "i").Replace("ó", "o").Replace("ú", "u");
 
-            // 🚀 CORREGIDO: Ahora le pasamos los 4 argumentos que la DAL necesita para calcular el SYSDATE + días
             bool exito = _vehiculoDal.RegistrarMantencionFlota(idTransporte, detalleLimpio, costoMantencion, diasEstimados);
             if (exito)
             {
@@ -119,6 +122,31 @@ namespace LaVeguita.Web.Controllers
             ViewBag.Vehiculos = _vehiculoDal.ListarVehiculos();
             ModelState.AddModelError("", "Falla en la transacción distribuida de Oracle Cloud.");
             return View();
+        }
+
+        // =================================================================
+        // 🚀 ACCIÓN FALTANTE: DEVOLVER EL VEHÍCULO A LA FLOTA (ALTA TÉCNICA)
+        // =================================================================
+        [HttpPost]
+        public IActionResult HabilitarVehiculo(int idTransporte)
+        {
+            if (idTransporte <= 0)
+            {
+                TempData["Error"] = "Identificador de vehículo no válido.";
+                return RedirectToAction("Index");
+            }
+
+            bool exito = _vehiculoDal.HabilitarVehiculoFlota(idTransporte);
+            if (exito)
+            {
+                TempData["ExitoFlota"] = "El móvil ha completado su mantenimiento y vuelve a estar DISPONIBLE en la flota.";
+            }
+            else
+            {
+                TempData["Error"] = "No se pudo actualizar el estado del vehículo en la base de datos.";
+            }
+
+            return RedirectToAction("Index");
         }
     }
 }

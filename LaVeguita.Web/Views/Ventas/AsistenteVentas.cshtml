@@ -13,9 +13,7 @@
 
     <div class="row">
 
-        <!-- COLUMNA IZQUIERDA: FORMULARIO DE INGRESO -->
         <div class="col-md-5">
-            <!-- Sección 1: Selección de Ítems -->
             <div class="card border-0 shadow-sm p-3 mb-3" style="border-radius: 15px;">
                 <div class="card-body">
                     <h6 class="fw-bold text-success mb-3"><i class="fas fa-cart-plus me-1"></i> 1. Añadir al Pedido Actual</h6>
@@ -39,17 +37,15 @@
                 </div>
             </div>
 
-            <!-- Sección 2: Datos del Comprador y Dirección de Despacho (Corregida) -->
             <div class="card border-0 shadow-sm p-3" style="border-radius: 15px;">
                 <div class="card-body">
-                    <h6 class="fw-bold text-success mb-3"><i class="fas fa-map-marker-alt me-1"></i> 2. Destino de Despacho</h6>
+                    <h6 class="fw-bold text-success mb-3"><i class="fas fa-map-marker-alt me-1"></i> 2. Destino de Despacho (Sin Tildes)</h6>
 
                     <div class="mb-2">
                         <label class="form-label small text-muted mb-1">Nombre Comprador</label>
-                        <input type="text" id="txtNombreCliente" class="form-control" placeholder="Ej: Juan Pérez" />
+                        <input type="text" id="txtNombreCliente" class="form-control" placeholder="Ej: Juan Perez" oninput="cleanInput(this)" />
                     </div>
 
-                    <!-- 🚀 NUEVO: RECUADRO DE RUT PARA EL ASISTENTE DE VENTAS -->
                     <div class="mb-2">
                         <label class="form-label small text-muted mb-1">RUT Cliente (Para Consulta y Seguimiento)</label>
                         <input type="text" id="txtRutCliente" class="form-control" placeholder="Ej: 12345678-9" />
@@ -57,13 +53,13 @@
 
                     <div class="mb-2">
                         <label class="form-label small text-muted mb-1">Calle / Pasaje</label>
-                        <input type="text" id="txtCalle" class="form-control" placeholder="Ej: Av. Tobalaba" />
+                        <input type="text" id="txtCalle" class="form-control" placeholder="Ej: Av Tobalaba" oninput="cleanInput(this)" />
                     </div>
 
                     <div class="row mb-2">
                         <div class="col-md-6">
                             <label class="form-label small text-muted mb-1">Número</label>
-                            <input type="text" id="txtNumero" class="form-control" placeholder="Ej: 1420" />
+                            <input type="number" id="txtNumero" class="form-control" placeholder="Ej: 1420" />
                         </div>
                         <div class="col-md-6">
                             <label class="form-label small text-muted mb-1">Comuna</label>
@@ -93,7 +89,6 @@
             </div>
         </div>
 
-        <!-- COLUMNA DERECHA: TABLA DINÁMICA DE LA CANASTA -->
         <div class="col-md-7">
             <div class="card border-0 shadow-sm p-3 h-100" style="border-radius: 15px;">
                 <div class="card-body d-flex flex-column justify-content-between">
@@ -137,6 +132,22 @@
 
 @section Scripts {
     <script>
+        // 🛡️ MOTOR DE SANITIZACIÓN: Elimina tildes en tiempo real
+        function cleanInput(e) {
+            e.value = e.value.normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-zA-Z0-9\s-]/g, "");
+        }
+
+        // 🔢 VALIDADOR DE RUT REAL TIME
+        function validarRutChileno(rut) {
+            if (!/^[0-9]+-[0-9kK]{1}$/.test(rut)) return false;
+            let tmp = rut.split('-');
+            let digv = tmp[1].toLowerCase();
+            let body = tmp[0];
+            let M = 0, S = 1;
+            for (; body; body = Math.floor(body / 10)) S = (S + body % 10 * (9 - M++ % 6)) % 11;
+            return (S ? (S - 1).toString() : 'k') === digv;
+        }
+
         document.addEventListener("DOMContentLoaded", function () {
             const cmbProducto = document.getElementById("cmbProducto");
             const txtCantidad = document.getElementById("txtCantidad");
@@ -146,7 +157,6 @@
             const lblTotalVenta = document.getElementById("lblTotalVenta");
             const btnFinalizarVenta = document.getElementById("btnFinalizarVenta");
 
-            // Elementos de la sección de despacho
             const txtNombreCliente = document.getElementById("txtNombreCliente");
             const txtRutCliente = document.getElementById("txtRutCliente");
             const txtCalle = document.getElementById("txtCalle");
@@ -154,14 +164,52 @@
             const cmbComuna = document.getElementById("cmbComuna");
             const cmbTipoEnvio = document.getElementById("cmbTipoEnvio");
 
+            let itemCount = 0;
+
+            function checkFormValidity() {
+                const nom = txtNombreCliente.value.trim();
+                const rut = txtRutCliente ? txtRutCliente.value.trim() : "";
+                const clle = txtCalle.value.trim();
+                const num = txtNumero.value.trim();
+                const com = cmbComuna.value;
+
+                const isRutValid = validarRutChileno(rut.replace(/\./g, ''));
+
+                if (txtRutCliente) {
+                    if (rut && !isRutValid) txtRutCliente.classList.add('is-invalid');
+                    else txtRutCliente.classList.remove('is-invalid');
+                }
+
+                if (nom && rut && isRutValid && clle && num && com && itemCount > 0) {
+                    btnFinalizarVenta.removeAttribute("disabled");
+                } else {
+                    btnFinalizarVenta.setAttribute("disabled", "disabled");
+                }
+            }
+
+            [txtNombreCliente, txtRutCliente, txtCalle, txtNumero, cmbComuna].forEach(input => {
+                if(input) {
+                    input.addEventListener('input', checkFormValidity);
+                    input.addEventListener('change', checkFormValidity);
+                }
+            });
+
+            if(txtRutCliente) {
+                txtRutCliente.addEventListener('input', function() {
+                    this.value = this.value.replace(/\./g, '').trim();
+                });
+            }
+
             function actualizarTabla(items, total) {
                 if (!items || items.length === 0) {
                     tbodyDetalle.innerHTML = `<tr><td colspan="5" class="text-center py-4 text-muted small">No hay productos agregados al pedido tradicional aún.</td></tr>`;
                     lblTotalVenta.innerText = "$0";
-                    btnFinalizarVenta.setAttribute("disabled", "disabled");
+                    itemCount = 0;
+                    checkFormValidity();
                     return;
                 }
 
+                itemCount = items.length;
                 let html = "";
                 items.forEach(item => {
                     html += `
@@ -180,7 +228,7 @@
 
                 tbodyDetalle.innerHTML = html;
                 lblTotalVenta.innerText = `$${total.toLocaleString('es-CL')}`;
-                btnFinalizarVenta.removeAttribute("disabled");
+                checkFormValidity();
 
                 document.querySelectorAll(".btn-quitar").forEach(btn => {
                     btn.onclick = function() {
@@ -192,7 +240,6 @@
                 });
             }
 
-            // EVENTO 1: VERIFICAR STOCK CRÍTICO Y AÑADIR A LA CANASTA
             btnAñadirItem.addEventListener("click", function () {
                 const idProd = cmbProducto.value;
                 const cant = txtCantidad.value;
@@ -232,7 +279,6 @@
                 });
             });
 
-            // EVENTO 2: CONFIRMAR COMPRA Y GENERAR TRANSACCIÓN
             btnFinalizarVenta.addEventListener("click", function () {
                 const nom = txtNombreCliente.value.trim();
                 const rut = txtRutCliente ? txtRutCliente.value.trim() : "";
@@ -240,16 +286,6 @@
                 const num = txtNumero.value.trim();
                 const com = cmbComuna.value;
                 const envio = cmbTipoEnvio.value;
-
-                if (!nom || !rut || !clle || !num || !com) {
-                    Swal.fire({
-                        icon: 'warning',
-                        title: 'Campos Obligatorios',
-                        text: 'Por favor, complete el nombre, RUT de seguimiento y la dirección física completa.',
-                        confirmButtonColor: '#198754'
-                    });
-                    return;
-                }
 
                 btnFinalizarVenta.setAttribute("disabled", "disabled");
                 btnFinalizarVenta.innerHTML = `<i class="fas fa-spinner fa-spin me-1"></i> Confirmando en Oracle Cloud...`;
