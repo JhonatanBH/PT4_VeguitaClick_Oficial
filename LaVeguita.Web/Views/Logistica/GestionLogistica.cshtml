@@ -160,70 +160,78 @@
 </style>
 
 @section Scripts {
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script>
+        // 🚀 FUNCIÓN CLAVE: Traduce los códigos HTML de tildes a texto limpio
+        function decodeHtml(html) {
+        var txt = document.createElement("textarea");
+        txt.innerHTML = html;
+        return txt.value;
+        }
+
         // 1. LÓGICA DE ALERTAS MODERNAS (SWEETALERT2)
         @if (TempData["Exito"] != null)
         {
             <text>
-            Swal.fire({
+                Swal.fire({
                 icon: 'success',
-                title: '¡Operación Exitosa!',
-                text: '@TempData["Exito"]',
+                title: 'Operación Exitosa',
+                text: decodeHtml('@System.Web.HttpUtility.HtmlDecode(TempData["Exito"].ToString())'),
                 confirmButtonColor: '#198754'
-            });
+                });
             </text>
         }
 
         @if (TempData["Error"] != null)
         {
             <text>
-            Swal.fire({
+                Swal.fire({
                 icon: 'error',
                 title: 'Error de Sistema',
-                text: '@TempData["Error"]',
+                text: decodeHtml('@System.Web.HttpUtility.HtmlDecode(TempData["Error"].ToString())'),
                 confirmButtonColor: '#d33'
-            });
+                });
             </text>
         }
 
         // 2. LÓGICA DE LOS BOTONES DE FILTRADO
         document.addEventListener("DOMContentLoaded", function () {
-            const botones = document.querySelectorAll('.btn-group .btn');
-            const tarjetas = document.querySelectorAll('.tarjeta-pedido');
+        const botones = document.querySelectorAll('.btn-group .btn');
+        const tarjetas = document.querySelectorAll('.tarjeta-pedido');
 
-            botones.forEach(boton => {
-                boton.addEventListener('click', function () {
-                    botones.forEach(b => b.classList.remove('active'));
-                    this.classList.add('active');
+        botones.forEach(boton => {
+        boton.addEventListener('click', function () {
+        botones.forEach(b => b.classList.remove('active'));
+        this.classList.add('active');
 
-                    const filtro = this.innerText.trim();
+        const filtro = this.innerText.trim();
 
-                    tarjetas.forEach(tarjeta => {
-                        const estado = tarjeta.getAttribute('data-estado');
+        tarjetas.forEach(tarjeta => {
+        const estado = tarjeta.getAttribute('data-estado');
 
-                        if (filtro === "Todos") {
-                            tarjeta.style.display = "block";
-                        }
-                        else if (filtro === "Por Asignar") {
-                            if (estado === "sin vehiculo") {
-                                tarjeta.style.display = "block";
-                            } else {
-                                tarjeta.style.display = "none";
-                            }
-                        }
-                        else if (filtro === "En Ruta") {
-                            if (estado === "pendiente") {
-                                tarjeta.style.display = "block";
-                            } else {
-                                tarjeta.style.display = "none";
-                            }
-                        }
-                        else {
-                            tarjeta.style.display = "none";
-                        }
-                    });
-                });
-            });
+        if (filtro === "Todos") {
+        tarjeta.style.display = "block";
+        }
+        else if (filtro === "Por Asignar") {
+        if (estado === "sin vehiculo") {
+        tarjeta.style.display = "block";
+        } else {
+        tarjeta.style.display = "none";
+        }
+        }
+        else if (filtro === "En Ruta") {
+        if (estado === "pendiente") {
+        tarjeta.style.display = "block";
+        } else {
+        tarjeta.style.display = "none";
+        }
+        }
+        else {
+        tarjeta.style.display = "none";
+        }
+        });
+        });
+        });
         });
     </script>
 }

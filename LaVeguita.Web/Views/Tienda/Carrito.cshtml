@@ -94,15 +94,15 @@
                             <div class="mb-3 p-3 rounded-3 border">
                                 <label class="form-label fw-bold text-muted"><i class="fas fa-map text-primary me-1"></i> Confirmar Zona de Despacho</label>
                                 <select id="ddlZonaDespacho" name="comunaInvitado" class="form-select border-primary" style="padding: 10px;" required>
-                                    <option value="0">Seleccione comuna de destino...</option>
-                                    <option value="2">Peñalolén (Matriz - 2 km)</option>
-                                    <option value="4">Macul (Aprox. 4 km)</option>
-                                    <option value="5">Ñuñoa (Aprox. 5 km)</option>
-                                    <option value="6">La Reina (Aprox. 6 km)</option>
-                                    <option value="9">Providencia (Aprox. 9 km)</option>
-                                    <option value="12">Santiago Centro (Aprox. 12 km)</option>
-                                    <option value="22">Maipú (Aprox. 22 km - Fuera de Rango)</option>
-                                    <option value="25">Quilicura (Aprox. 25 km - Fuera de Rango)</option>
+                                    <option value="0" data-km="0">Seleccione comuna de destino...</option>
+                                    <option value="1" data-km="2">Peñalolén (Matriz - 2 km)</option>
+                                    <option value="2" data-km="5">Ñuñoa (Aprox. 5 km)</option>
+                                    <option value="3" data-km="4">Macul (Aprox. 4 km)</option>
+                                    <option value="4" data-km="6">La Reina (Aprox. 6 km)</option>
+                                    <option value="5" data-km="9">Providencia (Aprox. 9 km)</option>
+                                    <option value="6" data-km="12">Santiago Centro (Aprox. 12 km)</option>
+                                    <option value="7" data-km="22">Maipú (Aprox. 22 km - Fuera de Rango)</option>
+                                    <option value="8" data-km="25">Quilicura (Aprox. 25 km - Fuera de Rango)</option>
                                 </select>
                                 <div id="alertaDistancia" class="alert alert-danger mt-2 d-none py-2 small">
                                     <i class="fas fa-ban me-1"></i> <strong>Radio Excedido:</strong> La comuna seleccionada supera el límite máximo de 15 km de cobertura logística para despachos.
@@ -175,7 +175,6 @@
 
 @section Scripts {
     <script>
-        // 🛡️ MOTOR DE SANITIZACIÓN: Elimina tildes en tiempo real
         function cleanInput(e) {
             e.value = e.value.normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-zA-Z0-9\s-]/g, "");
         }
@@ -320,15 +319,15 @@
                                             marcarValido(txtCalle);
 
                                             const comNorm = comuna.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
-                                            if (comNorm.includes("penalolen")) ddlZonaDespacho.value = "2";
-                                            else if (comNorm.includes("macul")) ddlZonaDespacho.value = "4";
-                                            else if (comNorm.includes("nunoa")) ddlZonaDespacho.value = "5";
-                                            else if (comNorm.includes("la reina")) ddlZonaDespacho.value = "6";
-                                            else if (comNorm.includes("providencia")) ddlZonaDespacho.value = "9";
-                                            else if (comNorm.includes("santiago")) ddlZonaDespacho.value = "12";
-                                            else if (comNorm.includes("maipu")) ddlZonaDespacho.value = "22";
-                                            else if (comNorm.includes("quilicura")) ddlZonaDespacho.value = "25";
-                                            else ddlZonaDespacho.value = "12";
+                                            // 🚀 REGLA DE MAPEO A IDS REALES
+                                            if (comNorm.includes("penalolen")) ddlZonaDespacho.value = "1";
+                                            else if (comNorm.includes("nunoa")) ddlZonaDespacho.value = "2";
+                                            else if (comNorm.includes("macul")) ddlZonaDespacho.value = "3";
+                                            else if (comNorm.includes("la reina")) ddlZonaDespacho.value = "4";
+                                            else if (comNorm.includes("providencia")) ddlZonaDespacho.value = "5";
+                                            else if (comNorm.includes("santiago")) ddlZonaDespacho.value = "6";
+                                            else if (comNorm.includes("maipu")) ddlZonaDespacho.value = "7";
+                                            else ddlZonaDespacho.value = "6";
 
                                             ddlZonaDespacho.dispatchEvent(new Event('change'));
                                         });
@@ -392,7 +391,9 @@
             }
 
             function validarTodo() {
-                const kilometros = parseInt(ddlZonaDespacho.value);
+                // 🚀 REPARADO: Ahora lee los kilómetros desde el atributo data-km, no desde el value
+                const selectedOption = ddlZonaDespacho.options[ddlZonaDespacho.selectedIndex];
+                const kilometros = selectedOption ? parseInt(selectedOption.getAttribute('data-km') || 0) : 0;
                 const horaValida = verificarReglaHoraria();
 
                 let expressValido = true;
@@ -407,7 +408,8 @@
                     expressValido = (nombreOK && fonoOK && rutOK && correoOK && calleOK && numOK);
                 }
 
-                if (kilometros === 0 || kilometros > 15 || !horaValida || !expressValido) {
+                // El bloqueo sigue funcionando igual: si supera los 15km, deshabilita el checkout
+                if (ddlZonaDespacho.value === "0" || kilometros > 15 || !horaValida || !expressValido) {
                     btnPagar.setAttribute('disabled', 'disabled');
                 } else {
                     btnPagar.removeAttribute('disabled');
@@ -430,7 +432,10 @@
             txtHoraFijo.addEventListener('input', validarTodo);
 
             ddlZonaDespacho.addEventListener('change', function () {
-                const kilometros = parseInt(this.value);
+                // 🚀 REPARADO: Lee la distancia desde el atributo data-km corporativo
+                const selectedOption = this.options[this.selectedIndex];
+                const kilometros = selectedOption ? parseInt(selectedOption.getAttribute('data-km') || 0) : 0;
+
                 if (kilometros > 15) alertaDistancia.classList.remove('d-none');
                 else alertaDistancia.classList.add('d-none');
                 validarTodo();

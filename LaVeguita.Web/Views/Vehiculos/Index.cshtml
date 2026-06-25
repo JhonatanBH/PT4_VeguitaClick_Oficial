@@ -1,6 +1,6 @@
 ﻿@model IEnumerable<LaVeguita.Entities.Vehiculo>
 @{
-    ViewData["Title"] = "Monitor de Flota Ecológica";
+    ViewData["Title"] = "Monitor de Flota Ecologica";
 }
 
 <div class="row mb-4 align-items-center">
@@ -28,13 +28,14 @@
                 <th class="text-muted small text-uppercase text-center">Capacidad Máxima</th>
                 <th class="text-muted small text-uppercase text-center">Estado Operativo</th>
                 <th class="text-muted small text-uppercase text-end">Kilometraje</th>
+                <th class="text-muted small text-uppercase text-center" style="width: 160px;">Acciones</th>
             </tr>
         </thead>
         <tbody>
             @if (!Model.Any())
             {
                 <tr>
-                    <td colspan="6" class="text-center py-4 text-muted">No se registran vehículos en la base de datos distribuida.</td>
+                    <td colspan="7" class="text-center py-4 text-muted">No se registran vehículos en la base de datos distribuida.</td>
                 </tr>
             }
             else
@@ -70,6 +71,22 @@
                             }
                         </td>
                         <td class="text-end text-muted">@v.KmTotal KM</td>
+
+                        <td class="text-center">
+                            @if (v.Estado.ToUpper() == "MANTENCION" || v.Estado.ToUpper() == "TALLER")
+                            {
+                                <form asp-action="HabilitarVehiculo" method="post" onsubmit="return confirmarAlta(this, '@v.Serial')">
+                                    <input type="hidden" name="idTransporte" value="@v.IdTransporte" />
+                                    <button type="submit" class="btn btn-sm btn-outline-success rounded-pill px-3 fw-bold shadow-sm">
+                                        <i class="fas fa-check-circle me-1"></i> Reintegrar
+                                    </button>
+                                </form>
+                            }
+                            else
+                            {
+                                <span class="text-muted small text-uppercase fw-semibold" style="font-size: 0.75rem;"><i class="fas fa-minus me-1"></i> Sin acciones</span>
+                            }
+                        </td>
                     </tr>
                 }
             }
@@ -77,16 +94,64 @@
     </table>
 </div>
 
-@if (TempData["ExitoFlota"] != null)
-{
-    @section Scripts {
-        <script>
-            Swal.fire({
+@section Scripts {
+    <!-- SweetAlert2 integrado para alertas corporativas limpias -->
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+    <script>
+        // 🚀 FUNCIÓN CLAVE: Decodifica los caracteres raros (tildes) para que se vean bien en la alerta
+        function decodeHtml(html) {
+        var txt = document.createElement("textarea");
+        txt.innerHTML = html;
+        return txt.value;
+        }
+
+        document.addEventListener("DOMContentLoaded", function () {
+
+        // 🚀 REPARADO: Ahora limpia el mensaje usando decodeHtml
+        @if (TempData["ExitoFlota"] != null)
+        {
+            <text>
+                Swal.fire({
                 icon: 'success',
                 title: 'Operación Exitosa',
-                text: '@TempData["ExitoFlota"]',
+                text: decodeHtml('@TempData["ExitoFlota"]'),
                 confirmButtonColor: '#2ecc71'
-            });
-        </script>
-    }
+                });
+            </text>
+        }
+
+        @if (TempData["Error"] != null)
+        {
+            <text>
+                Swal.fire({
+                icon: 'error',
+                title: 'Restricción Informática',
+                text: decodeHtml('@TempData["Error"]'),
+                confirmButtonColor: '#e74c3c'
+                });
+            </text>
+        }
+        });
+
+        // Intercepta el submit para darle un feedback UX premium al profesor
+        function confirmarAlta(form, serial) {
+        event.preventDefault();
+        Swal.fire({
+        title: '¿Confirmar Alta Técnica?',
+        text: "El móvil con serial " + serial + " cambiará su estado a DISPONIBLE para la asignación de rutas y despachos.",
+        icon: 'question',
+        showCancelButton: true,
+        confirmButtonColor: '#2ecc71',
+        cancelButtonColor: '#6c757d',
+        confirmButtonText: 'Sí, Reintegrar Móvil',
+        cancelButtonText: 'Cancelar'
+        }).then((result) => {
+        if (result.isConfirmed) {
+        form.submit();
+        }
+        });
+        return false;
+        }
+    </script>
 }

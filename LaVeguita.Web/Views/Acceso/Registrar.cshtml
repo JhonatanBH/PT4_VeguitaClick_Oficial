@@ -53,13 +53,14 @@
                             <div class="alert alert-danger small py-2 rounded-3"><i class="fas fa-exclamation-circle me-1"></i> @ViewData["Error"]</div>
                         }
 
-                        <form asp-action="Registrar" method="post" id="formRegistro">
+                        <form asp-action="Registrar" method="post" id="formRegistro" novalidate>
 
                             <div class="mb-3">
                                 <label class="form-label small fw-bold text-muted">Nombre de Usuario (Sin Tildes)</label>
                                 <div class="input-group">
                                     <span class="input-group-text bg-white text-muted"><i class="far fa-user"></i></span>
-                                    <input asp-for="NombreUser" class="form-control" placeholder="Ej: juan.perez" oninput="cleanInput(this)" required />
+                                    <input asp-for="NombreUser" id="txtUsuario" class="form-control" placeholder="Ej: juan.perez" oninput="cleanInput(this)" required />
+                                    <div class="invalid-feedback">El nombre de usuario debe tener al menos 4 caracteres.</div>
                                 </div>
                             </div>
 
@@ -67,7 +68,8 @@
                                 <label class="form-label small fw-bold text-muted">Correo Electronico</label>
                                 <div class="input-group">
                                     <span class="input-group-text bg-white text-muted"><i class="far fa-envelope"></i></span>
-                                    <input asp-for="CorreoUsu" type="email" class="form-control" placeholder="juan@correo.com" required />
+                                    <input asp-for="CorreoUsu" id="txtCorreo" type="email" class="form-control" placeholder="juan@correo.com" required />
+                                    <div class="invalid-feedback">Por favor, ingrese un correo electronico valido (ejemplo@dominio.com).</div>
                                 </div>
                             </div>
 
@@ -75,7 +77,8 @@
                                 <label class="form-label small fw-bold text-muted">Telefono de Contacto</label>
                                 <div class="input-group">
                                     <span class="input-group-text bg-white text-muted"><i class="fas fa-phone"></i></span>
-                                    <input asp-for="Fono" type="number" inputmode="numeric" pattern="[0-9]*" class="form-control" placeholder="Ej: 912345678" required />
+                                    <input asp-for="Fono" id="txtTelefono" type="number" class="form-control" placeholder="Ej: 912345678" required />
+                                    <div class="invalid-feedback">Debe ser un celular chileno valido de 9 digitos y empezar con 9.</div>
                                 </div>
                             </div>
 
@@ -84,6 +87,7 @@
                                 <div class="input-group">
                                     <span class="input-group-text bg-white text-muted"><i class="fas fa-lock"></i></span>
                                     <input asp-for="Contrasena" type="password" id="txtClave" class="form-control" placeholder="Ingrese su clave" required />
+                                    <div class="invalid-feedback">La contrasena debe tener al menos 4 caracteres.</div>
                                 </div>
                             </div>
 
@@ -92,20 +96,25 @@
                                 <div class="input-group">
                                     <span class="input-group-text bg-white text-muted"><i class="fas fa-shield-alt"></i></span>
                                     <input type="password" name="confirmarPass" id="txtConfirmar" class="form-control" placeholder="Repita su clave" required />
+                                    <div class="invalid-feedback">Las contrasenas ingresadas no coinciden.</div>
                                 </div>
-                                <div id="mensajeError" class="text-danger small mt-1 d-none">❌ Las contrasenas no coinciden.</div>
                             </div>
+
                             <div class="mb-3 p-3 rounded-3" style="background-color: #f8f9fa; border: 1px solid #e9ecef;">
                                 <label class="form-label small fw-bold text-muted"><i class="fas fa-map-marker-alt text-danger me-1"></i> Dirección de Despacho (Sin Tildes)</label>
 
-                                <input type="text" name="calleDir" class="form-control mb-2" placeholder="Ej: Av Grecia" oninput="cleanInput(this)" required />
+                                <div class="mb-2">
+                                    <input type="text" name="calleDir" id="txtCalle" class="form-control" placeholder="Ej: Av Grecia" oninput="cleanInput(this)" required />
+                                    <div class="invalid-feedback">La calle o avenida es obligatoria.</div>
+                                </div>
 
                                 <div class="row">
                                     <div class="col-4">
-                                        <input type="number" name="numeroDir" class="form-control" placeholder="N°" required />
+                                        <input type="number" name="numeroDir" id="txtNumero" class="form-control" placeholder="N°" required />
+                                        <div class="invalid-feedback">Invalido.</div>
                                     </div>
                                     <div class="col-8">
-                                        <select name="idComunaDir" class="form-select" required>
+                                        <select name="idComunaDir" id="cmbComuna" class="form-select" required>
                                             <option value="">Seleccione Comuna...</option>
                                             <option value="1">Peñalolén</option>
                                             <option value="2">Ñuñoa</option>
@@ -115,6 +124,7 @@
                                             <option value="6">Santiago Centro</option>
                                             <option value="7">Maipú</option>
                                         </select>
+                                        <div class="invalid-feedback">Debe seleccionar una comuna.</div>
                                     </div>
                                 </div>
                             </div>
@@ -136,64 +146,82 @@
 
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script>
-        // 🛡️ MOTOR DE SANITIZACIÓN: Elimina tildes en tiempo real
+        // 🛡️ REG LA 12: Sanitiza caracteres especiales y tildes al escribir
         function cleanInput(e) {
         e.value = e.value.normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-zA-Z0-9\s-]/g, "");
         }
 
         document.addEventListener("DOMContentLoaded", function () {
+        const form = document.getElementById("formRegistro");
+        const btnEnviar = document.getElementById("btnEnviar");
+
+        const txtUsuario = document.getElementById("txtUsuario");
+        const txtCorreo = document.getElementById("txtCorreo");
+        const txtTelefono = document.getElementById("txtTelefono");
         const txtClave = document.getElementById("txtClave");
         const txtConfirmar = document.getElementById("txtConfirmar");
-        const mensajeError = document.getElementById("mensajeError");
-        const btnEnviar = document.getElementById("btnEnviar");
-        const form = document.getElementById("formRegistro");
-        const inputs = form.querySelectorAll('input[required], select[required]');
+        const txtCalle = document.getElementById("txtCalle");
+        const txtNumero = document.getElementById("txtNumero");
+        const cmbComuna = document.getElementById("cmbComuna");
 
-        function checkFormValidity() {
-        let isValid = true;
-        inputs.forEach(input => {
-        if (!input.value.trim()) isValid = false;
-        });
-
-        if (txtClave.value !== txtConfirmar.value) isValid = false;
-
-        btnEnviar.disabled = !isValid;
-        }
-
-        function evaluarSimetriaClaves() {
-        if (txtConfirmar.value === "") {
-        mensajeError.classList.add("d-none");
-        checkFormValidity();
-        return;
-        }
-
-        if (txtClave.value !== txtConfirmar.value) {
-        mensajeError.classList.remove("d-none");
-        txtConfirmar.classList.add("is-invalid");
-        txtConfirmar.classList.remove("is-valid");
+        // 🛡️ MOTOR EVALUADOR EN TIEMPE REAL: Agrega colores semáforo
+        function validarCampo(input, condicion) {
+        // Solo pintamos si el usuario ya escribió algo (no dejar la pantalla roja al cargar)
+        if (input.value.trim() !== "" || input.tagName === "SELECT") {
+        if (condicion) {
+        input.classList.remove("is-invalid");
+        input.classList.add("is-valid");
+        return true;
         } else {
-        mensajeError.classList.add("d-none");
-        txtConfirmar.classList.remove("is-invalid");
-        txtConfirmar.classList.add("is-valid");
+        input.classList.remove("is-valid");
+        input.classList.add("is-invalid");
+        return false;
         }
-        checkFormValidity();
+        }
+        // Si está vacío y no se ha tocado, remueve estados
+        input.classList.remove("is-valid", "is-invalid");
+        return false;
         }
 
-        inputs.forEach(input => {
-        input.addEventListener("input", checkFormValidity);
-        input.addEventListener("change", checkFormValidity);
+        function validarTodoElFormulario() {
+        let vUsuario = validarCampo(txtUsuario, txtUsuario.value.trim().length >= 4);
+
+        const regexEmail = /^[a-zA-Z0-9._%+-]+@@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+        let vCorreo = validarCampo(txtCorreo, regexEmail.test(txtCorreo.value.trim()));
+
+        // Forzar largo de 9 caracteres max en teléfono
+        if (txtTelefono.value.length > 9) txtTelefono.value = txtTelefono.value.slice(0, 9);
+        const regexFono = /^9[0-9]{8}$/;
+        let vTelefono = validarCampo(txtTelefono, regexFono.test(txtTelefono.value));
+
+        let vClave = validarCampo(txtClave, txtClave.value.trim().length >= 4);
+        let vConfirmar = validarCampo(txtConfirmar, txtConfirmar.value !== "" && txtClave.value === txtConfirmar.value);
+        let vCalle = validarCampo(txtCalle, txtCalle.value.trim().length >= 3);
+        let vNumero = validarCampo(txtNumero, txtNumero.value.trim() !== "" && parseInt(txtNumero.value) > 0);
+        let vComuna = validarCampo(cmbComuna, cmbComuna.value !== "");
+
+        // El botón solo se activa si absolutamente TODO está en verde
+        if (vUsuario && vCorreo && vTelefono && vClave && vConfirmar && vCalle && vNumero && vComuna) {
+        btnEnviar.removeAttribute("disabled");
+        } else {
+        btnEnviar.setAttribute("disabled", "disabled");
+        }
+        }
+
+        // Escuchar la escritura en caliente del usuario campo por campo
+        [txtUsuario, txtCorreo, txtTelefono, txtClave, txtConfirmar, txtCalle, txtNumero].forEach(element => {
+        element.addEventListener("input", validarTodoElFormulario);
         });
+        cmbComuna.addEventListener("change", validarTodoElFormulario);
 
-        txtConfirmar.addEventListener("input", evaluarSimetriaClaves);
-        txtClave.addEventListener("input", evaluarSimetriaClaves);
-
+        // Control definitivo al presionar Submit
         form.addEventListener("submit", function (e) {
-        if (txtClave.value !== txtConfirmar.value) {
+        if (btnEnviar.hasAttribute("disabled")) {
         e.preventDefault();
         Swal.fire({
         icon: 'error',
-        title: 'Error de validación',
-        text: 'Las contraseñas no coinciden. Por favor verifíquelas.',
+        title: 'Formulario Incompleto',
+        text: 'Asegúrese de rellenar todos los recuadros marcados en rojo antes de crear su cuenta.',
         confirmButtonColor: '#198754'
         });
         }

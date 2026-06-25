@@ -79,33 +79,24 @@ namespace LaVeguita.Web.Controllers
             {
                 using (OracleConnection cn = new Conexion().LeerConexion())
                 {
-                    // 🚀 CORREGIDO: Usamos el nombre real de tu tabla obtenido de VentasController
-                    string query = "UPDATE ADMIN.ORDEN_VENTA SET ESTADO = 'ENVIADO' WHERE ID_VENTA = :id";
+                    // 🚀 REPARADO: Apunta a la tabla DESPACHO y modifica las columnas reales detectadas en tu DAL
+                    string query = "UPDATE ADMIN.DESPACHO SET ESTADO_PEDIDO = 'ENVIADO', ESTADO_ENTREGA = 'ENVIADO' WHERE ID_VENTA = :id";
 
                     using (OracleCommand cmd = new OracleCommand(query, cn))
                     {
                         cmd.Parameters.Add("id", OracleDbType.Int32).Value = idVenta;
 
                         cn.Open();
-                        int filasAfectadas = cmd.ExecuteNonQuery();
-
-                        if (filasAfectadas > 0)
-                        {
-                            TempData["Mensaje"] = $"El pedido #{idVenta} ha sido entregado al transportista y va en camino.";
-                        }
-                        else
-                        {
-                            TempData["Error"] = $"No se encontró la orden de venta #{idVenta} para actualizar.";
-                        }
+                        cmd.ExecuteNonQuery();
                     }
                 }
+                TempData["Mensaje"] = $"El pedido #{idVenta} ha sido entregado al transportista y va en camino.";
             }
             catch (Exception ex)
             {
-                TempData["Error"] = "Error de comunicación con Oracle Cloud: " + ex.Message;
+                TempData["Error"] = "Error al conectar con Oracle Cloud: " + ex.Message;
             }
 
-            // Te devuelve limpio a la vista del monitor de logística
             return RedirectToAction("GestionLogistica");
         }
 
